@@ -1,0 +1,86 @@
+# ========================================
+# Prometheus 采集配置
+# ========================================
+# 通过 silverwing-network 网络以容器名:端口 方式抓取各微服务的 /actuator/prometheus 端点
+# 微服务容器名与端口参见 onepanel-services-compose.yml
+# ========================================
+
+global:
+  scrape_interval: 15s          # 采集间隔
+  evaluation_interval: 15s      # 规则评估间隔
+  external_labels:
+    cluster: silverwing-logistics
+    env: prod
+
+# 告警规则（阶段 4 启用，当前预留）
+# rule_files:
+#   - /etc/prometheus/rules/*.yml
+
+scrape_configs:
+  # ==================== 微服务指标 ====================
+  - job_name: 'silverwing-gateway'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-gateway:8080']
+        labels:
+          service: gateway
+
+  - job_name: 'silverwing-auth'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-auth:8081']
+        labels:
+          service: auth
+
+  - job_name: 'silverwing-core-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-core-service:8082']
+        labels:
+          service: core-service
+
+  - job_name: 'silverwing-digital-twin'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-digital-twin:8083']
+        labels:
+          service: digital-twin
+
+  - job_name: 'silverwing-ai-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-ai-service:8084']
+        labels:
+          service: ai-service
+
+  - job_name: 'silverwing-ops-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-ops-service:8085']
+        labels:
+          service: ops-service
+
+  - job_name: 'silverwing-integration'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-integration:8086']
+        labels:
+          service: integration
+
+  - job_name: 'silverwing-admin-web'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['silverwing-admin-web:8087']
+        labels:
+          service: admin-web
+
+  # ==================== 基础设施指标（可选） ====================
+  # 如需监控 MySQL / Redis / RabbitMQ，可后续接入对应的 exporter
+  # - job_name: 'mysql'
+  #   static_configs:
+  #     - targets: ['mysqld-exporter:9104']
+
+  # ==================== Prometheus 自身指标 ====================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']

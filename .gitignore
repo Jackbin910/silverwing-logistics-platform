@@ -1,0 +1,51 @@
+# 编译文件
+target/
+*.class
+
+# IDE配置
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# CodeBuddy工作目录
+.codebuddy/
+
+# 日志文件
+*.log
+
+# 临时文件
+*.tmp
+*.bak
+*.swp
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# OS文件
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 配置文件(敏感信息)
+application-local.yml
+application-prod.yml
+.env
+
+# 基础设施打包产物
+silverwing-infra-images/
+silverwing-infra-images.tar.gz
+
+# 微服务打包产物
+docker-microservices-*/
+silverwing-microservices-*.tar.gz
+/data/rabbitmq/
+/data/redis/
+
+silverwing-monitor-images.tar.gz
+silverwing-monitor-images/
+silverwing-monitor-images.tar.gz

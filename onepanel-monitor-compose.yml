@@ -1,0 +1,82 @@
+# ========================================
+# OnePanel 监控栈部署配置
+# ========================================
+# 部署说明：
+# 1. 在 OnePanel 中创建应用「银翼-监控」
+# 2. 将此文件内容作为 docker-compose.yml
+# 3. 配置好 onepanel-monitor.env 环境变量后部署
+# 4. 前提：基础设施应用（含 silverwing-network 网络）与微服务应用已部署
+# 5. 部署后访问：
+#    - Prometheus: http://<服务器IP>:9090
+#    - Grafana:    http://<服务器IP>:3000 （默认账号 admin / 见 .env）
+# ========================================
+
+version: '3.8'
+
+services:
+  # ==================== Prometheus 指标采集 ====================
+  prometheus:
+    image: docker.1ms.run/prom/prometheus:v2.55.1
+    container_name: prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./docker/monitor/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    networks:
+      silverwing-network:
+        aliases:
+          - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9090/-/healthy"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: always
+
+  # ==================== Grafana 可视化面板 ====================
+  grafana:
+    image: docker.1ms.run/grafana/grafana:11.4.0
+    container_name: grafana
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      # 自动配置数据源与 Dashboard（provisioning）
+      - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+    volumes:
+      - ./docker/monitor/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    networks:
+      silverwing-network:
+        aliases:
+          - grafana
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+networks:
+  silverwing-network:
+    # 引用基础设施应用创建的外部网络，与微服务互通
+    external: true
+
+volumes:
+  # 使用 named volume 由 Docker 自动管理权限，无需手动 chown
+  # Prometheus/Grafana 容器内以非 root 用户运行，bind mount 常因宿主机目录权限不足导致启动失败
+  prometheus-data:
+  grafana-data:

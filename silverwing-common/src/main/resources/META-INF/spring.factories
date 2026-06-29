@@ -1,0 +1,6 @@
+# ========================================
+# Spring Boot EnvironmentPostProcessor 注册
+# ========================================
+# 监控默认配置后置处理器，为所有微服务注入 Actuator/Prometheus 默认端点配置
+org.springframework.boot.env.EnvironmentPostProcessor=\
+com.silverwing.common.config.MonitorDefaultsEnvironmentPostProcessor

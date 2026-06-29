@@ -1,0 +1,31 @@
+{
+  "groups": [
+    {
+      "name": "langchain4j.rag",
+      "type": "dev.langchain4j.rag.spring.RagProperties",
+      "sourceType": "dev.langchain4j.rag.spring.RagProperties"
+    },
+    {
+      "name": "langchain4j.rag.retrieval",
+      "type": "dev.langchain4j.rag.spring.RetrievalProperties",
+      "sourceType": "dev.langchain4j.rag.spring.RagProperties",
+      "sourceMethod": "retrieval()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "langchain4j.rag.retrieval.max-results",
+      "type": "java.lang.Integer",
+      "sourceType": "dev.langchain4j.rag.spring.RetrievalProperties"
+    },
+    {
+      "name": "langchain4j.rag.retrieval.min-score",
+      "type": "java.lang.Double",
+      "sourceType": "dev.langchain4j.rag.spring.RetrievalProperties"
+    }
+  ],
+  "hints": [],
+  "ignored": {
+    "properties": []
+  }
+}

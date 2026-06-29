@@ -1,0 +1,28 @@
+spring:
+  # PGVector 独立数据源配置（与业务 MySQL 数据源隔离）
+  pgvector:
+    datasource:
+      url: jdbc:postgresql://192.168.164.128:5432/silverwing_vector?currentSchema=public
+      username: silverwing
+      password: 123456
+      driver-class-name: org.postgresql.Driver
+      hikari:
+        minimum-idle: 2
+        maximum-pool-size: 1
+        idle-timeout: 30000
+        max-lifetime: 1800000
+        connection-timeout: 30000
+
+# LangChain4j PGVector 配置（手动Bean注入，不在 Spring Boot Starter 范围内）
+langchain4j:
+  vector-store:
+    pgvector:
+      host: ${PGVECTOR_HOST:192.168.164.128}
+      port: ${PGVECTOR_PORT:5432}
+      database: ${PGVECTOR_DATABASE:silverwing_vector}
+      user: ${PGVECTOR_USERNAME:silverwing}
+      password: ${PGVECTOR_PASSWORD:123456}
+      table: silverwing_embedding
+      dimension: 512
+      create-table: true
+      drop-table-first: false

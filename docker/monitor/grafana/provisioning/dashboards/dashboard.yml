@@ -1,0 +1,26 @@
+# ========================================
+# Grafana Dashboard 自动加载配置
+# ========================================
+# 从 /var/lib/grafana/dashboards 目录自动加载 JSON 面板
+#
+# 推荐手动导入的社区 Dashboard（Grafana UI → Dashboards → Import）：
+#   1. ID 4701  - JVM (Micrometer)        监控 JVM 内存/线程/GC
+#   2. ID 11378 - Spring Boot Statistics  监控 Spring Boot 请求/QPS/延迟
+#   3. ID 12900 - JVM (Micrometer) Rust   更新的 JVM 面板（可选）
+#
+# 导入后在 Variables 中选择 application = 对应服务名即可按服务筛选
+# ========================================
+
+apiVersion: 1
+
+providers:
+  - name: 'silverwing-dashboards'
+    orgId: 1
+    folder: 'SilverWing'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: true

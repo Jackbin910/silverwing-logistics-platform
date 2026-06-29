@@ -1,0 +1,13 @@
+package com.silverwing.auth.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.silverwing.auth.entity.SysUser;
+import org.apache.ibatis.annotations.Mapper;
+
+/**
+ * 用户 Mapper
+ */
+@Mapper
+public interface SysUserMapper extends BaseMapper<SysUser> {
+
+}

@@ -1,0 +1,183 @@
+# ========================================
+# OnePanel 微服务部署配置
+# ========================================
+# 部署说明：
+# 1. 在 OnePanel 中创建应用「银翼-微服务」
+# 2. 将此文件内容作为 docker-compose.yml
+# 3. 配置好 .env 环境变量后部署
+# 4. 前提：基础设施应用（MySQL/Redis/Nacos/RabbitMQ）已部署并健康
+# 5. 前提：已在 Nacos 配置中心创建好公共配置（见 nacos-config-templates/ 目录）
+#
+# 注意：所有数据库、Redis、RabbitMQ 连接信息统一由 Nacos 配置中心管理，
+#       微服务启动后自动从 Nacos 拉取，无需在 Docker 环境变量中配置。
+# ========================================
+
+version: '3.8'
+
+# 公共环境变量（所有微服务共享，只需配一份 Nacos 连接信息）
+x-common-env: &common-env
+  NACOS_SERVER_ADDR: nacos:8848
+  NACOS_NAMESPACE: ${NACOS_NAMESPACE:-prod}
+  NACOS_USERNAME: ${NACOS_USERNAME:-nacos}
+  NACOS_PASSWORD: ${NACOS_PASSWORD:-nacos_password}
+
+services:
+  # ==================== 微服务层 ====================
+
+  # Gateway 服务
+  silverwing-gateway:
+    image: silverwing/gateway:${APP_VERSION:-1.0.0}
+    container_name: silverwing-gateway
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${GATEWAY_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Auth 服务
+  silverwing-auth:
+    image: silverwing/auth:${APP_VERSION:-1.0.0}
+    container_name: silverwing-auth
+    ports:
+      - "${AUTH_PORT:-8081}:8081"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${AUTH_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Core Service
+  silverwing-core-service:
+    image: silverwing/core-service:${APP_VERSION:-1.0.0}
+    container_name: silverwing-core-service
+    ports:
+      - "${CORE_SERVICE_PORT:-8082}:8082"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${CORE_SERVICE_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Digital Twin 服务
+  silverwing-digital-twin:
+    image: silverwing/digital-twin:${APP_VERSION:-1.0.0}
+    container_name: silverwing-digital-twin
+    ports:
+      - "${DIGITAL_TWIN_PORT:-8083}:8083"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${DIGITAL_TWIN_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # AI Service
+  silverwing-ai-service:
+    image: silverwing/ai-service:${APP_VERSION:-1.0.0}
+    container_name: silverwing-ai-service
+    ports:
+      - "${AI_SERVICE_PORT:-8084}:8084"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${AI_SERVICE_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # OPS Service
+  silverwing-ops-service:
+    image: silverwing/ops-service:${APP_VERSION:-1.0.0}
+    container_name: silverwing-ops-service
+    ports:
+      - "${OPS_SERVICE_PORT:-8085}:8085"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${OPS_SERVICE_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Integration Service
+  silverwing-integration:
+    image: silverwing/integration:${APP_VERSION:-1.0.0}
+    container_name: silverwing-integration
+    ports:
+      - "${INTEGRATION_PORT:-8086}:8086"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${INTEGRATION_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Admin Web Service
+  silverwing-admin-web:
+    image: silverwing/admin-web:${APP_VERSION:-1.0.0}
+    container_name: silverwing-admin-web
+    ports:
+      - "${ADMIN_WEB_PORT:-8087}:8087"
+    environment:
+      <<: *common-env
+      JAVA_OPTS: ${ADMIN_WEB_JAVA_OPTS}
+    networks:
+      - silverwing-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  silverwing-network:
+    # 引用基础设施应用创建的外部网络
+    name: silverwing-network
+    external: true

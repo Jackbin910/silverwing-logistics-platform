@@ -1,0 +1,28 @@
+server:
+  port: 8082
+
+spring:
+  profiles:
+    active: prod
+  application:
+    name: silverwing-core-service
+  # 导入 Nacos 配置
+  config:
+    import:
+      - optional:nacos:silverwing-core-service.yml
+      - optional:nacos:common-redis.yml
+      - optional:nacos:common-rabbitmq.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:http://192.168.164.128:8848}
+        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:http://192.168.164.128:8848}
+        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yml
+
+
+
