@@ -3,83 +3,8 @@ server:
 
 spring:
   profiles:
-    active: prod
+    active: @spring.profiles.active@
   application:
     name: silverwing-ai-service
-  # 导入 Nacos 配置
-  config:
-    import:
-      - optional:nacos:silverwing-ai-service.yml
-      - optional:nacos:common-redis.yml
-      - optional:nacos:common-pgvector.yml
-  cloud:
-    nacos:
-      discovery:
-        server-addr: ${NACOS_SERVER_ADDR:http://192.168.164.128:8848}
-        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-        # 禁用Nacos优雅关机功能,避免启动时Bean生命周期冲突
-        graceful-shutdown:
-          enabled: false
-      config:
-        server-addr: ${NACOS_SERVER_ADDR:http://192.168.164.128:8848}
-        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-        file-extension: yml
-
-  # 数据库配置（本地配置，不依赖Nacos）
-  datasource:
-    type: com.alibaba.druid.pool.DruidDataSource
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://192.168.164.128:3306/silverwing_ai?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
-    druid:
-      initial-size: 5
-      min-idle: 5
-      max-active: 20
-      max-wait: 60000
-
-  # AI模型配置
-  ai:
-    # OpenAI配置 (可选)
-    openai:
-      api-key: ${OPENAI_API_KEY:}
-      base-url: ${OPENAI_BASE_URL:https://api.openai.com}
-      chat:
-        options:
-          model: ${OPENAI_CHAT_MODEL:gpt-3.5-turbo}
-          temperature: 0.7
-
-    # 通义千问配置 (可选)
-    qwen:
-      api-key: ${QWEN_API_KEY:}
-      base-url: ${QWEN_BASE_URL:https://dashscope.aliyuncs.com}
-      chat:
-        options:
-          model: ${QWEN_CHAT_MODEL:qwen-turbo}
-          temperature: 0.8
-
-# LangChain4j配置 (Spring Boot Starter 自动装配)
-langchain4j:
-  # Ollama本地模型配置（由 langchain4j-ollama-spring-boot-starter 自动配置）
-  ollama:
-    chat-model:
-      base-url: http://localhost:11434
-      model-name: qwen2.5:7b-instruct
-      temperature: 0.3
-      timeout: 120s
-
-  # PGVector向量数据库配置（手动Bean，不在starter范围内）
-  vector-store:
-    pgvector:
-      host: 192.168.164.128
-      port: 5432
-      database: silverwing_vector
-      user: silverwing
-      password: 123456
-      table: silverwing_embedding
-      dimension: 512
-      create-table: true
 
 

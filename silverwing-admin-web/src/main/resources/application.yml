@@ -3,23 +3,8 @@ server:
 
 spring:
   profiles:
-    active: prod
+    active: @spring.profiles.active@
   application:
     name: silverwing-admin-web
-  config:
-    import:
-      - optional:nacos:silverwing-admin-web.yml
-      - optional:nacos:common-redis.yml
-  cloud:
-    nacos:
-      discovery:
-        server-addr: ${NACOS_SERVER_ADDR:http://192.168.164.128:8848}
-        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-      config:
-        server-addr: ${NACOS_SERVER_ADDR:http://192.168.164.128:8848}
-        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-        file-extension: yml
 
 

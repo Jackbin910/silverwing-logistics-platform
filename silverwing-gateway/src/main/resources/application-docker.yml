@@ -1,0 +1,124 @@
+spring:
+  config:
+    import:
+      - nacos:common-redis.yml
+      - nacos:common-sa-token.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
+        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
+        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yml
+    gateway:
+      server:
+        webflux:
+          # Gateway 使用静态路由，关闭基于服务发现的自动生成路由
+          # HTTP 客户端配置
+          # 路由配置
+          routes:
+              # ==================== 认证服务 ====================
+              - id: auth-service
+                uri: lb://silverwing-auth
+                predicates:
+                    - Path=/auth/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 3000
+                    response-timeout: 10000
+
+              # ==================== 核心业务服务 ====================
+              - id: core-service
+                uri: lb://silverwing-core-service
+                predicates:
+                    - Path=/core/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 3000
+                    response-timeout: 10000
+
+              # ==================== 数字孪生服务 ====================
+              - id: digital-twin-service
+                uri: lb://silverwing-digital-twin
+                predicates:
+                    - Path=/twin/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 3000
+                    response-timeout: 30000
+
+              # ==================== AI 分析服务 ====================
+              - id: ai-service
+                uri: lb://silverwing-ai-service
+                predicates:
+                    - Path=/ai/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 5000
+                    response-timeout: 60000
+
+              # ==================== 售后运维服务 ====================
+              - id: ops-service
+                uri: lb://silverwing-ops-service
+                predicates:
+                    - Path=/ops/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 3000
+                    response-timeout: 10000
+
+              # ==================== 接入集成服务 ====================
+              - id: integration-service
+                uri: lb://silverwing-integration
+                predicates:
+                    - Path=/integration/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 5000
+                    response-timeout: 30000
+
+              # ==================== 管理后台服务 ====================
+              - id: admin-web-service
+                uri: lb://silverwing-admin-web
+                predicates:
+                    - Path=/admin/**
+                filters:
+                    - StripPrefix=1
+                metadata:
+                    connect-timeout: 3000
+                    response-timeout: 15000
+          httpclient:
+              response-timeout: ${GATEWAY_RESPONSE_TIMEOUT:30000}
+              connect-timeout: ${GATEWAY_CONNECT_TIMEOUT:5000}
+          discovery:
+              locator:
+                  enabled: false
+                  lower-case-service-id: true
+
+
+# Actuator 监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway,prometheus
+        base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    gateway:
+      access: unrestricted
+  metrics:
+    tags:
+      application: ${spring.application.name}

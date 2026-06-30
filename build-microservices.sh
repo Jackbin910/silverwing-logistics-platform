@@ -52,7 +52,7 @@ else
         mvn_modules="${mvn_modules},silverwing-${s}"
     done
     mvn_modules="${mvn_modules#,}"
-    mvn clean package -DskipTests -U -pl "$mvn_modules" -am
+    mvn clean package -Pdocker -DskipTests -U -pl "$mvn_modules" -am
 fi
 
 # 2. 准备 Docker 构建目录
@@ -91,9 +91,6 @@ done
 echo "[5/5] 准备部署文件并打包..."
 cp onepanel-services-compose.yml "$OUTPUT_DIR/docker-compose.yml"
 cp onepanel-services.env "$OUTPUT_DIR/.env"
-if [ -d "nacos-config-templates" ]; then
-    cp -r nacos-config-templates "$OUTPUT_DIR/"
-fi
 
 # 版本信息
 cat > "$OUTPUT_DIR/MICROSERVICES-VERSION" << EOF

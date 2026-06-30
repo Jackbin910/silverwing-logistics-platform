@@ -212,6 +212,12 @@
     </dependencyManagement>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -251,5 +257,27 @@
             </plugins>
         </pluginManagement>
     </build>
+
+    <!-- 多环境配置 -->
+    <profiles>
+        <profile>
+            <!-- 本地开发环境 -->
+            <id>prod</id>
+            <activation>
+                <!-- 默认激活本地环境 -->
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <spring.profiles.active>prod</spring.profiles.active>
+            </properties>
+        </profile>
+        <profile>
+            <!-- docker打包环境 -->
+            <id>docker</id>
+            <properties>
+                <spring.profiles.active>docker</spring.profiles.active>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
