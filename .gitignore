@@ -31,11 +31,6 @@ mvnw.cmd
 Thumbs.db
 desktop.ini
 
-# 配置文件(敏感信息)
-application-local.yml
-application-prod.yml
-.env
-
 # 基础设施打包产物
 silverwing-infra-images/
 silverwing-infra-images.tar.gz
@@ -48,4 +43,4 @@ silverwing-microservices-*.tar.gz
 
 silverwing-monitor-images.tar.gz
 silverwing-monitor-images/
-silverwing-monitor-images.tar.gz
+

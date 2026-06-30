@@ -1,0 +1,18 @@
+spring:
+  config:
+    import:
+      - nacos:silverwing-admin-web.yml
+      - nacos:common-redis.yml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.164.128:8848}
+        namespace: 505924bf-00f5-4eb4-8b17-f5703c3a0667
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:192.168.164.128:8848}
+        namespace: 505924bf-00f5-4eb4-8b17-f5703c3a0667
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yml
+
+

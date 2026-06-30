@@ -1,0 +1,19 @@
+
+spring:
+    # 导入 Nacos 配置
+    config:
+        import:
+            - nacos:silverwing-digital-twin.yml
+            - nacos:common-redis.yml
+            - nacos:common-sa-token.yml
+    cloud:
+        nacos:
+            discovery:
+                server-addr: ${NACOS_SERVER_ADDR:192.168.164.128:8848}
+                namespace: 505924bf-00f5-4eb4-8b17-f5703c3a0667
+                group: ${NACOS_GROUP:DEFAULT_GROUP}
+            config:
+                server-addr: ${NACOS_SERVER_ADDR:192.168.164.128::8848}
+                namespace: 505924bf-00f5-4eb4-8b17-f5703c3a0667
+                group: ${NACOS_GROUP:DEFAULT_GROUP}
+                file-extension: yml
