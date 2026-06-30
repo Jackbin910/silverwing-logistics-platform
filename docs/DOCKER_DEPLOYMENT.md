@@ -91,7 +91,6 @@ BUILD_VERSION=1.0.0 ./build-microservices.sh
 | `silverwing-*.tar` | 各微服务镜像 |
 | `docker-compose.yml` | 微服务编排文件 |
 | `.env` | 环境变量模板 |
-| `nacos-config-templates/` | Nacos 配置模板 |
 | `load-microservices-images.sh` | 镜像加载脚本（自动生成） |
 | `MICROSERVICES-VERSION` | 版本信息 |
 
