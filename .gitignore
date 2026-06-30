@@ -44,3 +44,6 @@ silverwing-microservices-*.tar.gz
 silverwing-monitor-images.tar.gz
 silverwing-monitor-images/
 
+data/
+.workbuddy
+
