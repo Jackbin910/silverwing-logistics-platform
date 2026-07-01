@@ -1,19 +1,17 @@
 package com.silverwing.common.i18n;
 
-import lombok.RequiredArgsConstructor;
+import com.silverwing.common.context.SpringContextHolder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
-import org.springframework.stereotype.Component;
 
-import jakarta.annotation.PostConstruct;
 import java.util.Locale;
 
 /**
- * 国际化消息工具类
+ * 国际化消息工具类（无状态版）
  * <p>
- * 提供静态方法，便于在 Service、异常处理等非 Bean 场景下获取多语言文案。
- * 通过 @PostConstruct 持有静态引用，解决 static 方法无法直接注入的问题。
+ * 通过 SpringContextHolder 懒加载 MessageSource，避免静态可变状态。
+ * 可在 Service、异常处理等非 Bean 场景下直接静态调用。
  * </p>
  * <p>
  * 使用示例：
@@ -26,21 +24,19 @@ import java.util.Locale;
  * @author silverwing
  */
 @Slf4j
-@Component
-@RequiredArgsConstructor
-public class MessageUtils {
+public final class MessageUtils {
 
-    private final MessageSource messageSource;
-
-    private static MessageSource staticMessageSource;
+    private MessageUtils() {
+    }
 
     /**
-     * 初始化静态引用，使工具方法可在任意位置调用
+     * 懒加载获取 MessageSource，容器未就绪时返回 null
      */
-    @PostConstruct
-    public void init() {
-        staticMessageSource = this.messageSource;
-        log.info("MessageUtils 初始化完成，已绑定 MessageSource");
+    private static MessageSource messageSource() {
+        if (!SpringContextHolder.isReady()) {
+            return null;
+        }
+        return SpringContextHolder.getBean(MessageSource.class);
     }
 
     /**
@@ -62,13 +58,14 @@ public class MessageUtils {
      * @return 格式化后的文案
      */
     public static String get(String code, Object... args) {
-        if (staticMessageSource == null) {
-            log.warn("MessageSource 尚未初始化，返回原始 code: {}", code);
+        MessageSource source = messageSource();
+        if (source == null) {
+            log.warn("MessageSource 尚未就绪，返回原始 code: {}", code);
             return code;
         }
         try {
             Locale locale = LocaleContextHolder.getLocale();
-            return staticMessageSource.getMessage(code, args, code, locale);
+            return source.getMessage(code, args, code, locale);
         } catch (Exception e) {
             log.warn("获取国际化文案失败 code={}: {}", code, e.getMessage());
             return code;
@@ -83,11 +80,12 @@ public class MessageUtils {
      * @return 文案，找不到时返回 code 本身
      */
     public static String get(String code, Locale locale) {
-        if (staticMessageSource == null) {
+        MessageSource source = messageSource();
+        if (source == null) {
             return code;
         }
         try {
-            return staticMessageSource.getMessage(code, null, code, locale);
+            return source.getMessage(code, null, code, locale);
         } catch (Exception e) {
             log.warn("获取国际化文案失败 code={}, locale={}: {}", code, locale, e.getMessage());
             return code;
