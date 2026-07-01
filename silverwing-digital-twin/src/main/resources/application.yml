@@ -6,3 +6,9 @@ spring:
         active: @spring.profiles.active@
     application:
         name: silverwing-digital-twin
+
+# 国际化配置 - 加载微服务专属文案
+silverwing:
+    i18n:
+        extra-basenames:
+            - i18n/service

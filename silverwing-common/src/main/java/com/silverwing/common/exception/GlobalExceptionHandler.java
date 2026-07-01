@@ -5,6 +5,7 @@ import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
 import com.silverwing.common.domain.Result;
 import com.silverwing.common.domain.ResultCode;
+import com.silverwing.common.i18n.MessageUtils;
 import jakarta.servlet.ServletException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -43,11 +44,27 @@ public class GlobalExceptionHandler {
 
     /**
      * 业务异常处理
+     * <p>优先使用 i18nCode 翻译为当前语言文案，降级使用原 message</p>
      */
     @ExceptionHandler(BusinessException.class)
     public Result<?> handleBusinessException(BusinessException e) {
-        log.warn("业务异常 [code={}]：{}", e.getCode(), e.getMessage());
-        return Result.fail(e.getCode(), e.getMessage());
+        String displayMessage = resolveMessage(e);
+        log.warn("业务异常 [code={}]：{}", e.getCode(), displayMessage);
+        return Result.fail(e.getCode(), displayMessage);
+    }
+
+    /**
+     * 解析国际化消息
+     * <p>如果异常携带了 i18nCode，则通过 MessageUtils 翻译；否则使用原始 message</p>
+     *
+     * @param e 业务异常
+     * @return 当前语言文案
+     */
+    private String resolveMessage(BusinessException e) {
+        if (e.getI18nCode() != null) {
+            return MessageUtils.get(e.getI18nCode(), (Object[]) e.getI18nArgs());
+        }
+        return e.getMessage();
     }
 
     // ==================== 认证授权异常（Sa-Token） ====================

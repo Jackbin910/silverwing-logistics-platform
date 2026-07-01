@@ -14,6 +14,7 @@ import com.silverwing.auth.service.SysUserService;
 import com.silverwing.common.annotation.SkipAuth;
 import com.silverwing.common.constant.SaSessionConstants;
 import com.silverwing.common.domain.Result;
+import com.silverwing.common.domain.ResultCode;
 import com.silverwing.common.exception.BusinessException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -52,19 +53,22 @@ public class AuthController {
         SysUser user = sysUserService.getByUsername(request.getUsername());
         if (user == null) {
             log.warn("登录失败：用户不存在 username={}", request.getUsername());
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException(ResultCode.UNAUTHORIZED,
+                    "auth.login.username.or.password.error");
         }
 
         // 2. 检查用户状态
         if (user.getStatus() != null && user.getStatus() == 0) {
             log.warn("登录失败：用户已禁用 username={}", request.getUsername());
-            throw new BusinessException("账号已被禁用，请联系管理员");
+            throw new BusinessException(ResultCode.FORBIDDEN,
+                    "auth.login.account.disabled");
         }
 
         // 3. BCrypt 密码比对
         if (!matchesPassword(request.getPassword(), user)) {
             log.warn("登录失败：密码错误 username={}", request.getUsername());
-            throw new BusinessException("用户名或密码错误");
+            throw new BusinessException(ResultCode.UNAUTHORIZED,
+                    "auth.login.username.or.password.error");
         }
 
         // 4. 查询用户角色
@@ -112,7 +116,7 @@ public class AuthController {
     public Result<UserInfo> getUserInfo() {
         Object loginId = StpUtil.getLoginIdDefaultNull();
         if (loginId == null) {
-            throw new BusinessException("未登录");
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "auth.not.login");
         }
 
         Long userId = Long.parseLong(loginId.toString());
@@ -161,17 +165,20 @@ public class AuthController {
             if (encodedPassword == null || encodedPassword.isBlank()) {
                 log.error("登录失败：用户密码哈希为空 userId={}, username={}",
                         user.getId(), user.getUsername());
-                throw new BusinessException("账号密码配置异常，请联系管理员");
+                throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
+                        "auth.login.account.config.error");
             }
             return BCrypt.checkpw(rawPassword, encodedPassword);
         } catch (StackOverflowError e) {
             log.error("登录失败：BCrypt 密码哈希触发栈溢出 userId={}, username={}",
                     user.getId(), user.getUsername(), e);
-            throw new BusinessException("账号密码配置异常，请联系管理员", e);
+            throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
+                    "auth.login.account.config.error");
         } catch (IllegalArgumentException e) {
             log.error("登录失败：BCrypt 密码哈希格式非法 userId={}, username={}",
                     user.getId(), user.getUsername(), e);
-            throw new BusinessException("账号密码配置异常，请联系管理员", e);
+            throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
+                    "auth.login.account.config.error");
         }
     }
 

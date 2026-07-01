@@ -27,7 +27,7 @@ public class VisualizationController {
      */
     @Operation(summary = "获取3D模型配置")
     @GetMapping("/model/config")
-    public Result<?> getModelConfig(@RequestParam(value = "scene", required = false) String scene) {
+    public Result<?> getModelConfig(@RequestParam(value = "scene") String scene) {
         return Result.success(visualizationService.getModelConfig(scene));
     }
     
