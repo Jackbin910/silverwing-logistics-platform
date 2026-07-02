@@ -1,0 +1,253 @@
+// ========================================
+// 银翼智驭 - Jenkins 离线部署流水线
+// ========================================
+// 适用场景：服务器无外网，镜像在外网构建后 docker load 导入
+// 工作原理：检查镜像 → 同步配置 → docker compose up → 健康检查
+// 不需要 Maven、不需要 JDK 编译、不需要 Git
+//
+// 使用方式：
+//   方式 1（推荐）：直接复制本文件内容，粘贴到 Jenkins 任务的
+//                   Pipeline → Definition: Pipeline script
+//   方式 2：内网起了 Gitea，把本文件推上去，用 Pipeline script from SCM
+//                   Script Path: Jenkinsfile.offline
+// ========================================
+
+pipeline {
+    agent any
+
+    // ----------------------------------------
+    // 流水线参数
+    // ----------------------------------------
+    parameters {
+        string(
+            name: 'BUILD_VERSION',
+            defaultValue: '1.0.1',
+            description: '镜像版本号，必须已通过 docker load 导入。例如 1.0.1'
+        )
+        string(
+            name: 'SERVICES',
+            defaultValue: '',
+            description: '仅部署指定微服务（逗号分隔），留空=全部。例: auth,gateway'
+        )
+        string(
+            name: 'DEPLOY_DIR',
+            defaultValue: '/opt/silverwing-deploy',
+            description: '部署目录（docker-compose.yml 和 .env 存放位置，首次需从微服务镜像包解压目录复制）'
+        )
+        booleanParam(
+            name: 'HEALTH_CHECK',
+            defaultValue: true,
+            description: '部署后执行健康检查'
+        )
+    }
+
+    // ----------------------------------------
+    // 环境变量
+    // ----------------------------------------
+    environment {
+        ALL_SERVICES = 'gateway,auth,core-service,digital-twin,ai-service,ops-service,integration,admin-web'
+    }
+
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '20'))
+        timestamps()
+        ansiColor('xterm')
+    }
+
+    stages {
+
+        // ========================================
+        // 阶段 1：检查镜像是否存在
+        // ========================================
+        stage('Verify Images') {
+            steps {
+                script {
+                    def services = params.SERVICES
+                        ? params.SERVICES.split(',').collect { it.trim() }.findAll { it }
+                        : env.ALL_SERVICES.split(',').collect { it.trim() }
+
+                    echo """
+                    ========================================
+                    银翼智驭 离线部署流水线
+                    ========================================
+                    镜像版本    : ${params.BUILD_VERSION}
+                    部署服务    : ${params.SERVICES ?: '全部微服务'}
+                    部署目录    : ${params.DEPLOY_DIR}
+                    ========================================
+                    """
+
+                    echo "[Verify] 检查 ${services.size()} 个镜像是否存在..."
+                    def missing = []
+                    for (svc in services) {
+                        def exists = sh(
+                            script: "docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^silverwing/${svc}:${params.BUILD_VERSION}\$'",
+                            returnStatus: true
+                        )
+                        if (exists != 0) {
+                            missing.add("silverwing/${svc}:${params.BUILD_VERSION}")
+                            echo "  ✗ silverwing/${svc}:${params.BUILD_VERSION} （缺失）"
+                        } else {
+                            echo "  ✓ silverwing/${svc}:${params.BUILD_VERSION}"
+                        }
+                    }
+
+                    if (missing.size() > 0) {
+                        error("""
+                            缺少 ${missing.size()} 个镜像，请先在外网构建并 docker load：
+                            ${missing.join('\n')}
+
+                            外网构建命令：
+                              BUILD_VERSION=${params.BUILD_VERSION} ./build-microservices.sh
+                            传输后加载：
+                              cd docker-microservices-${params.BUILD_VERSION}
+                              ./load-microservices-images.sh
+                        """)
+                    }
+                    echo "[Verify] 所有镜像检查通过"
+                }
+            }
+        }
+
+        // ========================================
+        // 阶段 2：更新版本号
+        // ========================================
+        stage('Prepare') {
+            steps {
+                sh """
+                    echo "[Prepare] 检查部署目录 ${params.DEPLOY_DIR}..."
+
+                    if [ ! -f ${params.DEPLOY_DIR}/docker-compose.yml ]; then
+                        echo "错误：${params.DEPLOY_DIR}/docker-compose.yml 不存在"
+                        echo "请先从微服务镜像包解压目录复制配置："
+                        echo "  cp docker-microservices-*/docker-compose.yml ${params.DEPLOY_DIR}/"
+                        echo "  cp docker-microservices-*/.env ${params.DEPLOY_DIR}/"
+                        exit 1
+                    fi
+
+                    # 更新 .env 中的版本号
+                    sed -i 's/^APP_VERSION=.*/APP_VERSION=${params.BUILD_VERSION}/' ${params.DEPLOY_DIR}/.env
+
+                    echo "[Prepare] 当前 .env 版本配置："
+                    grep APP_VERSION ${params.DEPLOY_DIR}/.env
+                """
+            }
+        }
+
+        // ========================================
+        // 阶段 3：部署
+        // ========================================
+        stage('Deploy') {
+            steps {
+                script {
+                    def services = params.SERVICES
+                        ? params.SERVICES.split(',').collect { it.trim() }.findAll { it }
+                        : env.ALL_SERVICES.split(',').collect { it.trim() }
+
+                    def composeServices = services.collect { "silverwing-${it}" }.join(' ')
+
+                    echo "[Deploy] 重建容器：${composeServices}"
+                    sh """
+                        cd ${params.DEPLOY_DIR}
+                        docker compose up -d --force-recreate ${composeServices}
+                        echo "[Deploy] 容器重建完成"
+                    """
+                }
+            }
+        }
+
+        // ========================================
+        // 阶段 4：健康检查
+        // ========================================
+        stage('Health Check') {
+            when {
+                expression { params.HEALTH_CHECK }
+            }
+            steps {
+                script {
+                    def services = params.SERVICES
+                        ? params.SERVICES.split(',').collect { it.trim() }.findAll { it }
+                        : env.ALL_SERVICES.split(',').collect { it.trim() }
+
+                    echo "[HealthCheck] 等待服务启动..."
+                    sh """
+                        cd ${params.DEPLOY_DIR}
+
+                        MAX_RETRY=18
+                        for i in \$(seq 1 \$MAX_RETRY); do
+                            echo "  第 \$i/\$MAX_RETRY 次检查..."
+                            all_healthy=true
+
+                            for svc in ${services.collect { it }.join(' ')}; do
+                                container="silverwing-\${svc}"
+                                status=\$(docker inspect "\${container}" --format '{{.State.Status}}' 2>/dev/null || echo "not-found")
+                                health=\$(docker inspect "\${container}" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' 2>/dev/null || echo "unknown")
+
+                                if [ "\$status" != "running" ]; then
+                                    echo "    \${container}: 状态=\${status}（未运行）"
+                                    all_healthy=false
+                                elif [ "\$health" != "healthy" ] && [ "\$health" != "none" ]; then
+                                    echo "    \${container}: 状态=\${status} 健康=\${health}（启动中）"
+                                    all_healthy=false
+                                else
+                                    echo "    \${container}: 状态=\${status} 健康=\${health} ✓"
+                                fi
+                            done
+
+                            if [ "\$all_healthy" = true ]; then
+                                echo ""
+                                echo "[HealthCheck] 所有服务健康检查通过"
+                                docker compose ps
+                                exit 0
+                            fi
+
+                            sleep 10
+                        done
+
+                        echo ""
+                        echo "[HealthCheck] 超时：部分服务未在 3 分钟内健康"
+                        docker compose ps
+                        echo ""
+                        echo "===== 失败容器日志（最后 30 行）====="
+                        for svc in ${services.collect { it }.join(' ')}; do
+                            container="silverwing-\${svc}"
+                            health=\$(docker inspect "\${container}" --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' 2>/dev/null || echo "unknown")
+                            if [ "\$health" != "healthy" ] && [ "\$health" != "none" ]; then
+                                echo "--- \${container} ---"
+                                docker logs "\${container}" --tail 30 2>&1
+                                echo ""
+                            fi
+                        done
+                        exit 1
+                    """
+                }
+            }
+        }
+    }
+
+    // ========================================
+    // 构建后操作
+    // ========================================
+    post {
+        success {
+            echo """
+            ========================================
+            ✅ 离线部署成功 #${env.BUILD_NUMBER}
+            ========================================
+            镜像版本 : ${params.BUILD_VERSION}
+            访问地址 : http://localhost/admin/
+            ========================================
+            """
+        }
+        failure {
+            echo """
+            ========================================
+            ❌ 离线部署失败 #${env.BUILD_NUMBER}
+            ========================================
+            请查看日志排查：${env.BUILD_URL}
+            ========================================
+            """
+        }
+    }
+}

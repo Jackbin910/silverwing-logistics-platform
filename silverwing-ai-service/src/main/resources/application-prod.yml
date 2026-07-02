@@ -9,12 +9,12 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_SERVER_ADDR:192.168.164.128:8848}
-        namespace: 505924bf-00f5-4eb4-8b17-f5703c3a0667
+        server-addr: ${NACOS_SERVER_ADDR:192.168.31.94:8848}
+        namespace: cc872612-5a94-48a2-85ed-e743bac31147
         group: ${NACOS_GROUP:DEFAULT_GROUP}
       config:
-        server-addr: ${NACOS_SERVER_ADDR:192.168.164.128:8848}
-        namespace: 505924bf-00f5-4eb4-8b17-f5703c3a0667
+        server-addr: ${NACOS_SERVER_ADDR:192.168.31.94:8848}
+        namespace: cc872612-5a94-48a2-85ed-e743bac31147
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yml
 

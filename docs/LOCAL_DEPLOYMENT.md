@@ -24,19 +24,19 @@
 
 ## 1. 环境要求
 
-| 组件 | 版本要求 | 说明 |
-|------|---------|------|
-| JDK | 17 | 推荐 Eclipse Temurin / OpenJDK |
-| Maven | 3.8+ | 项目构建工具 |
-| Docker Desktop | 最新版 | 用于启动基础设施（含 Compose） |
-| MySQL | 8.0+ | 业务数据库（由 Docker 提供 8.0.40，宿主机映射 3307） |
-| Redis | 6.2+ | 缓存和会话存储（由 Docker 提供 6.2.18） |
-| Nacos | 2.4.3 | 服务注册和配置中心（由 Docker 提供） |
-| RabbitMQ | 3.13+ | 消息队列（由 Docker 提供，core-service 依赖） |
-| PostgreSQL | 14+（含 pgvector） | 向量数据库（AI 服务依赖） |
-| Ollama | 最新版 | 本地大模型运行（AI 服务依赖） |
-| IDE | IntelliJ IDEA | 推荐，便于调试微服务 |
-| 内存 | >= 16GB | 运行全部基础设施 + 微服务 + Ollama |
+| 组件 | 版本要求 | 说明                                   |
+|------|---------|--------------------------------------|
+| JDK | 17 | 推荐 Eclipse Temurin / OpenJDK         |
+| Maven | 3.8+ | 项目构建工具                               |
+| Docker Desktop | 最新版 | 用于启动基础设施（含 Compose）                  |
+| MySQL | 8.0+ | 业务数据库（由 Docker 提供 8.0.45，宿主机映射 3307） |
+| Redis | 6.2+ | 缓存和会话存储（由 Docker 提供 6.2.18）          |
+| Nacos | 2.4.3 | 服务注册和配置中心（由 Docker 提供）               |
+| RabbitMQ | 3.13+ | 消息队列（由 Docker 提供，core-service 依赖）    |
+| PostgreSQL | 14+（含 pgvector） | 向量数据库（AI 服务依赖）                       |
+| Ollama | 最新版 | 本地大模型运行（AI 服务依赖）                     |
+| IDE | IntelliJ IDEA | 推荐，便于调试微服务                           |
+| 内存 | >= 16GB | 运行全部基础设施 + 微服务 + Ollama              |
 
 ### 检查环境
 

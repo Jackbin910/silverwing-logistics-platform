@@ -1,5 +1,5 @@
 # 银翼基础镜像
-FROM docker.1ms.run/library/eclipse-temurin:17-jre-alpine
+FROM docker.1ms.run/library/eclipse-temurin:17-jre
 
 LABEL maintainer="silverwing-tech"
 LABEL description="SilverWing Base Image with common dependencies"
@@ -11,7 +11,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # 安装必要的工具
 USER root
-RUN apk add --no-cache curl tzdata
+RUN apt-get update && apt-get install -y --no-install-recommends curl tzdata && rm -rf /var/lib/apt/lists/*
 
 # 创建应用目录
 WORKDIR /app
