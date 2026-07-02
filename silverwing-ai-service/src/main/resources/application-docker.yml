@@ -10,14 +10,11 @@ spring:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
-        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
+        namespace: ${NACOS_NAMESPACE:e5ec15ee-9d0a-40af-8791-e99227157224}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
-        # 禁用Nacos优雅关机功能,避免启动时Bean生命周期冲突
-        graceful-shutdown:
-          enabled: false
       config:
         server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
-        namespace: ${NACOS_NAMESPACE:b7273740-ffae-4c91-9e78-ba1360e42a0e}
+        namespace: ${NACOS_NAMESPACE:e5ec15ee-9d0a-40af-8791-e99227157224}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yml
 
