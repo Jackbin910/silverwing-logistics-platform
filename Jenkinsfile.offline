@@ -1,28 +1,12 @@
-// ========================================
-// 银翼智驭 - Jenkins 离线部署流水线
-// ========================================
-// 适用场景：服务器无外网，镜像在外网构建后 docker load 导入
-// 工作原理：检查镜像 → 同步配置 → docker compose up → 健康检查
-// 不需要 Maven、不需要 JDK 编译、不需要 Git
-//
-// 使用方式：
-//   方式 1（推荐）：直接复制本文件内容，粘贴到 Jenkins 任务的
-//                   Pipeline → Definition: Pipeline script
-//   方式 2：内网起了 Gitea，把本文件推上去，用 Pipeline script from SCM
-//                   Script Path: Jenkinsfile.offline
-// ========================================
-
 pipeline {
     agent any
 
-    // ----------------------------------------
     // 流水线参数
-    // ----------------------------------------
     parameters {
         string(
             name: 'BUILD_VERSION',
-            defaultValue: '1.0.1',
-            description: '镜像版本号，必须已通过 docker load 导入。例如 1.0.1'
+            defaultValue: '1.0.0',
+            description: '镜像版本号，必须已通过 docker load 导入。例如 1.0.0'
         )
         string(
             name: 'SERVICES',
@@ -32,7 +16,7 @@ pipeline {
         string(
             name: 'DEPLOY_DIR',
             defaultValue: '/opt/silverwing-deploy',
-            description: '部署目录（docker-compose.yml 和 .env 存放位置，首次需从微服务镜像包解压目录复制）'
+            description: '部署目录（docker compose.yml 和 .env 存放位置，首次需从微服务镜像包解压目录复制）'
         )
         booleanParam(
             name: 'HEALTH_CHECK',
@@ -41,9 +25,6 @@ pipeline {
         )
     }
 
-    // ----------------------------------------
-    // 环境变量
-    // ----------------------------------------
     environment {
         ALL_SERVICES = 'gateway,auth,core-service,digital-twin,ai-service,ops-service,integration,admin-web'
     }
@@ -52,15 +33,9 @@ pipeline {
         timeout(time: 10, unit: 'MINUTES')
         disableConcurrentBuilds()
         buildDiscarder(logRotator(numToKeepStr: '20'))
-        timestamps()
-        ansiColor('xterm')
     }
 
     stages {
-
-        // ========================================
-        // 阶段 1：检查镜像是否存在
-        // ========================================
         stage('Verify Images') {
             steps {
                 script {
@@ -110,18 +85,15 @@ pipeline {
             }
         }
 
-        // ========================================
-        // 阶段 2：更新版本号
-        // ========================================
         stage('Prepare') {
             steps {
                 sh """
                     echo "[Prepare] 检查部署目录 ${params.DEPLOY_DIR}..."
 
-                    if [ ! -f ${params.DEPLOY_DIR}/docker-compose.yml ]; then
-                        echo "错误：${params.DEPLOY_DIR}/docker-compose.yml 不存在"
+                    if [ ! -f ${params.DEPLOY_DIR}/docker compose.yml ]; then
+                        echo "错误：${params.DEPLOY_DIR}/docker compose.yml 不存在"
                         echo "请先从微服务镜像包解压目录复制配置："
-                        echo "  cp docker-microservices-*/docker-compose.yml ${params.DEPLOY_DIR}/"
+                        echo "  cp docker-microservices-*/docker compose.yml ${params.DEPLOY_DIR}/"
                         echo "  cp docker-microservices-*/.env ${params.DEPLOY_DIR}/"
                         exit 1
                     fi
@@ -135,9 +107,6 @@ pipeline {
             }
         }
 
-        // ========================================
-        // 阶段 3：部署
-        // ========================================
         stage('Deploy') {
             steps {
                 script {
@@ -157,9 +126,6 @@ pipeline {
             }
         }
 
-        // ========================================
-        // 阶段 4：健康检查
-        // ========================================
         stage('Health Check') {
             when {
                 expression { params.HEALTH_CHECK }
@@ -226,9 +192,6 @@ pipeline {
         }
     }
 
-    // ========================================
-    // 构建后操作
-    // ========================================
     post {
         success {
             echo """

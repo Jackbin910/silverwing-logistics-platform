@@ -283,7 +283,9 @@ docker run -d \
   -p 8888:8080 -p 50000:50000 \
   -v /opt/jenkins/home:/var/jenkins_home \
   -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /opt/silverwing-deploy:/opt/silverwing-deploy \
   -v /usr/bin/docker:/usr/bin/docker \
+  -v /usr/libexec/docker/cli-plugins:/usr/libexec/docker/cli-plugins \
   --group-add $(getent group docker | cut -d: -f3) \
   jenkins/jenkins:lts-jdk17
 ```
