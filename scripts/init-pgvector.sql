@@ -44,19 +44,35 @@ CREATE INDEX IF NOT EXISTS idx_silverwing_embedding_hnsw
 -- ========================================
 CREATE TABLE IF NOT EXISTS knowledge_document (
     id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL COMMENT '文档标题',
-    category VARCHAR(100) COMMENT '文档分类（如：设备手册、FAQ、维护记录）',
-    source_type VARCHAR(50) COMMENT '来源类型（如：pdf、word、web、manual）',
-    source_url VARCHAR(500) COMMENT '来源地址',
-    warehouse_id VARCHAR(50) COMMENT '仓库 ID（用于按仓库隔离知识）',
-    device_type VARCHAR(100) COMMENT '设备类型（用于按设备类型过滤）',
-    status SMALLINT DEFAULT 1 COMMENT '状态（0-禁用 1-启用）',
-    chunk_count INT DEFAULT 0 COMMENT '分片数量',
-    file_size BIGINT COMMENT '文件大小（字节）',
-    description TEXT COMMENT '文档描述',
+    title VARCHAR(255) NOT NULL ,
+    category VARCHAR(100),
+    source_type VARCHAR(50) ,
+    source_url VARCHAR(500),
+    warehouse_id VARCHAR(50) ,
+    device_type VARCHAR(100) ,
+    status SMALLINT DEFAULT 1 ,
+    chunk_count INT DEFAULT 0 ,
+    file_size BIGINT,
+    description TEXT ,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+COMMENT ON TABLE knowledge_document IS '知识库文档主表';
+
+-- 字段注释（PG标准写法）
+COMMENT ON COLUMN knowledge_document.title IS '文档标题';
+COMMENT ON COLUMN knowledge_document.category IS '文档分类（如：设备手册、FAQ、维护记录）';
+COMMENT ON COLUMN knowledge_document.source_type IS '来源类型（如：pdf、word、web、manual）';
+COMMENT ON COLUMN knowledge_document.source_url IS '来源地址';
+COMMENT ON COLUMN knowledge_document.warehouse_id IS '仓库 ID（用于按仓库隔离知识）';
+COMMENT ON COLUMN knowledge_document.device_type IS '设备类型（用于按设备类型过滤）';
+COMMENT ON COLUMN knowledge_document.status IS '状态（0-禁用 1-启用）';
+COMMENT ON COLUMN knowledge_document.chunk_count IS '分片数量';
+COMMENT ON COLUMN knowledge_document.file_size IS '文件大小（字节）';
+COMMENT ON COLUMN knowledge_document.description IS '文档描述';
+COMMENT ON COLUMN knowledge_document.created_at IS '创建时间';
+COMMENT ON COLUMN knowledge_document.updated_at IS '更新时间';
 
 -- 知识库文档索引
 CREATE INDEX IF NOT EXISTS idx_knowledge_doc_category ON knowledge_document(category);
@@ -64,44 +80,5 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_doc_warehouse ON knowledge_document(war
 CREATE INDEX IF NOT EXISTS idx_knowledge_doc_device ON knowledge_document(device_type);
 CREATE INDEX IF NOT EXISTS idx_knowledge_doc_status ON knowledge_document(status);
 
--- ========================================
--- 聊天记录表（用于持久化 AI 对话历史）
--- ========================================
-CREATE TABLE IF NOT EXISTS ai_chat_history (
-    id BIGSERIAL PRIMARY KEY,
-    session_id VARCHAR(64) NOT NULL COMMENT '会话 ID',
-    user_id VARCHAR(64) COMMENT '用户 ID',
-    role VARCHAR(20) NOT NULL COMMENT '角色（user / assistant / system）',
-    content TEXT NOT NULL COMMENT '消息内容',
-    token_count INT DEFAULT 0 COMMENT 'Token 数量',
-    model_name VARCHAR(50) COMMENT '使用的模型名称',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
 
-CREATE INDEX IF NOT EXISTS idx_ai_chat_session ON ai_chat_history(session_id);
-CREATE INDEX IF NOT EXISTS idx_ai_chat_user ON ai_chat_history(user_id);
 
--- ========================================
--- pgvector 安装说明（Docker 部署）
--- ========================================
---
--- 方式一：使用 pgvector 官方镜像
---   docker run -d \
---     --name pgvector \
---     -e POSTGRES_USER=silverwing \
---     -e POSTGRES_PASSWORD=silverwing_password \
---     -e POSTGRES_DB=silverwing_vector \
---     -p 5432:5432 \
---     pgvector/pgvector:pg16
---
--- 方式二：使用自定义 Dockerfile
---   FROM postgres:16-alpine
---   RUN apt-get update && apt-get install -y \
---       postgresql-16-pgvector \
---     && rm -rf /var/lib/apt/lists/*
---
--- 方式三：在已有 PostgreSQL 上安装扩展
---   Ubuntu/Debian: sudo apt-get install postgresql-16-pgvector
---   CentOS/RHEL:   sudo yum install pgvector_16
---   macOS:         brew install pgvector
--- ========================================
