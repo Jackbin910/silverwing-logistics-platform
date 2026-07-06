@@ -122,23 +122,15 @@ graph TB
 ### 1. 知识库向量化 (RAG)
 
 ```bash
-# 导入文档到知识库
-POST /api/ai/knowledge/ingest
-{
-  "title": "气动物流设备维护手册",
-  "content": "气动物流系统日常维护要点...",
-  "category": "设备手册",
-  "sourceType": "manual",
-  "warehouseId": "WH001",
-  "deviceType": "气动物流"
-}
+# 上传文档到知识库（支持 PDF / Word / Markdown）
+curl -X POST http://localhost:8084/api/ai/knowledge/ingest \
+  -F "file=@气动物流设备维护手册.pdf" \
+  -F "title=气动物流设备维护手册"
 
 # 知识问答
 POST /api/ai/knowledge/qa
 {
-  "question": "如何清洁气动物流管道？",
-  "warehouseId": "WH001",
-  "deviceType": "气动物流"
+  "question": "如何清洁气动物流管道？"
 }
 ```
 

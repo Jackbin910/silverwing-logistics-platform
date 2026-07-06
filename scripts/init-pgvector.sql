@@ -45,14 +45,12 @@ CREATE INDEX IF NOT EXISTS idx_silverwing_embedding_hnsw
 CREATE TABLE IF NOT EXISTS knowledge_document (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(255) NOT NULL ,
-    category VARCHAR(100),
-    source_type VARCHAR(50) ,
+    file_name VARCHAR(500),
+    file_type VARCHAR(20),
+    file_size BIGINT,
     source_url VARCHAR(500),
-    warehouse_id VARCHAR(50) ,
-    device_type VARCHAR(100) ,
     status SMALLINT DEFAULT 1 ,
     chunk_count INT DEFAULT 0 ,
-    file_size BIGINT,
     description TEXT ,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -62,22 +60,17 @@ COMMENT ON TABLE knowledge_document IS '知识库文档主表';
 
 -- 字段注释（PG标准写法）
 COMMENT ON COLUMN knowledge_document.title IS '文档标题';
-COMMENT ON COLUMN knowledge_document.category IS '文档分类（如：设备手册、FAQ、维护记录）';
-COMMENT ON COLUMN knowledge_document.source_type IS '来源类型（如：pdf、word、web、manual）';
+COMMENT ON COLUMN knowledge_document.file_name IS '原始文件名';
+COMMENT ON COLUMN knowledge_document.file_type IS '文件类型（如：pdf、docx、md）';
+COMMENT ON COLUMN knowledge_document.file_size IS '文件大小（字节）';
 COMMENT ON COLUMN knowledge_document.source_url IS '来源地址';
-COMMENT ON COLUMN knowledge_document.warehouse_id IS '仓库 ID（用于按仓库隔离知识）';
-COMMENT ON COLUMN knowledge_document.device_type IS '设备类型（用于按设备类型过滤）';
 COMMENT ON COLUMN knowledge_document.status IS '状态（0-禁用 1-启用）';
 COMMENT ON COLUMN knowledge_document.chunk_count IS '分片数量';
-COMMENT ON COLUMN knowledge_document.file_size IS '文件大小（字节）';
 COMMENT ON COLUMN knowledge_document.description IS '文档描述';
 COMMENT ON COLUMN knowledge_document.created_at IS '创建时间';
 COMMENT ON COLUMN knowledge_document.updated_at IS '更新时间';
 
 -- 知识库文档索引
-CREATE INDEX IF NOT EXISTS idx_knowledge_doc_category ON knowledge_document(category);
-CREATE INDEX IF NOT EXISTS idx_knowledge_doc_warehouse ON knowledge_document(warehouse_id);
-CREATE INDEX IF NOT EXISTS idx_knowledge_doc_device ON knowledge_document(device_type);
 CREATE INDEX IF NOT EXISTS idx_knowledge_doc_status ON knowledge_document(status);
 
 

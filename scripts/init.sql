@@ -453,10 +453,9 @@ CREATE TABLE ai_knowledge_document (
                                        id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
                                        document_id VARCHAR(64) NOT NULL UNIQUE COMMENT '文档唯一标识(UUID)',
                                        title VARCHAR(500) NOT NULL COMMENT '文档标题',
-                                       category VARCHAR(100) COMMENT '文档分类（设备手册、FAQ、维护记录等）',
-                                       source_type VARCHAR(50) COMMENT '来源类型（manual、web、faq）',
-                                       warehouse_id VARCHAR(64) COMMENT '仓库ID（用于知识隔离）',
-                                       device_type VARCHAR(100) COMMENT '设备类型',
+                                       file_name VARCHAR(500) COMMENT '原始文件名',
+                                       file_type VARCHAR(20) COMMENT '文件类型（如：pdf、docx、md）',
+                                       file_size BIGINT DEFAULT 0 COMMENT '文件大小（字节）',
                                        word_count INT DEFAULT 0 COMMENT '文档字数',
                                        chunk_count INT DEFAULT 0 COMMENT '导入的分片数量',
                                        status TINYINT DEFAULT 0 COMMENT '文档状态（0-待处理、1-已导入、2-导入失败）',
@@ -465,9 +464,6 @@ CREATE TABLE ai_knowledge_document (
                                        update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                                        deleted TINYINT DEFAULT 0 COMMENT '是否删除（0-否、1-是）',
                                        INDEX idx_document_id (document_id),
-                                       INDEX idx_category (category),
-                                       INDEX idx_warehouse_id (warehouse_id),
-                                       INDEX idx_device_type (device_type),
                                        INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档表';
 

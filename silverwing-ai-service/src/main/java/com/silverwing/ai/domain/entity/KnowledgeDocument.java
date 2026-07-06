@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 /**
  * 知识库文档实体
- * 存储已导入知识库的元信息（文档ID、标题、分类等）
+ * 存储已导入知识库的元信息（文档ID、标题、文件信息等）
  */
 @Data
 @TableName("ai_knowledge_document")
@@ -30,24 +30,19 @@ public class KnowledgeDocument {
     private String title;
 
     /**
-     * 文档分类（如：设备手册、FAQ、维护记录）
+     * 原始文件名
      */
-    private String category;
+    private String fileName;
 
     /**
-     * 来源类型（manual、web、faq）
+     * 文件类型（如：pdf、docx、md）
      */
-    private String sourceType;
+    private String fileType;
 
     /**
-     * 仓库ID（用于知识隔离）
+     * 文件大小（字节）
      */
-    private String warehouseId;
-
-    /**
-     * 设备类型
-     */
-    private String deviceType;
+    private Long fileSize;
 
     /**
      * 文档字数

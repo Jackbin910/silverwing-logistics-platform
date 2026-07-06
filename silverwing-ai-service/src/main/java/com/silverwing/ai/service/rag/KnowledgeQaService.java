@@ -7,7 +7,6 @@ import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.filter.Filter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -15,8 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 
 /**
  * 知识库问答服务（RAG）
@@ -34,11 +31,11 @@ public class KnowledgeQaService {
 
     private final ChatModel chatModel;
 
+
     /**
      * 默认检索最大结果数
      */
     private static final int DEFAULT_MAX_RESULTS = 5;
-
     /**
      * 默认最低相似度分数
      */
@@ -51,37 +48,21 @@ public class KnowledgeQaService {
      * @return LLM 生成的回答
      */
     public String answer(String question) {
-        return answer(question, null, null);
-    }
-
-    /**
-     * 基于知识库回答用户问题（带过滤条件）
-     *
-     * @param question    用户问题
-     * @param warehouseId 仓库 ID（可选，用于按仓库过滤知识）
-     * @param deviceType  设备类型（可选，用于按设备类型过滤知识）
-     * @return LLM 生成的回答
-     */
-    public String answer(String question, String warehouseId, String deviceType) {
         try {
             // 1. 将问题向量化
             Embedding questionEmbedding = embeddingModel.embed(question).content();
 
-            // 2. 构建元数据过滤条件
-            Filter filter = buildFilter(warehouseId, deviceType);
-
-            // 3. 从向量库检索最相关的文档片段
+            // 2. 从向量库检索最相关的文档片段
             EmbeddingSearchRequest searchRequest = EmbeddingSearchRequest.builder()
                     .queryEmbedding(questionEmbedding)
                     .maxResults(DEFAULT_MAX_RESULTS)
                     .minScore(DEFAULT_MIN_SCORE)
-                    .filter(filter)
                     .build();
 
             List<EmbeddingMatch<TextSegment>> relevantMatches = embeddingStore.search(searchRequest)
                     .matches();
 
-            // 4. 构建上下文
+            // 3. 构建上下文
             String context = relevantMatches.stream()
                     .map(match -> {
                         TextSegment segment = match.embedded();
@@ -99,38 +80,13 @@ public class KnowledgeQaService {
 
             log.info("检索到 {} 条相关知识片段，开始生成回答", relevantMatches.size());
 
-            // 5. 使用 Chat 模型基于上下文生成回答
+            // 4. 使用 Chat 模型基于上下文生成回答
             String prompt = buildRagPrompt(question, context);
             return chatModel.chat(prompt);
 
         } catch (Exception e) {
             log.error("知识库问答失败: {}", question, e);
             return "抱歉，在处理您的问题时遇到了技术问题，请稍后重试。";
-        }
-    }
-
-    /**
-     * 构建元数据过滤条件
-     *
-     * @param warehouseId 仓库 ID
-     * @param deviceType  设备类型
-     * @return 过滤条件，无过滤条件时返回 null
-     */
-    private Filter buildFilter(String warehouseId, String deviceType) {
-        if (warehouseId != null && !warehouseId.isBlank() 
-            && deviceType != null && !deviceType.isBlank()) {
-            // 两个条件都存在，使用 AND 连接
-            return metadataKey("warehouseId").isEqualTo(warehouseId)
-                    .and(metadataKey("deviceType").isEqualTo(deviceType));
-        } else if (warehouseId != null && !warehouseId.isBlank()) {
-            // 只有 warehouseId
-            return metadataKey("warehouseId").isEqualTo(warehouseId);
-        } else if (deviceType != null && !deviceType.isBlank()) {
-            // 只有 deviceType
-            return metadataKey("deviceType").isEqualTo(deviceType);
-        } else {
-            // 都没有，不过滤
-            return null;
         }
     }
 

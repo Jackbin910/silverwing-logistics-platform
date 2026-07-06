@@ -2,7 +2,6 @@ package com.silverwing.ai.service.rag;
 
 import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.silverwing.ai.domain.dto.KnowledgeIngestRequest;
 import com.silverwing.ai.domain.dto.KnowledgeIngestResult;
 import com.silverwing.ai.domain.entity.KnowledgeDocument;
 import com.silverwing.ai.domain.mapper.KnowledgeDocumentMapper;
@@ -11,17 +10,21 @@ import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.filter.Filter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
+
 /**
  * 知识库导入服务
- * 负责将文档内容切分、向量化并存入 PGVector 向量数据库
+ * 负责将上传的文档文件（PDF / Word / Markdown 等）解析、切分、向量化并存入 PGVector 向量数据库
  */
 @Slf4j
 @Service
@@ -44,49 +47,59 @@ public class KnowledgeIngestService {
 
     private final KnowledgeDocumentMapper documentMapper;
 
+    private final DocumentParser documentParser;
+
     /**
      * 导入知识库文档（带元信息记录）
+     * 自动解析上传的文件，提取纯文本后切分、向量化、存入向量数据库
      *
-     * @param request 知识导入请求
+     * @param title 文档标题（为空时使用文件名）
+     * @param file 上传的文档文件（支持 PDF / Word / Markdown）
      * @return 导入结果
      */
     @Transactional(rollbackFor = Exception.class)
-    public KnowledgeIngestResult ingest(KnowledgeIngestRequest request) {
-        // 1. 生成文档ID
+    public KnowledgeIngestResult ingest(String title, MultipartFile file) {
+        // 标题为空时使用文件名（去掉扩展名）
+        String fileName = file.getOriginalFilename();
+        if (title == null || title.isBlank()) {
+            title = stripExtension(fileName);
+        }
+
+        // 1. 解析文件，提取纯文本
+        String content = documentParser.parse(file);
+        String fileType = documentParser.extractExtension(fileName);
+        long fileSize = file.getSize();
+
+        // 2. 生成文档ID
         String documentId = IdUtil.fastSimpleUUID();
 
-        // 2. 初始化文档记录（待处理状态）
+        // 3. 初始化文档记录（待处理状态）
         KnowledgeDocument doc = new KnowledgeDocument();
         doc.setDocumentId(documentId);
-        doc.setTitle(request.getTitle());
-        doc.setCategory(request.getCategory());
-        doc.setSourceType(request.getSourceType());
-        doc.setWarehouseId(request.getWarehouseId());
-        doc.setDeviceType(request.getDeviceType());
-        doc.setWordCount(request.getContent().length());
+        doc.setTitle(title);
+        doc.setFileName(fileName);
+        doc.setFileType(fileType);
+        doc.setFileSize(fileSize);
+        doc.setWordCount(content.length());
         doc.setStatus(0); // 待处理
         documentMapper.insert(doc);
 
         try {
-            // 3. 执行向量导入
-            int chunkCount = ingest(
-                    request.getTitle(),
-                    request.getContent(),
-                    request.getCategory(),
-                    request.getSourceType(),
-                    request.getWarehouseId(),
-                    request.getDeviceType()
-            );
+            // 4. 执行向量导入（documentId 写入 metadata，便于后续按文档删除向量）
+            int chunkCount = ingest(title, content, documentId);
 
-            // 4. 更新文档状态为已导入
+            // 5. 更新文档状态为已导入
             doc.setChunkCount(chunkCount);
             doc.setStatus(1); // 已导入
             documentMapper.updateById(doc);
 
             return KnowledgeIngestResult.builder()
                     .documentId(documentId)
+                    .title(title)
                     .chunkCount(chunkCount)
-                    .wordCount(request.getContent().length())
+                    .wordCount(content.length())
+                    .status("SUCCESS")
+                    .message("文档导入成功")
                     .build();
 
         } catch (Exception e) {
@@ -101,52 +114,33 @@ public class KnowledgeIngestService {
     /**
      * 导入纯文本文档到知识库
      * 自动按段落切分、向量化、存入向量数据库
+     * documentId 会写入每个分片的 metadata，用于后续按文档 ID 精确删除向量
      *
      * @param title      文档标题
-     * @param content    文档内容
-     * @param category   文档分类（如：设备手册、FAQ）
-     * @param sourceType 来源类型（如：manual、web）
+     * @param content    文档纯文本内容
+     * @param documentId 文档唯一标识（写入 metadata）
      * @return 导入的分片数量
      */
-    public int ingest(String title, String content, String category, String sourceType) {
-        return ingest(title, content, category, sourceType, null, null);
-    }
-
-    /**
-     * 导入纯文本文档到知识库（带仓库和设备类型过滤）
-     *
-     * @param title       文档标题
-     * @param content     文档内容
-     * @param category    文档分类
-     * @param sourceType  来源类型
-     * @param warehouseId 仓库 ID（可选）
-     * @param deviceType  设备类型（可选）
-     * @return 导入的分片数量
-     */
-    public int ingest(String title, String content, String category, String sourceType,
-                      String warehouseId, String deviceType) {
+    public int ingest(String title, String content, String documentId) {
         try {
-            // 1. 构建文档元信息
+            // 1. 构建文档元信息（documentId 用于后续按文档精确删除向量）
             Metadata metadata = Metadata.from("title", title);
-            putIfPresent(metadata, "category", category);
-            putIfPresent(metadata, "sourceType", sourceType);
-            putIfPresent(metadata, "warehouseId", warehouseId);
-            putIfPresent(metadata, "deviceType", deviceType);
+            metadata.put("documentId", documentId);
 
             // 2. 按段落切分文本
             List<TextSegment> chunks = splitIntoChunks(content, metadata);
-            log.info("文档切分完成: title={}, 总段落数={}, 切分后分片数={}", title, 0, chunks.size());
+            log.info("文档切分完成: title={}, documentId={}, 切分后分片数={}", title, documentId, chunks.size());
 
             // 3. 批量向量化并存入向量数据库
             List<Embedding> embeddings = embeddingModel.embedAll(chunks).content();
 
             embeddingStore.addAll(embeddings, chunks);
 
-            log.info("知识库导入成功: title={}, category={}, chunkCount={}", title, category, chunks.size());
+            log.info("知识库导入成功: title={}, documentId={}, chunkCount={}", title, documentId, chunks.size());
             return chunks.size();
 
         } catch (Exception e) {
-            log.error("知识库导入失败: title={}", title, e);
+            log.error("知识库导入失败: title={}, documentId={}", title, documentId, e);
             throw new RuntimeException("知识库导入失败: " + e.getMessage(), e);
         }
     }
@@ -275,19 +269,23 @@ public class KnowledgeIngestService {
     }
 
     /**
-     * 根据文档ID删除知识库中的分片
-     * 注意：PGVector目前不支持按metadata删除，这里标记为逻辑删除
+     * 根据文档ID删除知识库中的向量数据
+     * 同时删除 MySQL 文档记录和 PGVector 中该文档的所有分片向量
      *
      * @param documentId 文档ID
      */
     @Transactional(rollbackFor = Exception.class)
     public void deleteByDocumentId(String documentId) {
         try {
-            // 逻辑删除MySQL中的文档记录
+            // 1. 按 documentId 过滤条件删除 PGVector 中的所有向量分片
+            Filter filter = metadataKey("documentId").isEqualTo(documentId);
+            embeddingStore.removeAll(filter);
+            log.info("已删除向量数据: documentId={}", documentId);
+
+            // 2. 逻辑删除 MySQL 中的文档记录
             LambdaQueryWrapper<KnowledgeDocument> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(KnowledgeDocument::getDocumentId, documentId);
             documentMapper.delete(wrapper);
-            // TODO: 向量库的精确删除需要根据documentId过滤，当前版本暂不支持
             log.info("已删除文档记录: documentId={}", documentId);
         } catch (Exception e) {
             log.error("删除文档失败: documentId={}", documentId, e);
@@ -296,15 +294,16 @@ public class KnowledgeIngestService {
     }
 
     /**
-     * 向元信息中添加非空字段
+     * 去掉文件名的扩展名
      *
-     * @param metadata 元信息
-     * @param key      键
-     * @param value    值
+     * @param fileName 原始文件名
+     * @return 不含扩展名的文件名
      */
-    private void putIfPresent(Metadata metadata, String key, String value) {
-        if (value != null && !value.isBlank()) {
-            metadata.put(key, value);
+    private String stripExtension(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return "未命名文档";
         }
+        int dotIndex = fileName.lastIndexOf('.');
+        return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
     }
 }

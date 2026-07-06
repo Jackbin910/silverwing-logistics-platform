@@ -90,6 +90,12 @@
             <artifactId>langchain4j-pgvector</artifactId>
         </dependency>
 
+        <!-- LangChain4j - Apache Tika 文档解析（支持 PDF / Word / Markdown 等多种格式提取纯文本） -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-document-parser-apache-tika</artifactId>
+        </dependency>
+
         <!-- PostgreSQL 驱动（PGVector 向量存储需要） -->
         <dependency>
             <groupId>org.postgresql</groupId>
