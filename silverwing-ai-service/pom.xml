@@ -78,12 +78,6 @@
             <artifactId>langchain4j-ollama-spring-boot-starter</artifactId>
         </dependency>
 
-        <!-- LangChain4j - 本地 Embedding 模型（bge-small-zh-v15 量化版，RAG 知识库向量化） -->
-        <dependency>
-            <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-embeddings-bge-small-zh-v15-q</artifactId>
-        </dependency>
-
         <!-- LangChain4j - PGVector 向量存储（RAG 知识库） -->
         <dependency>
             <groupId>dev.langchain4j</groupId>

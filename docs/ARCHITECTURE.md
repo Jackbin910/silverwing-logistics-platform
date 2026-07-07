@@ -38,7 +38,7 @@ graph TB
 
     subgraph AI_Engine["AI引擎层"]
         Ollama[Ollama<br/>Qwen2.5 7B<br/>本地LLM]
-        BGE[BGE-small-zh<br/>向量嵌入模型]
+        BGE[bge-m3<br/>多语言向量嵌入模型<br/>1024维]
     end
 
     Web -->|HTTPS| Nginx
@@ -195,7 +195,7 @@ sequenceDiagram
 | 任务调度 | XXL-Job | 2.4.2 | 定时任务 |
 | AI框架 | LangChain4j | 1.12.2 | LLM编排 |
 | 大模型 | Qwen2.5 | 7B | 本地LLM |
-| 向量模型 | BGE-small-zh | v1.5-Q | 中文向量嵌入 |
+| 向量模型 | bge-m3 | Ollama | 多语言向量嵌入（1024维） |
 | 向量数据库 | PGVector | 0.5+ | 向量存储 |
 | API文档 | Knife4j | 4.5.0 | OpenAPI 3.0 |
 | 工具库 | Hutool | 5.8+ | 工具类 |
@@ -308,7 +308,7 @@ sequenceDiagram
 
 **AI能力：**
 - LangChain4j + Ollama (Qwen2.5 7B)
-- BGE-small-zh-v1.5-Q 向量嵌入
+- bge-m3 多语言向量嵌入（1024维，Ollama 托管）
 - PGVector 向量数据库
 - 时序异常检测算法
 

@@ -20,7 +20,7 @@
 | 注册/配置 | Nacos | 2.4.3                |
 | 消息队列 | RabbitMQ | 3.13                 |
 | 任务调度 | XXL-Job | 2.4.2                |
-| AI | LangChain4j + Qwen2.5 7B + BGE-small-zh-v15-Q + PGVector | 1.12.2               |
+| AI | LangChain4j + Qwen2.5 7B + bge-m3 + PGVector | 1.12.2               |
 | API 文档 | Knife4j (OpenAPI 3.0) | 4.5.0                |
 
 ## 模块结构

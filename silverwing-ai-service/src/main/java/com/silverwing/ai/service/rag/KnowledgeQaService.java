@@ -39,7 +39,7 @@ public class KnowledgeQaService {
     /**
      * 默认最低相似度分数
      */
-    private static final double DEFAULT_MIN_SCORE = 0.1;
+    private static final double DEFAULT_MIN_SCORE = 0.4;
 
     /**
      * 基于知识库回答用户问题

@@ -180,13 +180,6 @@
                 <version>${langchain4j-starter.version}</version>
             </dependency>
 
-            <!-- LangChain4j 本地 Embedding 模型（beta22，不在 BOM 中） -->
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-embeddings-bge-small-zh-v15-q</artifactId>
-                <version>${langchain4j-starter.version}</version>
-            </dependency>
-
             <!-- LangChain4j PGVector 向量存储（beta22，不在 BOM 中） -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>

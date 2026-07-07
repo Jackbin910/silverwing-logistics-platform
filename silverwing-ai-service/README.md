@@ -54,7 +54,7 @@ graph TB
         subgraph "AI 引擎层"
             LC4[LangChain4j]
             OLM[Ollama<br/>Qwen2.5 7B]
-            BE[BGE Embedding<br/>bge-small-zh-v15-Q]
+            BE[BGE Embedding<br/>bge-m3 Ollama]
             PGS[PGVector<br/>Vector Store]
         end
 
