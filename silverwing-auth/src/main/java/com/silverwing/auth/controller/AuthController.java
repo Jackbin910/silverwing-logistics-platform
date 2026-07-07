@@ -133,7 +133,6 @@ public class AuthController {
             UserInfo userInfo = new UserInfo();
             userInfo.setId(userId);
             userInfo.setUsername(loginId.toString());
-            userInfo.setNickname("未知用户");
             userInfo.setRoles(roleCodes);
             userInfo.setPermissions(permissions);
             return Result.success(userInfo);
