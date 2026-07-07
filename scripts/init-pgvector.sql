@@ -29,7 +29,7 @@ SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';
 
 CREATE TABLE IF NOT EXISTS silverwing_embedding (
     embedding_id UUID PRIMARY KEY,        -- LangChain4j 默认 ID 列名，不可改名
-    embedding vector(512) NOT NULL,
+    embedding vector(1024) NOT NULL,
     text TEXT NOT NULL,
     metadata JSONB
 );
