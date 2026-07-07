@@ -4,7 +4,7 @@ spring:
     import:
       - nacos:silverwing-auth.yml
       - nacos:common-redis.yml
-      - nacos:common-rabbitmq.yml
+      - nacos:common-sa-token.yml
   cloud:
     nacos:
       discovery:
