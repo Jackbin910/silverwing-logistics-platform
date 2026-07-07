@@ -13,9 +13,11 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
         namespace: ${NACOS_NAMESPACE:e5ec15ee-9d0a-40af-8791-e99227157224}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
+        timeout: 30000
       config:
         server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
         namespace: ${NACOS_NAMESPACE:e5ec15ee-9d0a-40af-8791-e99227157224}
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yml
+        timeout: 30000
 

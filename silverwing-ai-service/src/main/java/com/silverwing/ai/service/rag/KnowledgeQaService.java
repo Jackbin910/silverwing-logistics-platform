@@ -35,11 +35,11 @@ public class KnowledgeQaService {
     /**
      * 默认检索最大结果数
      */
-    private static final int DEFAULT_MAX_RESULTS = 5;
+    private static final int DEFAULT_MAX_RESULTS = 10;
     /**
      * 默认最低相似度分数
      */
-    private static final double DEFAULT_MIN_SCORE = 0.6;
+    private static final double DEFAULT_MIN_SCORE = 0.1;
 
     /**
      * 基于知识库回答用户问题

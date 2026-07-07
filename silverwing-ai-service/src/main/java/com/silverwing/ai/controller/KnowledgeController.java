@@ -60,7 +60,7 @@ public class KnowledgeController {
             @Parameter(description = "问题内容", required = true)
             @RequestBody String question) {
 
-        if (question == null || question.isBlank()) {  // Directly check the question parameter
+        if (question == null || question.isBlank()) {
             return Result.fail("问题不能为空");
         }
 
