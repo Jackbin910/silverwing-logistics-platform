@@ -57,9 +57,10 @@ public class KnowledgeController {
     @Operation(summary = "知识库问答", description = "基于向量相似度检索知识库并生成回答")
     @PostMapping("/qa")
     public Result<Map<String, String>> qa(
+            @Parameter(description = "问题内容", required = true)
             @RequestBody String question) {
 
-        if (question == null || question.isBlank()) {
+        if (question == null || question.isBlank()) {  // Directly check the question parameter
             return Result.fail("问题不能为空");
         }
 

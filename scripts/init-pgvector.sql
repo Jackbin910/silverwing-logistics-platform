@@ -16,13 +16,19 @@ CREATE EXTENSION IF NOT EXISTS vector;
 SELECT extname, extversion FROM pg_extension WHERE extname = 'vector';
 
 -- ========================================
--- 向量表：存储文本嵌入向量（LangChain4j PGVectorEmbeddingStore 标准表结构）
+-- 向量表：存储文本嵌入向量
+-- 列名与 LangChain4j PgVectorEmbeddingStore 1.17.1 默认表结构保持一致
 -- ========================================
--- 注意：如果使用 langchain4j 的 createTable=true 配置，此表会自动创建
--- 此脚本用于手动初始化或验证
+-- 注意：
+--   1. 如果使用 langchain4j 的 createTable=true 配置，此表会自动创建（用默认列名 embedding_id）
+--      此脚本用于手动初始化或验证，列名必须与 LangChain4j 默认一致，否则写入时报
+--      "column embedding_id of relation silverwing_embedding does not exist"
+--   2. 知识库文档元信息（标题、文件名、状态等）存储在 MySQL 的 ai_knowledge_document 表，
+--      由 KnowledgeDocumentMapper（MyBatis-Plus）管理。PG 只存储向量数据。
+--      两库通过 metadata JSONB 中的 documentId 字段在应用层建立逻辑关联，无需物理外键。
 
 CREATE TABLE IF NOT EXISTS silverwing_embedding (
-    id UUID PRIMARY KEY,
+    embedding_id UUID PRIMARY KEY,        -- LangChain4j 默认 ID 列名，不可改名
     embedding vector(512) NOT NULL,
     text TEXT NOT NULL,
     metadata JSONB
@@ -38,40 +44,6 @@ CREATE TABLE IF NOT EXISTS silverwing_embedding (
 CREATE INDEX IF NOT EXISTS idx_silverwing_embedding_hnsw
     ON silverwing_embedding USING hnsw (embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
-
--- ========================================
--- 知识库管理表（用于管理 RAG 知识文档的元信息）
--- ========================================
-CREATE TABLE IF NOT EXISTS knowledge_document (
-    id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL ,
-    file_name VARCHAR(500),
-    file_type VARCHAR(20),
-    file_size BIGINT,
-    source_url VARCHAR(500),
-    status SMALLINT DEFAULT 1 ,
-    chunk_count INT DEFAULT 0 ,
-    description TEXT ,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-COMMENT ON TABLE knowledge_document IS '知识库文档主表';
-
--- 字段注释（PG标准写法）
-COMMENT ON COLUMN knowledge_document.title IS '文档标题';
-COMMENT ON COLUMN knowledge_document.file_name IS '原始文件名';
-COMMENT ON COLUMN knowledge_document.file_type IS '文件类型（如：pdf、docx、md）';
-COMMENT ON COLUMN knowledge_document.file_size IS '文件大小（字节）';
-COMMENT ON COLUMN knowledge_document.source_url IS '来源地址';
-COMMENT ON COLUMN knowledge_document.status IS '状态（0-禁用 1-启用）';
-COMMENT ON COLUMN knowledge_document.chunk_count IS '分片数量';
-COMMENT ON COLUMN knowledge_document.description IS '文档描述';
-COMMENT ON COLUMN knowledge_document.created_at IS '创建时间';
-COMMENT ON COLUMN knowledge_document.updated_at IS '更新时间';
-
--- 知识库文档索引
-CREATE INDEX IF NOT EXISTS idx_knowledge_doc_status ON knowledge_document(status);
 
 
 
