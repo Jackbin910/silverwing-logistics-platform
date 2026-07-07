@@ -1,6 +1,7 @@
 package com.silverwing.auth.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.silverwing.common.entity.BaseEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName(value = "sys_role", autoResultMap = true)
-public class SysRole {
+public class SysRole extends BaseEntity {
 
     /**
      * 角色ID
@@ -29,30 +30,7 @@ public class SysRole {
     private String roleName;
 
     /**
-     * 角色描述
-     */
-    private String description;
-
-    /**
      * 状态: 0-禁用, 1-启用
      */
     private Integer status;
-
-    /**
-     * 删除标记
-     */
-    @TableLogic
-    private Integer deleted;
-
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
 }

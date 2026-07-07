@@ -37,11 +37,10 @@ public class BaseEntity implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * 主键 ID（自增）
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+
+    private String createBy;
+
+    private String updateBy;
 
     /**
      * 创建时间（插入时自动填充）

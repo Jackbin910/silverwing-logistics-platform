@@ -93,7 +93,6 @@ public class AuthController {
         LoginResponse response = new LoginResponse();
         response.setToken(token);
         response.setUsername(user.getUsername());
-        response.setNickname(user.getNickname());
         response.setRoles(roleCodes);
         return Result.success(response);
     }
@@ -143,7 +142,6 @@ public class AuthController {
         UserInfo userInfo = new UserInfo();
         userInfo.setId(user.getId());
         userInfo.setUsername(user.getUsername());
-        userInfo.setNickname(user.getNickname());
         userInfo.setAvatar(user.getAvatar());
         userInfo.setEmail(user.getEmail());
         userInfo.setPhone(user.getPhone());

@@ -1,6 +1,7 @@
 package com.silverwing.auth.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.silverwing.common.entity.BaseEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -10,8 +11,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName(value = "sys_user", autoResultMap = true)
-public class SysUser {
-
+public class SysUser extends BaseEntity {
     /**
      * 用户ID
      */
@@ -24,14 +24,14 @@ public class SysUser {
     private String username;
 
     /**
+     * 性别 0-男, 1-女, 2-未知
+     */
+    private Integer sex;
+
+    /**
      * 密码（BCrypt 加密）
      */
     private String password;
-
-    /**
-     * 昵称
-     */
-    private String nickname;
 
     /**
      * 头像
@@ -52,23 +52,5 @@ public class SysUser {
      * 状态: 0-禁用, 1-启用
      */
     private Integer status;
-
-    /**
-     * 删除标记
-     */
-    @TableLogic
-    private Integer deleted;
-
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
 
 }
