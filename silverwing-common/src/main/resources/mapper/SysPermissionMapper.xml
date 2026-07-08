@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silverwing.common.infrastructure.mapper.SysPermissionMapper">
+
+    <resultMap id="SysPermissionResultMap" type="com.silverwing.common.domain.model.SysPermission">
+        <id property="id" column="id"/>
+        <result property="permissionCode" column="permission_code"/>
+        <result property="permissionName" column="permission_name"/>
+        <result property="visible" column="visible"/>
+        <result property="sort" column="sort"/>
+        <result property="status" column="status"/>
+        <result property="target" column="target"/>
+        <result property="isRefresh" column="is_refresh"/>
+        <result property="icon" column="icon"/>
+        <result property="url" column="url"/>
+        <result property="parentId" column="parent_id"/>
+        <result property="resourceType" column="resource_type"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, permission_code, permission_name, visible, sort, status, target, is_refresh, icon, url, parent_id, resource_type, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询权限标识列表（用户 -> 角色 -> 权限） -->
+    <select id="selectPermissionCodesByUserId" resultType="java.lang.String">
+        SELECT p.permission_code
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND p.deleted = 0
+          AND p.status = 1
+        GROUP BY p.permission_code, p.sort
+        ORDER BY p.sort
+    </select>
+
+</mapper>

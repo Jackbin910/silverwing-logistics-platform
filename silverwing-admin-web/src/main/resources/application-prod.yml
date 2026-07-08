@@ -3,6 +3,7 @@ spring:
     import:
       - nacos:silverwing-admin-web.yml
       - nacos:common-redis.yml
+      - nacos:common-sa-token.yml
   cloud:
     nacos:
       discovery:
