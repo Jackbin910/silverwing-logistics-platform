@@ -1,6 +1,7 @@
 package com.silverwing.biz.ai.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.silverwing.common.entity.BaseEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName("ai_knowledge_document")
-public class KnowledgeDocument {
+public class KnowledgeDocument extends BaseEntity {
 
     /**
      * 主键ID
@@ -64,21 +65,4 @@ public class KnowledgeDocument {
      */
     private String errorMsg;
 
-    /**
-     * 创建时间
-     */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    /**
-     * 是否删除（0-否、1-是）
-     */
-    @TableLogic
-    private Integer deleted;
 }
