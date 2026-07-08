@@ -2,7 +2,6 @@ package com.silverwing.auth.application.service;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.crypto.digest.BCrypt;
 import com.silverwing.auth.application.command.LoginCommand;
 import com.silverwing.auth.application.dto.AuthUserInfo;
 import com.silverwing.auth.application.dto.LoginResponse;
@@ -39,7 +38,7 @@ public class AuthAppService {
 
     /**
      * 用户登录
-     * 流程：查询用户 → 状态校验 → BCrypt 密码比对 → Sa-Token 签发 → 写入角色/权限到 Session
+     * 流程：查询用户 → 状态校验 → MD5 + 盐 密码比对 → Sa-Token 签发 → 写入角色/权限到 Session
      */
     public LoginResponse login(LoginCommand command) {
         // 1. 查询用户
@@ -157,28 +156,16 @@ public class AuthAppService {
     }
 
     /**
-     * 密码安全校验
+     * 密码安全校验（MD5 + 盐）
      */
     private boolean matchesPassword(String rawPassword, SysUser user) {
-        try {
-            String encodedPassword = user.getPassword();
-            if (encodedPassword == null || encodedPassword.isBlank()) {
-                log.error("登录失败：用户密码哈希为空 userId={}, username={}",
-                        user.getId(), user.getUsername());
-                throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
-                        "auth.login.account.config.error");
-            }
-            return BCrypt.checkpw(rawPassword, encodedPassword);
-        } catch (StackOverflowError e) {
-            log.error("登录失败：BCrypt 密码哈希触发栈溢出 userId={}, username={}",
-                    user.getId(), user.getUsername(), e);
-            throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
-                    "auth.login.account.config.error");
-        } catch (IllegalArgumentException e) {
-            log.error("登录失败：BCrypt 密码哈希格式非法 userId={}, username={}",
-                    user.getId(), user.getUsername(), e);
+        String encodedPassword = user.getPassword();
+        if (encodedPassword == null || encodedPassword.isBlank()) {
+            log.error("登录失败：用户密码哈希为空 userId={}, username={}",
+                    user.getId(), user.getUsername());
             throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
                     "auth.login.account.config.error");
         }
+        return user.matchesPassword(rawPassword);
     }
 }

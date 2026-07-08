@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.silverwing.common.entity.BaseEntity;
+import cn.hutool.core.util.RandomUtil;
+import cn.hutool.crypto.digest.DigestUtil;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -31,6 +33,8 @@ public class SysUser extends BaseEntity {
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
 
+    private String salt;
+
     // ===== 领域行为 =====
 
     /** 用户是否处于启用状态 */
@@ -54,11 +58,33 @@ public class SysUser extends BaseEntity {
     }
 
     /**
-     * 修改密码（传入已加密的密码哈希）
-     * @param encryptedPassword BCrypt 加密后的密码
+     * 修改密码（传入明文密码，内部使用 MD5 + 随机盐 加密后存储）
+     * <p>
+     * 盐值随机生成并写入 salt 字段，password 字段存储 MD5(salt + 明文) 的小写十六进制串。
+     * </p>
+     * @param rawPassword 明文密码
      */
-    public void changePassword(String encryptedPassword) {
-        this.password = encryptedPassword;
+    public void changePassword(String rawPassword) {
+        String salt = RandomUtil.randomString(16);
+        this.salt = salt;
+        this.password = encrypt(rawPassword, salt);
+    }
+
+    /**
+     * 校验明文密码是否匹配已存储的 MD5 + 盐哈希
+     * @param rawPassword 明文密码
+     * @return 是否匹配
+     */
+    public boolean matchesPassword(String rawPassword) {
+        if (salt == null || salt.isBlank() || password == null || password.isBlank()) {
+            return false;
+        }
+        return password.equalsIgnoreCase(encrypt(rawPassword, salt));
+    }
+
+    /** 计算 MD5(salt + 明文) 的小写十六进制串 */
+    private static String encrypt(String rawPassword, String salt) {
+        return DigestUtil.md5Hex(salt + rawPassword);
     }
 
     /** 清除密码字段（用于 DTO 转换，避免泄露） */

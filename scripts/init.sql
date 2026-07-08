@@ -12,7 +12,8 @@ DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名',
-    `password` VARCHAR(255) NOT NULL COMMENT '密码',
+    `password` VARCHAR(255) NOT NULL COMMENT '密码(MD5(盐+明文))',
+    `salt` VARCHAR(64) DEFAULT '' COMMENT '密码盐值',
     `sex`   TINYINT default 0 COMMENT '用户性别（0男 1女 2未知）',
     `avatar` VARCHAR(255) COMMENT '头像',
     `phone` VARCHAR(20) COMMENT '手机号',
@@ -197,13 +198,11 @@ CREATE TABLE `logistics_work_order` (
 -- ========================================
 
 -- 插入默认用户
--- 注意：以下密码哈希需要使用 BCrypt 工具类生成
--- 推荐使用：BCrypt.hashpw("admin123", BCrypt.gensalt()) 生成 admin 密码
--- 推荐使用：BCrypt.hashpw("nurse123", BCrypt.gensalt()) 生成 nurse1 密码
--- 临时测试：可以先用明文密码 "123456" 的 BCrypt 哈希
-INSERT INTO `sys_user` (`username`, `password`, `nickname`, `phone`, `email`, `status`) VALUES
-('admin', '$2a$10$JjUIlZViZv2oZk.ANIdyaero4iEL2FwJ1xPRCHrMEo3l054WFebmi', '系统管理员', '13800138000', 'admin@silverwing.com', 1),
-('nurse1', '$2a$10$BncrHbpJ703Xy0IqohRVCOKnE/7cXdIUYnY1P3EQUwA8wDi2Me5E2', '护士-手术室1', '13800138001', 'nurse1@hospital.com', 1);
+-- 密码采用 MD5(盐 + 明文) 方式存储，盐值见 salt 列
+-- admin 密码: admin123，nurse1 密码: nurse123
+INSERT INTO `sys_user` (`username`, `password`, `salt`, `nickname`, `phone`, `email`, `status`) VALUES
+('admin', '594797df0f52acdfe042fbb5363d39eb', 'sw_admin_salt_01', '系统管理员', '13800138000', 'admin@silverwing.com', 1),
+('nurse1', '7d8317755b46e55a6784cb581e2dc941', 'sw_nurse_salt_01', '护士-手术室1', '13800138001', 'nurse1@hospital.com', 1);
 
 -- 插入默认角色
 INSERT INTO `sys_role` (`role_code`, `role_name`, `description`, `status`) VALUES

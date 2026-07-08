@@ -1,6 +1,5 @@
 package com.silverwing.admin.application.service;
 
-import cn.hutool.crypto.digest.BCrypt;
 import com.silverwing.admin.application.command.CreateUserCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
 import com.silverwing.common.domain.PageResult;
@@ -52,7 +51,7 @@ public class UserAppService {
 
         SysUser user = new SysUser();
         user.setUsername(command.getUsername());
-        user.changePassword(BCrypt.hashpw(command.getPassword(), BCrypt.gensalt()));
+        user.changePassword(command.getPassword());
         user.setSex(command.getSex());
         user.setAvatar(command.getAvatar());
         user.setPhone(command.getPhone());
@@ -97,7 +96,7 @@ public class UserAppService {
         if (user == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
         }
-        user.changePassword(BCrypt.hashpw(newPassword, BCrypt.gensalt()));
+        user.changePassword(newPassword);
         userRepository.save(user);
         log.info("重置用户密码 id={}", id);
     }
