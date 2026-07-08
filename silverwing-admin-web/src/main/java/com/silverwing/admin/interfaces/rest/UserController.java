@@ -23,7 +23,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "用户管理", description = "用户增删改查接口")
 @RestController
-@RequestMapping("/admin/user")
+@RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
 

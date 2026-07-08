@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "权限管理", description = "权限增删改查接口")
 @RestController
-@RequestMapping("/admin/permission")
+@RequestMapping("/permission")
 @RequiredArgsConstructor
 public class PermissionController {
 

@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "角色管理", description = "角色增删改查接口")
 @RestController
-@RequestMapping("/admin/role")
+@RequestMapping("/role")
 @RequiredArgsConstructor
 public class RoleController {
 
