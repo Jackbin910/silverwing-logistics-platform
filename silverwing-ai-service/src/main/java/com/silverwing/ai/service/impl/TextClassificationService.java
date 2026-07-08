@@ -1,7 +1,7 @@
 package com.silverwing.ai.service.impl;
 
-import com.silverwing.ai.domain.dto.ClassifyResult;
-import com.silverwing.ai.domain.enums.TextCategoryEnum;
+import com.silverwing.ai.dto.ClassifyResult;
+import com.silverwing.biz.ai.domain.enums.TextCategoryEnum;
 import com.silverwing.ai.service.ai.TextClassifier;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;

@@ -3,12 +3,12 @@ package com.silverwing.admin.application.service;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.silverwing.admin.application.command.SavePermissionCommand;
+import com.silverwing.biz.iam.domain.model.SysPermission;
+import com.silverwing.biz.iam.domain.model.SysRole;
+import com.silverwing.biz.iam.domain.repository.PermissionRepository;
+import com.silverwing.biz.iam.domain.repository.RoleRepository;
 import com.silverwing.common.constant.SaSessionConstants;
 import com.silverwing.common.domain.ResultCode;
-import com.silverwing.common.domain.model.SysPermission;
-import com.silverwing.common.domain.model.SysRole;
-import com.silverwing.common.domain.repository.PermissionRepository;
-import com.silverwing.common.domain.repository.RoleRepository;
 import com.silverwing.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -112,9 +112,15 @@ public class PermissionAppService {
     }
 
     private void applyCommandToEntity(SysPermission entity, SavePermissionCommand cmd) {
-        if (cmd.getPermissionCode() != null) entity.setPermissionCode(cmd.getPermissionCode());
-        if (cmd.getPermissionName() != null) entity.setPermissionName(cmd.getPermissionName());
-        if (cmd.getResourceType() != null) entity.setResourceType(cmd.getResourceType());
+        if (cmd.getPermissionCode() != null) {
+            entity.setPermissionCode(cmd.getPermissionCode());
+        }
+        if (cmd.getPermissionName() != null) {
+            entity.setPermissionName(cmd.getPermissionName());
+        }
+        if (cmd.getResourceType() != null) {
+            entity.setResourceType(cmd.getResourceType());
+        }
         entity.setParentId(cmd.getParentId() != null ? cmd.getParentId() : 0L);
         entity.setSort(cmd.getSort() != null ? cmd.getSort() : 0);
         if (cmd.getStatus() != null) {
@@ -122,9 +128,15 @@ public class PermissionAppService {
             else entity.disable();
         }
         entity.setVisible(cmd.getVisible());
-        if (cmd.getUrl() != null) entity.setUrl(cmd.getUrl());
-        if (cmd.getTarget() != null) entity.setTarget(cmd.getTarget());
+        if (cmd.getUrl() != null) {
+            entity.setUrl(cmd.getUrl());
+        }
+        if (cmd.getTarget() != null) {
+            entity.setTarget(cmd.getTarget());
+        }
         entity.setIsRefresh(cmd.getIsRefresh());
-        if (cmd.getIcon() != null) entity.setIcon(cmd.getIcon());
+        if (cmd.getIcon() != null) {
+            entity.setIcon(cmd.getIcon());
+        }
     }
 }

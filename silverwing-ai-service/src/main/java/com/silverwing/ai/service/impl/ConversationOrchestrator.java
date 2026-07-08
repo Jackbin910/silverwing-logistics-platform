@@ -1,8 +1,8 @@
 package com.silverwing.ai.service.impl;
 
 import com.alibaba.fastjson2.JSON;
-import com.silverwing.ai.domain.dto.*;
-import com.silverwing.ai.domain.enums.IntentEnum;
+import com.silverwing.ai.dto.*;
+import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.service.ai.AnswerFormatter;
 import com.silverwing.ai.service.rag.DatabaseRagService;
 import com.silverwing.ai.service.rag.KnowledgeQaService;

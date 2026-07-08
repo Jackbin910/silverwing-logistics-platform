@@ -1,6 +1,6 @@
 package com.silverwing.ai.service;
 
-import com.silverwing.ai.domain.dto.*;
+import com.silverwing.ai.dto.*;
 
 import java.util.List;
 

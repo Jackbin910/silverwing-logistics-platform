@@ -4,9 +4,9 @@ import com.silverwing.admin.application.command.CreateUserCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
 import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.ResultCode;
-import com.silverwing.common.domain.model.SysUser;
-import com.silverwing.common.domain.model.UserQuery;
-import com.silverwing.common.domain.repository.UserRepository;
+import com.silverwing.biz.iam.domain.model.SysUser;
+import com.silverwing.biz.iam.domain.model.UserQuery;
+import com.silverwing.biz.iam.domain.repository.UserRepository;
 import com.silverwing.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +56,7 @@ public class UserAppService {
         user.setAvatar(command.getAvatar());
         user.setPhone(command.getPhone());
         user.setEmail(command.getEmail());
-        user.enable(); // 领域行为：默认启用
+        user.enable();
 
         userRepository.save(user);
         log.info("新建用户成功 username={}, id={}", user.getUsername(), user.getId());

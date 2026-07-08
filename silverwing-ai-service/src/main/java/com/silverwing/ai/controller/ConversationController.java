@@ -1,8 +1,8 @@
 package com.silverwing.ai.controller;
 
 import com.silverwing.common.domain.Result;
-import com.silverwing.ai.domain.dto.ConversationResponse;
-import com.silverwing.ai.domain.dto.ChatRequest;
+import com.silverwing.ai.dto.ConversationResponse;
+import com.silverwing.ai.dto.ChatRequest;
 import com.silverwing.ai.service.impl.ConversationOrchestrator;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

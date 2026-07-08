@@ -24,6 +24,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Biz IAM 领域（实体与仓储） -->
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-biz-iam</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Nacos Discovery -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>

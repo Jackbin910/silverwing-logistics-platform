@@ -1,6 +1,6 @@
 package com.silverwing.ai.service.impl;
 
-import com.silverwing.ai.domain.dto.SummaryResult;
+import com.silverwing.ai.dto.SummaryResult;
 import com.silverwing.ai.service.ai.TextSummarizer;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;

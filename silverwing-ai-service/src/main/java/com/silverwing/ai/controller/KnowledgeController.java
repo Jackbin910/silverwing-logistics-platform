@@ -1,6 +1,6 @@
 package com.silverwing.ai.controller;
 
-import com.silverwing.ai.domain.dto.KnowledgeIngestResult;
+import com.silverwing.ai.dto.KnowledgeIngestResult;
 import com.silverwing.ai.service.rag.KnowledgeIngestService;
 import com.silverwing.ai.service.rag.KnowledgeQaService;
 import com.silverwing.common.domain.Result;

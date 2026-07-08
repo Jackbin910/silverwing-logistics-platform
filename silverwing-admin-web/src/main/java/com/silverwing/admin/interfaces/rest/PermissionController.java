@@ -4,7 +4,7 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.silverwing.admin.application.command.SavePermissionCommand;
 import com.silverwing.admin.application.service.PermissionAppService;
 import com.silverwing.common.domain.Result;
-import com.silverwing.common.domain.model.SysPermission;
+import com.silverwing.biz.iam.domain.model.SysPermission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

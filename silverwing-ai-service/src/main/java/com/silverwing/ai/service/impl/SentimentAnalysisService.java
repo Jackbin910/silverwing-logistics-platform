@@ -2,7 +2,7 @@ package com.silverwing.ai.service.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
-import com.silverwing.ai.domain.dto.SentimentResult;
+import com.silverwing.ai.dto.SentimentResult;
 import com.silverwing.ai.service.ai.SentimentAnalyzer;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;

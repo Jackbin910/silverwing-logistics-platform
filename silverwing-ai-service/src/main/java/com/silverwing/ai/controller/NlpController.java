@@ -1,6 +1,6 @@
 package com.silverwing.ai.controller;
 
-import com.silverwing.ai.domain.dto.*;
+import com.silverwing.ai.dto.*;
 import com.silverwing.common.domain.Result;
 import com.silverwing.ai.service.NlpService;
 import com.silverwing.ai.service.impl.ConversationOrchestrator;

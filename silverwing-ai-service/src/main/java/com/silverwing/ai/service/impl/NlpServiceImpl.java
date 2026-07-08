@@ -1,7 +1,7 @@
 package com.silverwing.ai.service.impl;
 
-import com.silverwing.ai.domain.dto.*;
-import com.silverwing.ai.domain.enums.IntentEnum;
+import com.silverwing.ai.dto.*;
+import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.service.NlpService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

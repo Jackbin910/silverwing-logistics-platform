@@ -1,8 +1,8 @@
 package com.silverwing.ai.service.impl.handler;
 
-import com.silverwing.ai.domain.dto.BizQueryResult;
-import com.silverwing.ai.domain.dto.EntityResult;
-import com.silverwing.ai.domain.enums.IntentEnum;
+import com.silverwing.ai.dto.BizQueryResult;
+import com.silverwing.ai.dto.EntityResult;
+import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.service.impl.IntentHandler;
 import com.silverwing.ai.service.rag.DatabaseRagService;
 import lombok.RequiredArgsConstructor;

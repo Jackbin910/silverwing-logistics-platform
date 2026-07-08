@@ -13,8 +13,8 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
-@MapperScan("com.silverwing.common.infrastructure.mapper")
-@ComponentScan(basePackages = {"com.silverwing.ai", "com.silverwing.common"})
+@MapperScan("com.silverwing.biz.ai.infrastructure.mapper")
+@ComponentScan(basePackages = {"com.silverwing.ai", "com.silverwing.common", "com.silverwing.biz.ai"})
 public class SilverwingAiServiceApplication {
     
     public static void main(String[] args) {

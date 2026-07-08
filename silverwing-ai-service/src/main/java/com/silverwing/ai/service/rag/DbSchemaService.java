@@ -1,8 +1,8 @@
 package com.silverwing.ai.service.rag;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.silverwing.ai.domain.entity.DbTableSchema;
-import com.silverwing.ai.domain.mapper.DbTableSchemaMapper;
+import com.silverwing.biz.ai.domain.entity.DbTableSchema;
+import com.silverwing.biz.ai.domain.repository.DbTableSchemaRepository;
 import com.alicp.jetcache.anno.CacheType;
 import com.alicp.jetcache.anno.Cached;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class DbSchemaService {
 
-    private final DbTableSchemaMapper dbTableSchemaMapper;
+    private final DbTableSchemaRepository dbTableSchemaRepository;
 
     /**
      * 默认数据库名称
@@ -36,7 +36,7 @@ public class DbSchemaService {
      */
     public List<DbTableSchema> getAllTableSchemas() {
         try {
-            List<DbTableSchema> schemas = dbTableSchemaMapper.selectList(null);
+            List<DbTableSchema> schemas = dbTableSchemaRepository.list(null);
             return schemas;
         } catch (Exception e) {
             log.error("获取表结构信息失败", e);
@@ -53,7 +53,7 @@ public class DbSchemaService {
     public List<DbTableSchema> getTableSchema(String tableName) {
         LambdaQueryWrapper<DbTableSchema> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(DbTableSchema::getTableName, tableName);
-        return dbTableSchemaMapper.selectList(wrapper);
+        return dbTableSchemaRepository.list(wrapper);
     }
 
     /**

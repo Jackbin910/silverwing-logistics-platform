@@ -2,9 +2,9 @@ package com.silverwing.ai.service.rag;
 
 import cn.hutool.core.util.IdUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.silverwing.ai.domain.dto.KnowledgeIngestResult;
-import com.silverwing.ai.domain.entity.KnowledgeDocument;
-import com.silverwing.ai.domain.mapper.KnowledgeDocumentMapper;
+import com.silverwing.ai.dto.KnowledgeIngestResult;
+import com.silverwing.biz.ai.domain.entity.KnowledgeDocument;
+import com.silverwing.biz.ai.domain.repository.KnowledgeDocumentRepository;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -45,7 +45,7 @@ public class KnowledgeIngestService {
 
     private final EmbeddingStore<TextSegment> embeddingStore;
 
-    private final KnowledgeDocumentMapper documentMapper;
+    private final KnowledgeDocumentRepository documentRepository;
 
     private final DocumentParser documentParser;
 
@@ -82,7 +82,7 @@ public class KnowledgeIngestService {
         doc.setFileSize(fileSize);
         doc.setWordCount(content.length());
         doc.setStatus(0); // 待处理
-        documentMapper.insert(doc);
+        documentRepository.insert(doc);
 
         try {
             // 4. 执行向量导入（documentId 写入 metadata，便于后续按文档删除向量）
@@ -91,7 +91,7 @@ public class KnowledgeIngestService {
             // 5. 更新文档状态为已导入
             doc.setChunkCount(chunkCount);
             doc.setStatus(1); // 已导入
-            documentMapper.updateById(doc);
+            documentRepository.updateById(doc);
 
             return KnowledgeIngestResult.builder()
                     .documentId(documentId)
@@ -106,7 +106,7 @@ public class KnowledgeIngestService {
             // 更新文档状态为导入失败
             doc.setStatus(2);
             doc.setErrorMsg(e.getMessage());
-            documentMapper.updateById(doc);
+            documentRepository.updateById(doc);
             throw new RuntimeException("知识库导入失败: " + e.getMessage(), e);
         }
     }
@@ -260,7 +260,7 @@ public class KnowledgeIngestService {
             // 清空向量库
             embeddingStore.removeAll();
             // 清空MySQL文档记录
-            documentMapper.delete(null);
+            documentRepository.delete(null);
             log.info("知识库已清空");
         } catch (Exception e) {
             log.error("清空知识库失败", e);
@@ -285,7 +285,7 @@ public class KnowledgeIngestService {
             // 2. 逻辑删除 MySQL 中的文档记录
             LambdaQueryWrapper<KnowledgeDocument> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(KnowledgeDocument::getDocumentId, documentId);
-            documentMapper.delete(wrapper);
+            documentRepository.delete(wrapper);
             log.info("已删除文档记录: documentId={}", documentId);
         } catch (Exception e) {
             log.error("删除文档失败: documentId={}", documentId, e);
