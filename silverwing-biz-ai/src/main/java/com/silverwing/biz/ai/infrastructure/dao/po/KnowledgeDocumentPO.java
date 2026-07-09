@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.silverwing.common.entity.BaseEntity;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @TableName(value = "ai_knowledge_document")
-public class KnowledgeDocumentPO {
+public class KnowledgeDocumentPO extends BaseEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -34,15 +35,4 @@ public class KnowledgeDocumentPO {
     private Integer status;
     private String errorMsg;
 
-    private String createBy;
-    private String updateBy;
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
-
-    @TableField(fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
-
-    @TableLogic
-    private Integer deleted;
 }

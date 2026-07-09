@@ -4,12 +4,14 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.silverwing.biz.ai.infrastructure.dao.po.DbTableSchemaPO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
 /**
  * 数据库表结构Mapper
+ * <p>
+ * 自定义查询的 SQL 定义在对应的 DbTableSchemaMapper.xml 中（对齐 biz-iam 的 XML 模式）。
+ * </p>
  */
 @Mapper
 public interface DbTableSchemaMapper extends BaseMapper<DbTableSchemaPO> {
@@ -20,8 +22,6 @@ public interface DbTableSchemaMapper extends BaseMapper<DbTableSchemaPO> {
      * @param databaseName 数据库名称
      * @return 表结构列表
      */
-    @Select("SELECT table_name, table_comment FROM information_schema.tables " +
-            "WHERE table_schema = #{databaseName}")
     List<DbTableSchemaPO> getTables(@Param("databaseName") String databaseName);
 
     /**
@@ -31,17 +31,6 @@ public interface DbTableSchemaMapper extends BaseMapper<DbTableSchemaPO> {
      * @param tableName   表名称
      * @return 列信息列表
      */
-    @Select("SELECT " +
-            "    c.column_name, " +
-            "    c.data_type, " +
-            "    c.column_type, " +
-            "    c.column_key, " +
-            "    c.is_nullable, " +
-            "    c.column_comment " +
-            "FROM information_schema.columns c " +
-            "WHERE c.table_schema = #{databaseName} " +
-            "  AND c.table_name = #{tableName} " +
-            "ORDER BY c.ordinal_position")
     List<DbTableSchemaPO> getTableColumns(@Param("databaseName") String databaseName,
                                           @Param("tableName") String tableName);
 }
