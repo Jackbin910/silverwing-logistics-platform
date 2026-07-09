@@ -194,6 +194,39 @@ CREATE TABLE `logistics_work_order` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='工单表';
 
 -- ========================================
+-- 操作日志表（admin-web 等依赖 biz-iam 的进程复用此表）
+-- ========================================
+DROP TABLE IF EXISTS `sys_oper_log`;
+CREATE TABLE `sys_oper_log` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '日志主键',
+    `title` VARCHAR(50) DEFAULT '' COMMENT '模块标题',
+    `business_type` INT DEFAULT 0 COMMENT '业务类型（0其它 1新增 2修改 3删除）',
+    `method` VARCHAR(200) DEFAULT '' COMMENT '方法名称',
+    `request_method` VARCHAR(10) DEFAULT '' COMMENT '请求方式',
+    `operator_type` TINYINT DEFAULT 0 COMMENT '操作类别（0其它 1后台用户 2手机端用户）',
+    `oper_name` VARCHAR(50) DEFAULT '' COMMENT '操作人员',
+    `dept_name` VARCHAR(50) DEFAULT '' COMMENT '部门名称',
+    `oper_url` VARCHAR(255) DEFAULT '' COMMENT '请求URL',
+    `oper_ip` VARCHAR(128) DEFAULT '' COMMENT '主机地址',
+    `oper_location` VARCHAR(255) DEFAULT '' COMMENT '操作地点',
+    `oper_param` VARCHAR(2000) DEFAULT '' COMMENT '请求参数',
+    `json_result` VARCHAR(2000) DEFAULT '' COMMENT '返回参数',
+    `status` TINYINT DEFAULT 0 COMMENT '操作状态（0正常 1异常）',
+    `error_msg` VARCHAR(2000) DEFAULT '' COMMENT '错误消息',
+    `oper_time` DATETIME DEFAULT NULL COMMENT '操作时间',
+    `cost_time` BIGINT DEFAULT 0 COMMENT '消耗时间',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `create_by` VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    `update_by` VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    `deleted` TINYINT DEFAULT 0 COMMENT '删除标记',
+    PRIMARY KEY (`id`),
+    KEY `idx_sys_oper_log_bt` (`business_type`),
+    KEY `idx_sys_oper_log_ot` (`oper_time`),
+    KEY `idx_sys_oper_log_s` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志记录';
+
+-- ========================================
 -- 插入初始数据
 -- ========================================
 
@@ -573,6 +606,40 @@ CREATE TABLE ai_device_log (
                                INDEX idx_log_type (log_type),
                                INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='设备运行日志表';
+
+
+-- ============================================================
+-- 操作日志表（ai-service 复用 biz-ai 的库记录 @Log 操作日志）
+-- ============================================================
+DROP TABLE IF EXISTS sys_oper_log;
+
+CREATE TABLE sys_oper_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '日志主键',
+    title VARCHAR(50) DEFAULT '' COMMENT '模块标题',
+    business_type INT DEFAULT 0 COMMENT '业务类型（0其它 1新增 2修改 3删除）',
+    method VARCHAR(200) DEFAULT '' COMMENT '方法名称',
+    request_method VARCHAR(10) DEFAULT '' COMMENT '请求方式',
+    operator_type TINYINT DEFAULT 0 COMMENT '操作类别（0其它 1后台用户 2手机端用户）',
+    oper_name VARCHAR(50) DEFAULT '' COMMENT '操作人员',
+    dept_name VARCHAR(50) DEFAULT '' COMMENT '部门名称',
+    oper_url VARCHAR(255) DEFAULT '' COMMENT '请求URL',
+    oper_ip VARCHAR(128) DEFAULT '' COMMENT '主机地址',
+    oper_location VARCHAR(255) DEFAULT '' COMMENT '操作地点',
+    oper_param VARCHAR(2000) DEFAULT '' COMMENT '请求参数',
+    json_result VARCHAR(2000) DEFAULT '' COMMENT '返回参数',
+    status TINYINT DEFAULT 0 COMMENT '操作状态（0正常 1异常）',
+    error_msg VARCHAR(2000) DEFAULT '' COMMENT '错误消息',
+    oper_time DATETIME DEFAULT NULL COMMENT '操作时间',
+    cost_time BIGINT DEFAULT 0 COMMENT '消耗时间',
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    create_by VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    update_by VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    deleted TINYINT DEFAULT 0 COMMENT '删除标记',
+    INDEX idx_sys_oper_log_bt (business_type),
+    INDEX idx_sys_oper_log_ot (oper_time),
+    INDEX idx_sys_oper_log_s (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='操作日志记录';
 
 
 -- 完成提示

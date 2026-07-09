@@ -1,6 +1,7 @@
 package com.silverwing.admin.trigger.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.silverwing.common.annotation.Log;
 import com.silverwing.admin.application.command.PermissionCommandService;
 import com.silverwing.admin.application.command.SavePermissionCommand;
 import com.silverwing.admin.application.dto.PermissionResponse;
@@ -43,6 +44,7 @@ public class PermissionController {
         return Result.success(permissionQueryService.getById(id));
     }
 
+    @Log(title = "权限管理-新建权限", businessType = 1)
     @SaCheckPermission("system:permission:add")
     @Operation(summary = "新建权限")
     @PostMapping
@@ -50,6 +52,7 @@ public class PermissionController {
         return Result.success(permissionCommandService.create(command));
     }
 
+    @Log(title = "权限管理-更新权限", businessType = 2)
     @SaCheckPermission("system:permission:edit")
     @Operation(summary = "更新权限")
     @PutMapping("/{id}")
@@ -58,6 +61,7 @@ public class PermissionController {
         return Result.success("更新成功");
     }
 
+    @Log(title = "权限管理-删除权限", businessType = 3)
     @SaCheckPermission("system:permission:delete")
     @Operation(summary = "删除权限")
     @DeleteMapping("/{id}")

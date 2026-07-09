@@ -1,6 +1,7 @@
 package com.silverwing.admin.trigger.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
+import com.silverwing.common.annotation.Log;
 import com.silverwing.admin.application.command.RoleCommandService;
 import com.silverwing.admin.application.command.SaveRoleCommand;
 import com.silverwing.admin.application.dto.RoleResponse;
@@ -52,6 +53,7 @@ public class RoleController {
         return Result.success(roleQueryService.getById(id));
     }
 
+    @Log(title = "角色管理-新建角色", businessType = 1)
     @SaCheckPermission("system:role:add")
     @Operation(summary = "新建角色")
     @PostMapping
@@ -59,6 +61,7 @@ public class RoleController {
         return Result.success(roleCommandService.create(command));
     }
 
+    @Log(title = "角色管理-更新角色", businessType = 2)
     @SaCheckPermission("system:role:edit")
     @Operation(summary = "更新角色")
     @PutMapping("/{id}")
@@ -67,6 +70,7 @@ public class RoleController {
         return Result.success("更新成功");
     }
 
+    @Log(title = "角色管理-删除角色", businessType = 3)
     @SaCheckPermission("system:role:delete")
     @Operation(summary = "删除角色")
     @DeleteMapping("/{id}")
