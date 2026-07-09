@@ -12,8 +12,8 @@ import java.time.LocalDateTime;
 /**
  * 操作日志持久化对象（PO）
  * <p>
- * 与数据库表 sys_oper_log 一一对应，仅承载数据。由 {@code SysOperLogRecorder}
- * 将 common 的 {@code OperLog} 转换后通过 {@code SysOperLogMapper} 落库。
+ * 与数据库表 sys_oper_log 一一对应，仅承载数据。由 {@code OperLogAspect}
+ * 直接组装后通过 {@code SysOperLogMapper#insertBatch} 落库。
  * </p>
  */
 @Data

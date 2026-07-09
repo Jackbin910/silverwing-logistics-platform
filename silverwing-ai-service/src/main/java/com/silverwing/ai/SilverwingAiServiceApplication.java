@@ -1,5 +1,6 @@
 package com.silverwing.ai;
 
+import org.dromara.dynamictp.spring.annotation.EnableDynamicTp;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.ComponentScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
+@EnableDynamicTp
 @MapperScan("com.silverwing.biz.ai.infrastructure.mapper")
 @ComponentScan(basePackages = {"com.silverwing.ai", "com.silverwing.common", "com.silverwing.biz.ai"})
 public class SilverwingAiServiceApplication {

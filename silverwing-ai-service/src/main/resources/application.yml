@@ -6,5 +6,34 @@ spring:
     active: @spring.profiles.active@
   application:
     name: silverwing-ai-service
+  # Dynamic-TP 动态线程池配置（生产环境建议将此段移入 Nacos: silverwing-ai-service.yml 以支持动态刷新）
+  dynamic:
+    tp:
+      enabled: true
+      enabledCollect: true
+      collectorTypes: micrometer
+      monitorInterval: 5
+      executors:
+        - threadPoolName: operLogExecutor
+          threadPoolAliasName: 操作日志异步线程池
+          corePoolSize: 2
+          maximumPoolSize: 8
+          keepAliveTime: 60
+          queueType: VariableLinkedBlockingQueue
+          queueCapacity: 2000
+          rejectedHandlerType: CallerRunsPolicy
+          threadNamePrefix: oper-log-async
+          allowCoreThreadTimeOut: false
+          waitForTasksToCompleteOnShutdown: true
+          awaitTerminationSeconds: 30
+
+# dynamic-tp 监控端点暴露（Nacos 部署时请在对应 silverwing-*.yml 的
+# management.endpoints.web.exposure.include 中一并加入 dynamictp）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,dynamictp
+
 
 

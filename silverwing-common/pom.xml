@@ -157,6 +157,11 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- Dynamic-TP 动态线程池（Spring Cloud Alibaba + Nacos 配置中心集成） -->
+        <dependency>
+            <groupId>org.dromara.dynamictp</groupId>
+            <artifactId>dynamic-tp-spring-cloud-starter-nacos</artifactId>
+        </dependency>
 
         <!-- Test -->
         <dependency>

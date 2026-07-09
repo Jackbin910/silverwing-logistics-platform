@@ -1,5 +1,6 @@
 package com.silverwing.auth;
 
+import org.dromara.dynamictp.spring.annotation.EnableDynamicTp;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -11,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @SpringBootApplication
 @EnableDiscoveryClient
+@EnableDynamicTp
 @MapperScan("com.silverwing.biz.iam.infrastructure.dao")
 @ComponentScan(basePackages = {"com.silverwing.auth", "com.silverwing.common", "com.silverwing.biz.iam"})
 public class SilverwingAuthApplication {

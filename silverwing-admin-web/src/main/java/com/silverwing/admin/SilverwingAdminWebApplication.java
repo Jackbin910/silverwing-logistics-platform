@@ -1,5 +1,6 @@
 package com.silverwing.admin;
 
+import org.dromara.dynamictp.spring.annotation.EnableDynamicTp;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -13,6 +14,7 @@ import org.mybatis.spring.annotation.MapperScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
+@EnableDynamicTp
 @MapperScan("com.silverwing.biz.iam.infrastructure.dao")
 @ComponentScan(basePackages = {"com.silverwing.admin", "com.silverwing.common", "com.silverwing.biz.iam"})
 public class SilverwingAdminWebApplication {

@@ -9,9 +9,9 @@ import java.lang.annotation.Target;
 /**
  * 操作日志注解
  * <p>
- * 标记在 Controller（HTTP 入口）方法上，由 {@code OperLogAspect} 自动采集：
+ * 标记在 Controller（HTTP 入口）方法上，由各业务模块的 {@code OperLogAspect} 自动采集：
  * 方法耗时、入参、返回结果、异常信息以及请求上下文（URL / IP / 请求方式 / 操作人员），
- * 并交由各微服务自行注册的 {@code OperLogRecorder} 持久化到本服务数据库。
+ * 并直接组装为本模块的 sys_oper_log PO 异步批量落库到本服务数据库。
  * </p>
  */
 @Target(ElementType.METHOD)

@@ -38,6 +38,8 @@
         <commons-pool2.version>2.13.0</commons-pool2.version>
         <!-- MapStruct（对象转换，编译期生成实现） -->
         <mapstruct.version>1.6.3</mapstruct.version>
+        <!-- Dynamic-TP 动态线程池（Spring Boot 3.x 用 -x 后缀版本） -->
+        <dynamic-tp.version>1.2.2-x</dynamic-tp.version>
     </properties>
 
     <modules>
@@ -215,6 +217,15 @@
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-processor</artifactId>
                 <version>${mapstruct.version}</version>
+            </dependency>
+
+            <!-- Dynamic-TP 动态线程池 BOM（Spring Boot 3.x） -->
+            <dependency>
+                <groupId>org.dromara.dynamictp</groupId>
+                    <artifactId>dynamic-tp-dependencies</artifactId>
+                <version>${dynamic-tp.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
         </dependencies>
