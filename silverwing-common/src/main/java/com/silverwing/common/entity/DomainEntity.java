@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
  * 领域基类（纯领域对象，不含任何持久化注解）
  * <p>
  * 抽取领域实体/聚合根共有的审计字段，与基础设施层的 {@link BaseEntity}（带 MyBatis-Plus 注解）
- * 区分，避免领域层泄露持久化细节。对应 kaleido 的 base.model.entity.BaseEntity 设计。
  * </p>
  */
 @Data

@@ -10,7 +10,6 @@ import java.util.List;
  * 用户仓储接口（领域契约/端口）
  * <p>
  * 定义用户聚合根的数据访问契约，具体实现在 infrastructure/adapter/repository。
- * 对齐 kaleido 的 domain/adapter/repository 端口位置（依赖倒置）。
  * </p>
  */
 public interface UserRepository {

@@ -11,7 +11,6 @@ import java.util.List;
  * 认证应用层转换器
  * <p>
  * 负责将 biz-iam 领域对象（SysUserAggregate）与角色/权限编码聚合转换为应用层 DTO，
- * 隔离领域模型与对外传输模型，对齐 kaleido 的 application/convertor 分层（MapStruct + Spring 注入）。
  * 用户为 null 时（降级场景）各用户字段自然为 null，仅填充角色与权限编码，与原有降级行为一致。
  * </p>
  */

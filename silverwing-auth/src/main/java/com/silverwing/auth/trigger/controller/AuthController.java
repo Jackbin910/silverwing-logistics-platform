@@ -21,7 +21,6 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 认证接口（薄控制器，仅做 HTTP 转换与路由，不含业务编排）
  * <p>
- * 对齐 kaleido 的 trigger/controller 分层：控制器只负责协议转换，
  * 命令类用例委托给 application/command，查询类用例委托给 application/query。
  * </p>
  */

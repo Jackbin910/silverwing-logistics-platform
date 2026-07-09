@@ -13,7 +13,6 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 /**
  * 用户应用层转换器
  * <p>
- * 负责命令对象到领域实体（SysUserAggregate）的映射，隔离应用层与领域模型，对齐 kaleido 的
  * application/convertor 分层（MapStruct + Spring 注入）。
  * 密码加密（changePassword）与默认启用（enable）属于领域行为，
  * 交由 {@code @AfterMapping} 在映射完成后调用，避免泄露到转换层。
