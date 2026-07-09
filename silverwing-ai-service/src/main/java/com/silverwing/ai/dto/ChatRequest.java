@@ -17,6 +17,6 @@ public class ChatRequest {
     /**
      * 用户输入的自然语言内容
      */
-    @NotBlank(message = "消息内容不能为空")
+    @NotBlank(message = "{validation.chat.message.notblank}")
     private String message;
 }

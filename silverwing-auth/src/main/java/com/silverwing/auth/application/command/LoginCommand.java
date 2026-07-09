@@ -9,9 +9,9 @@ import lombok.Data;
 @Data
 public class LoginCommand {
 
-    @NotBlank(message = "用户名不能为空")
+    @NotBlank(message = "{validation.login.username.notblank}")
     private String username;
 
-    @NotBlank(message = "密码不能为空")
+    @NotBlank(message = "{validation.login.password.notblank}")
     private String password;
 }

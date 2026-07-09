@@ -15,19 +15,19 @@ public class PathPlanRequest {
     /**
      * 起始位置
      */
-    @NotNull(message = "起始位置不能为空")
+    @NotNull(message = "{validation.pathplan.startlocation.notnull}")
     private Location startLocation;
     
     /**
      * 目标位置列表
      */
-    @NotEmpty(message = "目标位置不能为空")
+    @NotEmpty(message = "{validation.pathplan.targetlocations.notempty}")
     private List<Location> targetLocations;
     
     /**
      * 物品信息
      */
-    @NotNull(message = "物品信息不能为空")
+    @NotNull(message = "{validation.pathplan.items.notnull}")
     private List<ItemInfo> items;
     
     /**

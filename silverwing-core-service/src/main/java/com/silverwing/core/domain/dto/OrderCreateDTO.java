@@ -15,37 +15,37 @@ public class OrderCreateDTO {
     /**
      * 订单类型：手术物资、批量物资、药品、样本
      */
-    @NotBlank(message = "订单类型不能为空")
+    @NotBlank(message = "{validation.order.ordertype.notblank}")
     private String orderType;
     
     /**
      * 部门/科室
      */
-    @NotBlank(message = "部门不能为空")
+    @NotBlank(message = "{validation.order.department.notblank}")
     private String department;
     
     /**
      * 目标位置（如：手术室1号）
      */
-    @NotBlank(message = "目标位置不能为空")
+    @NotBlank(message = "{validation.order.targetlocation.notblank}")
     private String targetLocation;
     
     /**
      * 联系人
      */
-    @NotBlank(message = "联系人不能为空")
+    @NotBlank(message = "{validation.order.contactname.notblank}")
     private String contactName;
     
     /**
      * 联系电话
      */
-    @NotBlank(message = "联系电话不能为空")
+    @NotBlank(message = "{validation.order.contactphone.notblank}")
     private String contactPhone;
     
     /**
      * 物品列表
      */
-    @NotNull(message = "物品列表不能为空")
+    @NotNull(message = "{validation.order.items.notnull}")
     private List<OrderItemDTO> items;
     
     /**
@@ -67,13 +67,13 @@ public class OrderCreateDTO {
         /**
          * 物品编码
          */
-        @NotBlank(message = "物品编码不能为空")
+        @NotBlank(message = "{validation.order.item.itemcode.notblank}")
         private String itemCode;
         
         /**
          * 物品名称
          */
-        @NotBlank(message = "物品名称不能为空")
+        @NotBlank(message = "{validation.order.item.itemname.notblank}")
         private String itemName;
         
         /**
@@ -84,7 +84,7 @@ public class OrderCreateDTO {
         /**
          * 数量
          */
-        @NotNull(message = "数量不能为空")
+        @NotNull(message = "{validation.order.item.quantity.notnull}")
         private Integer quantity;
         
         /**

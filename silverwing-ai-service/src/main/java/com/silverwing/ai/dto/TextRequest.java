@@ -12,6 +12,6 @@ public class TextRequest {
     /**
      * 待处理的文本内容
      */
-    @NotBlank(message = "文本内容不能为空")
+    @NotBlank(message = "{validation.text.text.notblank}")
     private String text;
 }

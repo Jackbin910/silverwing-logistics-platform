@@ -6,5 +6,3 @@ spring:
     active: @spring.profiles.active@
   application:
     name: silverwing-admin-web
-
-

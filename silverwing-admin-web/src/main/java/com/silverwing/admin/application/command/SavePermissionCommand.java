@@ -9,10 +9,10 @@ import lombok.Data;
 @Data
 public class SavePermissionCommand {
 
-    @NotBlank(message = "权限标识不能为空")
+    @NotBlank(message = "{validation.permission.permissioncode.notblank}")
     private String permissionCode;
 
-    @NotBlank(message = "权限名称不能为空")
+    @NotBlank(message = "{validation.permission.permissionname.notblank}")
     private String permissionName;
 
     private String resourceType;

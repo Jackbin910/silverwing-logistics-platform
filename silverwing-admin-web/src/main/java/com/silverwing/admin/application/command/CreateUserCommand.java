@@ -10,12 +10,12 @@ import lombok.Data;
 @Data
 public class CreateUserCommand {
 
-    @NotBlank(message = "用户名不能为空")
-    @Size(min = 3, max = 30, message = "用户名长度需在3-30之间")
+    @NotBlank(message = "{validation.user.username.notblank}")
+    @Size(min = 3, max = 30, message = "{validation.user.username.size}")
     private String username;
 
-    @NotBlank(message = "密码不能为空")
-    @Size(min = 6, max = 50, message = "密码长度需在6-50之间")
+    @NotBlank(message = "{validation.user.password.notblank}")
+    @Size(min = 6, max = 50, message = "{validation.user.password.size}")
     private String password;
 
     private Integer sex;

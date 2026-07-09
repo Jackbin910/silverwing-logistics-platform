@@ -9,10 +9,10 @@ import lombok.Data;
 @Data
 public class SaveRoleCommand {
 
-    @NotBlank(message = "角色编码不能为空")
+    @NotBlank(message = "{validation.role.rolecode.notblank}")
     private String roleCode;
 
-    @NotBlank(message = "角色名称不能为空")
+    @NotBlank(message = "{validation.role.rolename.notblank}")
     private String roleName;
 
     private Integer status;
