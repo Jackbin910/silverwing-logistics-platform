@@ -2,6 +2,7 @@ package com.silverwing.admin.application.convertor;
 
 import com.silverwing.admin.application.command.CreateUserCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
+import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.biz.iam.domain.model.aggregate.SysUserAggregate;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -59,4 +60,9 @@ public interface UserConvertor {
             }
         }
     }
+
+    /**
+     * 将用户聚合根转换为对外响应DTO（不含密码与盐值）
+     */
+    UserResponse toResponse(SysUserAggregate user);
 }

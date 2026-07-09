@@ -1,6 +1,7 @@
 package com.silverwing.admin.application.convertor;
 
 import com.silverwing.admin.application.command.SavePermissionCommand;
+import com.silverwing.admin.application.dto.PermissionResponse;
 import com.silverwing.biz.iam.domain.model.aggregate.SysPermissionAggregate;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -51,4 +52,9 @@ public interface PermissionConvertor {
         entity.setVisible(cmd.getVisible());
         entity.setIsRefresh(cmd.getIsRefresh());
     }
+
+    /**
+     * 将权限聚合根转换为对外响应DTO（屏蔽领域聚合根，仅暴露展示字段）
+     */
+    PermissionResponse toResponse(SysPermissionAggregate permission);
 }

@@ -1,6 +1,7 @@
 package com.silverwing.admin.application.convertor;
 
 import com.silverwing.admin.application.command.SaveRoleCommand;
+import com.silverwing.admin.application.dto.RoleResponse;
 import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
 import org.mapstruct.AfterMapping;
 import org.mapstruct.Mapper;
@@ -36,4 +37,9 @@ public interface RoleConvertor {
             role.enable();
         }
     }
+
+    /**
+     * 将角色聚合根转换为对外响应DTO（屏蔽领域聚合根，仅暴露展示字段）
+     */
+    RoleResponse toResponse(SysRoleAggregate role);
 }

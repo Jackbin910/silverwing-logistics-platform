@@ -4,8 +4,8 @@ import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.silverwing.admin.application.command.CreateUserCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
 import com.silverwing.admin.application.command.UserCommandService;
+import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.application.query.UserQueryService;
-import com.silverwing.biz.iam.domain.model.aggregate.SysUserAggregate;
 import com.silverwing.biz.iam.domain.model.query.UserQuery;
 import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.Result;
@@ -20,7 +20,8 @@ import java.util.List;
 
 /**
  * 用户管理接口（薄控制器，仅做 HTTP 转换与路由）
- * <p>命令类用例委托 application/command，查询类用例委托 application/query。</p>
+ * <p>命令类用例委托 application/command，查询类用例委托 application/query；读侧返回
+ * 经由 UserConvertor 映射的 {@link UserResponse}，不再直接暴露领域聚合根。</p>
  */
 @Slf4j
 @RestController
@@ -35,21 +36,21 @@ public class UserController {
     @SaCheckPermission("system:user:list")
     @Operation(summary = "分页查询用户列表")
     @GetMapping("/list")
-    public Result<PageResult<SysUserAggregate>> list(UserQuery query) {
+    public Result<PageResult<UserResponse>> list(UserQuery query) {
         return Result.success(userQueryService.list(query));
     }
 
     @SaCheckPermission("system:user:query")
     @Operation(summary = "根据ID查询用户")
     @GetMapping("/{id}")
-    public Result<SysUserAggregate> getById(@PathVariable Long id) {
+    public Result<UserResponse> getById(@PathVariable Long id) {
         return Result.success(userQueryService.getById(id));
     }
 
     @SaCheckPermission("system:user:add")
     @Operation(summary = "新建用户")
     @PostMapping
-    public Result<SysUserAggregate> create(@Valid @RequestBody CreateUserCommand command) {
+    public Result<UserResponse> create(@Valid @RequestBody CreateUserCommand command) {
         return Result.success(userCommandService.create(command));
     }
 

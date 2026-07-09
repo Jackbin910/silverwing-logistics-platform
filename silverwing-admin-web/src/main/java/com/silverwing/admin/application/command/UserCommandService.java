@@ -1,6 +1,7 @@
 package com.silverwing.admin.application.command;
 
 import com.silverwing.admin.application.convertor.UserConvertor;
+import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.biz.iam.domain.adapter.repository.UserRepository;
 import com.silverwing.biz.iam.domain.model.aggregate.SysUserAggregate;
 import com.silverwing.biz.iam.domain.service.IUserDomainService;
@@ -30,13 +31,12 @@ public class UserCommandService {
     private final IUserDomainService userDomainService;
 
     @Transactional
-    public SysUserAggregate create(CreateUserCommand command) {
+    public UserResponse create(CreateUserCommand command) {
         SysUserAggregate user = userConvertor.toEntity(command);
         // 领域服务负责用户名唯一性校验与持久化
         user = userDomainService.registerUser(user);
         log.info("新建用户成功 username={}, id={}", user.getUsername(), user.getId());
-        user.clearPassword();
-        return user;
+        return userConvertor.toResponse(user);
     }
 
     @Transactional

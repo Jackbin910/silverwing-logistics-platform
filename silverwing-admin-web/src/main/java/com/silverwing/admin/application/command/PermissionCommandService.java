@@ -3,6 +3,7 @@ package com.silverwing.admin.application.command;
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.silverwing.admin.application.convertor.PermissionConvertor;
+import com.silverwing.admin.application.dto.PermissionResponse;
 import com.silverwing.biz.iam.domain.adapter.repository.PermissionRepository;
 import com.silverwing.biz.iam.domain.adapter.repository.RoleRepository;
 import com.silverwing.biz.iam.domain.model.aggregate.SysPermissionAggregate;
@@ -37,7 +38,7 @@ public class PermissionCommandService {
     private final IPermissionDomainService permissionDomainService;
 
     @Transactional
-    public SysPermissionAggregate create(SavePermissionCommand command) {
+    public PermissionResponse create(SavePermissionCommand command) {
         SysPermissionAggregate permission = new SysPermissionAggregate();
         permissionConvertor.applyCommandToEntity(permission, command);
         permission.enable();
@@ -46,7 +47,7 @@ public class PermissionCommandService {
         permission = permissionDomainService.save(permission);
         log.info("新建权限成功 permissionCode={}, id={}",
                 command.getPermissionCode(), permission.getId());
-        return permission;
+        return permissionConvertor.toResponse(permission);
     }
 
     @Transactional

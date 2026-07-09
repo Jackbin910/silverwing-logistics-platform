@@ -2,21 +2,21 @@ package com.silverwing.auth.application.convertor;
 
 import com.silverwing.auth.application.dto.AuthUserInfo;
 import com.silverwing.biz.iam.domain.model.aggregate.SysUserAggregate;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
 import java.util.List;
 
 /**
  * 认证应用层转换器
  * <p>
- * 负责将 biz-iam 领域对象（SysUserAggregate）与角色/权限编码聚合并转换为应用层 DTO，
- * 隔离领域模型与对外传输模型，对齐 kaleido 的 application/convertor 分层。
+ * 负责将 biz-iam 领域对象（SysUserAggregate）与角色/权限编码聚合转换为应用层 DTO，
+ * 隔离领域模型与对外传输模型，对齐 kaleido 的 application/convertor 分层（MapStruct + Spring 注入）。
+ * 用户为 null 时（降级场景）各用户字段自然为 null，仅填充角色与权限编码，与原有降级行为一致。
  * </p>
  */
-@Component
-@RequiredArgsConstructor
-public class AuthConvertor {
+@Mapper(componentModel = "spring")
+public interface AuthConvertor {
 
     /**
      * 将领域用户与角色/权限编码转换为对外用户信息 DTO
@@ -26,24 +26,12 @@ public class AuthConvertor {
      * @param permissions 权限编码列表
      * @return 用户信息 DTO
      */
-    public AuthUserInfo toAuthUserInfo(SysUserAggregate user, List<String> roleCodes,
-            List<String> permissions) {
-        if (user == null) {
-            // 降级：返回基础信息
-            return AuthUserInfo.builder()
-                    .roles(roleCodes)
-                    .permissions(permissions)
-                    .build();
-        }
-
-        return AuthUserInfo.builder()
-                .id(user.getId())
-                .username(user.getUsername())
-                .avatar(user.getAvatar())
-                .email(user.getEmail())
-                .phone(user.getPhone())
-                .roles(roleCodes)
-                .permissions(permissions)
-                .build();
-    }
+    @Mapping(target = "id", source = "user.id")
+    @Mapping(target = "username", source = "user.username")
+    @Mapping(target = "avatar", source = "user.avatar")
+    @Mapping(target = "email", source = "user.email")
+    @Mapping(target = "phone", source = "user.phone")
+    @Mapping(target = "roles", source = "roleCodes")
+    AuthUserInfo toAuthUserInfo(SysUserAggregate user, List<String> roleCodes,
+            List<String> permissions);
 }

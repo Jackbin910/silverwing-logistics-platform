@@ -3,8 +3,8 @@ package com.silverwing.admin.trigger.controller;
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.silverwing.admin.application.command.PermissionCommandService;
 import com.silverwing.admin.application.command.SavePermissionCommand;
+import com.silverwing.admin.application.dto.PermissionResponse;
 import com.silverwing.admin.application.query.PermissionQueryService;
-import com.silverwing.biz.iam.domain.model.aggregate.SysPermissionAggregate;
 import com.silverwing.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +17,7 @@ import java.util.List;
 
 /**
  * 权限管理接口（薄控制器，仅做 HTTP 转换与路由）
+ * <p>读侧返回经由 PermissionConvertor 映射的 {@link PermissionResponse}，不再直接暴露领域聚合根。</p>
  */
 @Slf4j
 @RestController
@@ -31,21 +32,21 @@ public class PermissionController {
     @SaCheckPermission("system:permission:list")
     @Operation(summary = "查询全部权限列表")
     @GetMapping("/list")
-    public Result<List<SysPermissionAggregate>> list() {
+    public Result<List<PermissionResponse>> list() {
         return Result.success(permissionQueryService.listAll());
     }
 
     @SaCheckPermission("system:permission:query")
     @Operation(summary = "根据ID查询权限")
     @GetMapping("/{id}")
-    public Result<SysPermissionAggregate> getById(@PathVariable Long id) {
+    public Result<PermissionResponse> getById(@PathVariable Long id) {
         return Result.success(permissionQueryService.getById(id));
     }
 
     @SaCheckPermission("system:permission:add")
     @Operation(summary = "新建权限")
     @PostMapping
-    public Result<SysPermissionAggregate> create(@Valid @RequestBody SavePermissionCommand command) {
+    public Result<PermissionResponse> create(@Valid @RequestBody SavePermissionCommand command) {
         return Result.success(permissionCommandService.create(command));
     }
 

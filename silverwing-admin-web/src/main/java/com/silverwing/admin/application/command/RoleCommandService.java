@@ -1,6 +1,7 @@
 package com.silverwing.admin.application.command;
 
 import com.silverwing.admin.application.convertor.RoleConvertor;
+import com.silverwing.admin.application.dto.RoleResponse;
 import com.silverwing.biz.iam.domain.adapter.repository.RoleRepository;
 import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
 import com.silverwing.biz.iam.domain.service.IRoleDomainService;
@@ -26,12 +27,12 @@ public class RoleCommandService {
     private final IRoleDomainService roleDomainService;
 
     @Transactional
-    public SysRoleAggregate create(SaveRoleCommand command) {
+    public RoleResponse create(SaveRoleCommand command) {
         SysRoleAggregate role = roleConvertor.toEntity(command);
         // 领域服务负责角色编码唯一性校验与持久化
         role = roleDomainService.registerRole(role);
         log.info("新建角色成功 roleCode={}, id={}", role.getRoleCode(), role.getId());
-        return role;
+        return roleConvertor.toResponse(role);
     }
 
     @Transactional
