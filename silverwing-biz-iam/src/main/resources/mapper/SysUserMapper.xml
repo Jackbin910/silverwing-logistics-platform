@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.silverwing.biz.iam.infrastructure.mapper.SysUserMapper">
+<mapper namespace="com.silverwing.biz.iam.infrastructure.dao.SysUserDao">
 
-    <resultMap id="SysUserResultMap" type="com.silverwing.biz.iam.domain.model.SysUser">
+    <resultMap id="SysUserResultMap" type="com.silverwing.biz.iam.infrastructure.dao.po.SysUserPO">
         <id property="id" column="id"/>
         <result property="username" column="username"/>
         <result property="email" column="email"/>

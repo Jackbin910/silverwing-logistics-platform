@@ -11,7 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
  */
 @SpringBootApplication
 @EnableDiscoveryClient
-@MapperScan("com.silverwing.biz.iam.infrastructure.mapper")
+@MapperScan("com.silverwing.biz.iam.infrastructure.dao")
 @ComponentScan(basePackages = {"com.silverwing.auth", "com.silverwing.common", "com.silverwing.biz.iam"})
 public class SilverwingAuthApplication {
     

@@ -36,6 +36,8 @@
         <jetcache.version>2.7.8</jetcache.version>
         <postgresql.version>42.7.7</postgresql.version>
         <commons-pool2.version>2.13.0</commons-pool2.version>
+        <!-- MapStruct（对象转换，编译期生成实现） -->
+        <mapstruct.version>1.6.3</mapstruct.version>
     </properties>
 
     <modules>
@@ -201,6 +203,18 @@
                 <groupId>com.alicp.jetcache</groupId>
                 <artifactId>jetcache-starter-redis</artifactId>
                 <version>${jetcache.version}</version>
+            </dependency>
+
+            <!-- MapStruct（对象转换，编译期生成实现） -->
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct</artifactId>
+                <version>${mapstruct.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <version>${mapstruct.version}</version>
             </dependency>
 
         </dependencies>

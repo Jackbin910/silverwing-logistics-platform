@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.silverwing.biz.iam.infrastructure.mapper.SysUserRoleMapper">
+<mapper namespace="com.silverwing.biz.iam.infrastructure.dao.SysUserRoleDao">
 
     <!-- 角色结果映射，JOIN 查询需显式限定各列，避免 id/deleted 等列歧义 -->
-    <resultMap id="SysRoleResultMap" type="com.silverwing.biz.iam.domain.model.SysRole">
+    <resultMap id="SysRoleResultMap" type="com.silverwing.biz.iam.infrastructure.dao.po.SysRolePO">
         <id property="id" column="id"/>
         <result property="roleCode" column="role_code"/>
         <result property="roleName" column="role_name"/>

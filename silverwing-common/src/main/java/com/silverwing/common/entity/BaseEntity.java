@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
  * &#64;Data
  * &#64;EqualsAndHashCode(callSuper = true)
  * &#64;TableName("sys_user")
- * public class SysUser extends BaseEntity {
+ * public class SysUserAggregate extends BaseEntity {
  *     private String username;
  *     // ... 其他业务字段
  * }

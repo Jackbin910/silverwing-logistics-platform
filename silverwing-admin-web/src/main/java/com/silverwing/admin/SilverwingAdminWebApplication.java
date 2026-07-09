@@ -13,7 +13,7 @@ import org.mybatis.spring.annotation.MapperScan;
 @SpringBootApplication
 @EnableDiscoveryClient
 @EnableFeignClients
-@MapperScan("com.silverwing.biz.iam.infrastructure.mapper")
+@MapperScan("com.silverwing.biz.iam.infrastructure.dao")
 @ComponentScan(basePackages = {"com.silverwing.admin", "com.silverwing.common", "com.silverwing.biz.iam"})
 public class SilverwingAdminWebApplication {
     
