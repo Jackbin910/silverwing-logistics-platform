@@ -8,11 +8,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import dev.langchain4j.store.embedding.EmbeddingStore;
 
 import java.util.Map;
 
@@ -24,7 +21,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/knowledge")
 @RequiredArgsConstructor
-@ConditionalOnBean(EmbeddingStore.class)
 public class KnowledgeController {
 
     private final KnowledgeIngestService ingestService;
