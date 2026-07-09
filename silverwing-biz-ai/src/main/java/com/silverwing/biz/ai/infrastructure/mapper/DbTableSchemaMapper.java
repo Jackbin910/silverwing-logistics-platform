@@ -1,7 +1,7 @@
 package com.silverwing.biz.ai.infrastructure.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.silverwing.biz.ai.domain.entity.DbTableSchema;
+import com.silverwing.biz.ai.infrastructure.dao.po.DbTableSchemaPO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -12,7 +12,7 @@ import java.util.List;
  * 数据库表结构Mapper
  */
 @Mapper
-public interface DbTableSchemaMapper extends BaseMapper<DbTableSchema> {
+public interface DbTableSchemaMapper extends BaseMapper<DbTableSchemaPO> {
 
     /**
      * 获取指定数据库的所有表结构信息
@@ -22,7 +22,7 @@ public interface DbTableSchemaMapper extends BaseMapper<DbTableSchema> {
      */
     @Select("SELECT table_name, table_comment FROM information_schema.tables " +
             "WHERE table_schema = #{databaseName}")
-    List<DbTableSchema> getTables(@Param("databaseName") String databaseName);
+    List<DbTableSchemaPO> getTables(@Param("databaseName") String databaseName);
 
     /**
      * 获取指定表的列信息
@@ -42,6 +42,6 @@ public interface DbTableSchemaMapper extends BaseMapper<DbTableSchema> {
             "WHERE c.table_schema = #{databaseName} " +
             "  AND c.table_name = #{tableName} " +
             "ORDER BY c.ordinal_position")
-    List<DbTableSchema> getTableColumns(@Param("databaseName") String databaseName,
+    List<DbTableSchemaPO> getTableColumns(@Param("databaseName") String databaseName,
                                           @Param("tableName") String tableName);
 }
