@@ -1,6 +1,7 @@
 package com.silverwing.biz.iam.infrastructure.aspect;
 
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.alibaba.fastjson2.JSON;
 import com.silverwing.biz.iam.infrastructure.dao.SysOperLogMapper;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysOperLogPO;
@@ -39,7 +40,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @Aspect
 @Component
-@Order(Ordered.LOWEST_PRECEDENCE)
+@Order
 @RequiredArgsConstructor
 public class OperLogAspect {
 
@@ -77,12 +78,12 @@ public class OperLogAspect {
 
             Object result = joinPoint.proceed();
             if (logAnno.saveResult()) {
-                po.setJsonResult(truncate(JSON.toJSONString(result)));
+                po.setJsonResult(CharSequenceUtil.sub(JSON.toJSONString(result),0, 2000));
             }
             return result;
         } catch (Throwable throwable) {
             po.setStatus(1);
-            po.setErrorMsg(truncate(throwable.getMessage()));
+            po.setErrorMsg(CharSequenceUtil.sub(throwable.getMessage(), 0, 2000));
             throw throwable;
         } finally {
             po.setCostTime(System.currentTimeMillis() - startTime);
@@ -123,15 +124,12 @@ public class OperLogAspect {
         try {
             ServletRequestAttributes attributes =
                     (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return;
-            }
             HttpServletRequest request = attributes.getRequest();
             po.setRequestMethod(request.getMethod());
             po.setOperUrl(request.getRequestURI());
             po.setOperIp(getClientIp(request));
             if (saveResult) {
-                po.setOperParam(truncate(JSON.toJSONString(args)));
+                po.setOperParam(CharSequenceUtil.sub(JSON.toJSONString(args), 0, 2000));
             }
             fillOperator(po);
         } catch (Exception e) {
@@ -180,16 +178,4 @@ public class OperLogAspect {
         return ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip);
     }
 
-    /**
-     * 超出字段长度时截断，避免入库失败
-     *
-     * @param str 原始字符串
-     * @return 截断后的字符串
-     */
-    private String truncate(String str) {
-        if (str == null) {
-            return "";
-        }
-        return str.length() > MAX_LENGTH ? str.substring(0, MAX_LENGTH) : str;
-    }
 }
