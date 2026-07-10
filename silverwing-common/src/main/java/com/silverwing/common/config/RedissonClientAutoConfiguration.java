@@ -20,6 +20,10 @@ import org.springframework.util.StringUtils;
  * 并内置一套适合分布式锁场景的连接池与看门狗参数。
  * 后续业务可直接注入 {@code RedissonClient} 使用 {@code getLock()}/{@code getFairLock()} 等分布式锁。
  * <p>
+ * 地址规则（Redisson 3.52 强制要求）：{@code setAddress()} 必须传入带协议头的 URI，
+ * 明文为 {@code redis://host:port}，SSL 为 {@code rediss://host:port}；若不带协议头会解析失败。
+ * 若 {@code spring.data.redis.url} 已配置（其本身即含协议头/认证/库号），则直接复用该地址。
+ * <p>
  * 本配置类由各服务组件扫描加载（与 {@code RedisAutoConfiguration} 一致的加载方式）。
  * 由于 redisson-spring-boot-starter 自带自动配置声明了
  * {@code @ConditionalOnMissingBean(RedissonClient.class)}，本 Bean 会优先生效，避免重复创建。
@@ -73,22 +77,28 @@ public class RedissonClientAutoConfiguration {
         Config config = new Config();
         RedissonProperties props = redissonProperties;
 
-        String address = "redis://" + redisProperties.getHost() + ':' + redisProperties.getPort();
+        // 地址必须带协议头：redis:// 明文，rediss:// SSL
+        // 若配置了 spring.data.redis.url（已含协议头/认证/库号），则直接复用
+        String address;
+        if (StringUtils.hasText(redisProperties.getUrl())) {
+            address = redisProperties.getUrl();
+        } else {
+            String scheme = props.isSsl() ? "rediss://" : "redis://";
+            address = scheme + redisProperties.getHost() + ':' + redisProperties.getPort();
+        }
 
         // 当前平台使用单机版 Redis（与 RedisAutoConfiguration 中
         // RedisStandaloneConfiguration 保持一致）
         SingleServerConfig single = config.useSingleServer()
                 .setAddress(address)
-                .setDatabase(redisProperties.getDatabase())
                 .setConnectionPoolSize(props.getConnectionPoolSize())
                 .setConnectionMinimumIdleSize(props.getConnectionMinimumIdleSize())
                 .setSubscriptionConnectionPoolSize(props.getSubscriptionConnectionPoolSize())
+                .setSubscriptionConnectionMinimumIdleSize(props.getSubscriptionConnectionMinimumIdleSize())
                 .setIdleConnectionTimeout(props.getIdleConnectionTimeout())
                 .setConnectTimeout(props.getConnectTimeout())
                 .setTimeout(props.getTimeout())
-                .setRetryAttempts(props.getRetryAttempts())
-                .setRetryInterval(props.getRetryInterval())
-                .setPingConnectionInterval(props.getPingConnectionInterval());
+                .setRetryAttempts(props.getRetryAttempts());
 
         if (StringUtils.hasText(redisProperties.getUsername())) {
             single.setUsername(redisProperties.getUsername());
@@ -96,9 +106,10 @@ public class RedissonClientAutoConfiguration {
         if (StringUtils.hasText(redisProperties.getPassword())) {
             single.setPassword(redisProperties.getPassword());
         }
-
-        // 看门狗锁续期：持有锁期间自动续期，避免业务未执行完锁提前过期
-        config.setLockWatchdogTimeout(props.getLockWatchdogTimeout());
+        // url 模式已内含库号时不再覆盖，避免覆盖 url 中的 database
+        if (!StringUtils.hasText(redisProperties.getUrl())) {
+            single.setDatabase(redisProperties.getDatabase());
+        }
         config.setThreads(props.getThreads());
         config.setNettyThreads(props.getNettyThreads());
 

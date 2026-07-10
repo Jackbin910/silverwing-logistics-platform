@@ -2,11 +2,12 @@ package com.silverwing.biz.ai.infrastructure.aspect;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.extra.servlet.JakartaServletUtil;
 import com.alibaba.fastjson2.JSON;
-import com.silverwing.common.constant.SaSessionConstants;
 import com.silverwing.biz.ai.infrastructure.dao.po.SysOperLogPO;
 import com.silverwing.biz.ai.infrastructure.mapper.SysOperLogMapper;
 import com.silverwing.common.annotation.Log;
+import com.silverwing.common.constant.SaSessionConstants;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +16,6 @@ import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
 import org.dromara.dynamictp.core.DtpRegistry;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -117,13 +117,10 @@ public class OperLogAspect {
         try {
             ServletRequestAttributes attributes =
                     (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            if (attributes == null) {
-                return;
-            }
             HttpServletRequest request = attributes.getRequest();
             po.setRequestMethod(request.getMethod());
             po.setOperUrl(request.getRequestURI());
-            po.setOperIp(getClientIp(request));
+            po.setOperIp(JakartaServletUtil.getClientIP(request));
             if (saveResult) {
                 po.setOperParam(truncate(JSON.toJSONString(args)));
             }
@@ -156,30 +153,6 @@ public class OperLogAspect {
         } catch (Exception e) {
             // 未登录或令牌不可用，操作人员留空
         }
-    }
-
-    /**
-     * 优先取 X-Forwarded-For / X-Real-IP，兜底取远程地址
-     *
-     * @param request HTTP 请求
-     * @return 客户端 IP
-     */
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (isInvalidIp(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (isInvalidIp(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip == null ? "" : ip;
-    }
-
-    private boolean isInvalidIp(String ip) {
-        return ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip);
     }
 
     /**
