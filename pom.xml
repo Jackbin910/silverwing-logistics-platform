@@ -27,7 +27,7 @@
         <sa-token.version>1.45.0</sa-token.version>
         <knife4j.version>4.5.0</knife4j.version>
         <easyexcel.version>3.3.4</easyexcel.version>
-        <hutool.version>5.8.29</hutool.version>
+        <hutool.version>5.8.46</hutool.version>
         <fastjson2.version>2.0.52</fastjson2.version>
 
         <langchain4j.version>1.17.1</langchain4j.version>

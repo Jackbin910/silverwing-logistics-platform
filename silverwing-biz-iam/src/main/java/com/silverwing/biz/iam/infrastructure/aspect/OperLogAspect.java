@@ -2,6 +2,8 @@ package com.silverwing.biz.iam.infrastructure.aspect;
 
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import cn.hutool.extra.servlet.JakartaServletUtil;
+import cn.hutool.extra.servlet.ServletUtil;
 import com.alibaba.fastjson2.JSON;
 import com.silverwing.biz.iam.infrastructure.dao.SysOperLogMapper;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysOperLogPO;
@@ -44,8 +46,6 @@ import java.util.concurrent.Executor;
 @RequiredArgsConstructor
 public class OperLogAspect {
 
-    /** 字段最大长度，与 sys_oper_log 表中 varchar(2000) 对齐 */
-    private static final int MAX_LENGTH = 2000;
 
     /** DynamicTP 线程池名称，须与 application.yml 中 spring.dynamic.tp.executors[].threadPoolName 一致 */
     private static final String DTP_EXECUTOR_NAME = "operLogExecutor";
@@ -126,7 +126,7 @@ public class OperLogAspect {
             HttpServletRequest request = attributes.getRequest();
             po.setRequestMethod(request.getMethod());
             po.setOperUrl(request.getRequestURI());
-            po.setOperIp(getClientIp(request));
+            po.setOperIp(JakartaServletUtil.getClientIP(request));
             if (saveResult) {
                 po.setOperParam(CharSequenceUtil.sub(JSON.toJSONString(args), 0, 2000));
             }
@@ -151,30 +151,6 @@ public class OperLogAspect {
         } catch (Exception e) {
             // 未登录或令牌不可用，操作人员留空
         }
-    }
-
-    /**
-     * 优先取 X-Forwarded-For / X-Real-IP，兜底取远程地址
-     *
-     * @param request HTTP 请求
-     * @return 客户端 IP
-     */
-    private String getClientIp(HttpServletRequest request) {
-        String ip = request.getHeader("X-Forwarded-For");
-        if (isInvalidIp(ip)) {
-            ip = request.getHeader("X-Real-IP");
-        }
-        if (isInvalidIp(ip)) {
-            ip = request.getRemoteAddr();
-        }
-        if (ip != null && ip.contains(",")) {
-            ip = ip.split(",")[0].trim();
-        }
-        return ip == null ? "" : ip;
-    }
-
-    private boolean isInvalidIp(String ip) {
-        return ip == null || ip.isEmpty() || "unknown".equalsIgnoreCase(ip);
     }
 
 }
