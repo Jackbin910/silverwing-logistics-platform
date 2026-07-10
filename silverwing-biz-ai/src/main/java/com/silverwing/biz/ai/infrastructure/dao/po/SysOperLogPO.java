@@ -9,17 +9,10 @@ import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
-/**
- * 操作日志持久化对象（PO）
- * <p>
- * 与 silverwing_ai 库的 sys_oper_log 表一一对应，仅承载数据。由
- * {@code OperLogAspect} 直接组装后通过 {@code SysOperLogMapper#insertBatch} 落库。
- * </p>
- */
+
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName(value = "sys_oper_log")
-public class SysOperLogPO extends BaseEntity {
+public class SysOperLogPO{
 
     @TableId(type = IdType.AUTO)
     private Long id;

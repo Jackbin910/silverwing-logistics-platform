@@ -100,13 +100,6 @@ public class OperLogAspect {
      * @param po 操作日志 PO
      */
     private void record(SysOperLogPO po) {
-        po.setCreateTime(LocalDateTime.now());
-        po.setUpdateTime(LocalDateTime.now());
-        po.setDeleted(0);
-        // 自定义批量插入绕过 MP 自动填充，createBy/updateBy 取已采集的操作人（operName）
-        po.setCreateBy(po.getOperName());
-        po.setUpdateBy(po.getOperName());
-
         Executor executor = DtpRegistry.getExecutor(DTP_EXECUTOR_NAME);
         CompletableFuture.runAsync(() -> {
             try {
@@ -137,8 +130,7 @@ public class OperLogAspect {
             }
             fillOperator(po);
         } catch (Exception e) {
-            // 非 Web 上下文或序列化失败时忽略，保证主流程不受影响
-            log.debug("采集操作日志请求上下文失败", e);
+            log.error("采集操作日志请求上下文失败", e);
         }
     }
 

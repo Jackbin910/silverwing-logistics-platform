@@ -38,7 +38,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @Aspect
 @Component
-@Order(Ordered.LOWEST_PRECEDENCE)
+@Order
 @RequiredArgsConstructor
 public class OperLogAspect {
 
@@ -96,14 +96,6 @@ public class OperLogAspect {
      * @param po 操作日志 PO
      */
     private void record(SysOperLogPO po) {
-        // MyBatis-Plus 自动填充仅对 MP 自带 insert 生效，自定义批量插入需手动补齐审计字段；
-        // 其中 createBy/updateBy 取已采集的操作人（operName）
-        po.setCreateTime(LocalDateTime.now());
-        po.setUpdateTime(LocalDateTime.now());
-        po.setDeleted(0);
-        po.setCreateBy(po.getOperName());
-        po.setUpdateBy(po.getOperName());
-
         Executor executor = DtpRegistry.getExecutor(DTP_EXECUTOR_NAME);
         CompletableFuture.runAsync(() -> {
             try {

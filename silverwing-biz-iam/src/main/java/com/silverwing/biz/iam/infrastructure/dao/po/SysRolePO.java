@@ -12,7 +12,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName(value = "sys_role", autoResultMap = true)
+@TableName(value = "sys_role")
 public class SysRolePO extends BaseEntity {
 
     @TableId(type = IdType.AUTO)

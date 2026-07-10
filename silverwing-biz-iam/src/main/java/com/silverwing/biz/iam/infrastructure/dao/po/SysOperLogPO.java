@@ -17,9 +17,8 @@ import java.time.LocalDateTime;
  * </p>
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
 @TableName(value = "sys_oper_log")
-public class SysOperLogPO extends BaseEntity {
+public class SysOperLogPO {
 
     @TableId(type = IdType.AUTO)
     private Long id;

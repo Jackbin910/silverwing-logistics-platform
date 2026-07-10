@@ -23,22 +23,6 @@ import java.time.Duration;
 
 /**
  * Redis 自动配置类（公共配置）
- * <p>
- * 用于配置 RedisTemplate 序列化策略，所有微服务共享此配置。
- * 仅在 classpath 存在 Redis 相关类时加载，不使用 Redis 的服务不会触发。
- * </p>
- * <p>
- * 配置说明：
- * <ul>
- *   <li>强制使用 LettuceConnectionFactory 作为主连接工厂，避免第三方 RedisConnection
- *       实现与 Spring Data Redis 版本不兼容导致 pExpire 递归栈溢出</li>
- *   <li>启用 Lettuce 连接池，保持最小空闲连接，防止长时间无请求后冷启动超时</li>
- *   <li>Key 使用 StringRedisSerializer：保持 key 为可读字符串格式</li>
- *   <li>Value 使用 FastJson2RedisSerializer：基于 FastJSON2 的 JSON 序列化，性能更优</li>
- *   <li>Hash 结构同样采用上述策略</li>
- * </ul>
- * </p>
- *
  * @author silverwing
  */
 @AutoConfiguration
@@ -47,16 +31,6 @@ public class RedisAutoConfiguration {
 
     /**
      * 显式声明并优先使用 Lettuce 连接工厂（带连接池）。
-     * <p>
-     * 解决 Redisson 等第三方注入的 RedisConnectionFactory 与 Spring Data Redis 版本
-     * 不兼容导致 pExpire 递归栈溢出的问题。
-     * </p>
-     * <p>
-     * 连接池配置：min-idle=2 保持最少 2 个空闲连接，避免长时间无请求后
-     * Redis 连接被断开导致首次请求超时。
-     * </p>
-     *
-     * @param redisProperties Spring Redis 配置属性
      * @return Redis 连接工厂
      */
     @Bean
