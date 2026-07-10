@@ -72,7 +72,7 @@ public class KnowledgeController {
     @Log(title = "知识库-删除文档", businessType = 3)
     @Operation(summary = "删除文档", description = "根据文档 ID 删除知识库中该文档的所有分片")
     @DeleteMapping("/delete/{documentId}")
-    public Result<String> deleteByDocumentId(@PathVariable String documentId) {
+    public Result<String> deleteByDocumentId(@PathVariable("documentId") String documentId) {
         ingestService.deleteByDocumentId(documentId);
         return Result.success("已删除文档: " + documentId);
     }

@@ -46,7 +46,7 @@ public class VisualizationController {
      */
     @Operation(summary = "设备详细数据")
     @GetMapping("/device/detail/{deviceId}")
-    public Result<?> getDeviceDetail(@PathVariable String deviceId) {
+    public Result<?> getDeviceDetail(@PathVariable("deviceId") String deviceId) {
         return Result.success(visualizationService.getDeviceDetail(deviceId));
     }
     

@@ -56,7 +56,7 @@ public class AuthController {
     @SkipAuth
     @Operation(summary = "刷新用户权限缓存（内部调用）")
     @PostMapping("/permission/refresh/{userId}")
-    public Result<Void> refreshPermissionCache(@PathVariable Long userId) {
+    public Result<Void> refreshPermissionCache(@PathVariable("userId") Long userId) {
         authCommandService.refreshPermissionCache(userId);
         return Result.success("刷新成功");
     }

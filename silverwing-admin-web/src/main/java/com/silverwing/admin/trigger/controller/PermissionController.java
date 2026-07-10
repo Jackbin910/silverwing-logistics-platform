@@ -56,7 +56,7 @@ public class PermissionController {
     @SaCheckPermission("system:permission:edit")
     @Operation(summary = "更新权限")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody SavePermissionCommand command) {
+    public Result<Void> update(@PathVariable("id") Long id, @Valid @RequestBody SavePermissionCommand command) {
         permissionCommandService.update(id, command);
         return Result.success("更新成功");
     }
@@ -65,7 +65,7 @@ public class PermissionController {
     @SaCheckPermission("system:permission:delete")
     @Operation(summary = "删除权限")
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable("id") Long id) {
         permissionCommandService.delete(id);
         return Result.success("删除成功");
     }
@@ -73,7 +73,7 @@ public class PermissionController {
     @SaCheckPermission("system:permission:manage")
     @Operation(summary = "刷新用户权限缓存")
     @PostMapping("/refresh/{userId}")
-    public Result<Void> refreshUserCache(@PathVariable Long userId) {
+    public Result<Void> refreshUserCache(@PathVariable("userId") Long userId) {
         permissionCommandService.refreshUserPermissionCache(userId);
         return Result.success("刷新成功");
     }
