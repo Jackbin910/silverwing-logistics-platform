@@ -1,7 +1,9 @@
 package com.silverwing.biz.iam.infrastructure.aspect;
 
+import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.text.CharSequenceUtil;
+import com.silverwing.common.constant.SaSessionConstants;
 import cn.hutool.extra.servlet.JakartaServletUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import com.alibaba.fastjson2.JSON;
@@ -101,6 +103,9 @@ public class OperLogAspect {
         po.setCreateTime(LocalDateTime.now());
         po.setUpdateTime(LocalDateTime.now());
         po.setDeleted(0);
+        // 自定义批量插入绕过 MP 自动填充，createBy/updateBy 取已采集的操作人（operName）
+        po.setCreateBy(po.getOperName());
+        po.setUpdateBy(po.getOperName());
 
         Executor executor = DtpRegistry.getExecutor(DTP_EXECUTOR_NAME);
         CompletableFuture.runAsync(() -> {
@@ -144,6 +149,14 @@ public class OperLogAspect {
      */
     private void fillOperator(SysOperLogPO po) {
         try {
+            // 优先取登录时写入会话的用户名作为操作人
+            SaSession session = StpUtil.getSession();
+            String username = session.getString(SaSessionConstants.USERNAME);
+            if (username != null && !username.isBlank()) {
+                po.setOperName(username);
+                return;
+            }
+            // 兜底取 Sa-Token 登录标识（通常为 userId）
             Object loginId = StpUtil.getLoginIdDefaultNull();
             if (loginId != null) {
                 po.setOperName(String.valueOf(loginId));

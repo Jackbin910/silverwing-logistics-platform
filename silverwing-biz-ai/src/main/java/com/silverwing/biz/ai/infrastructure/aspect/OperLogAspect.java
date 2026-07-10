@@ -1,7 +1,9 @@
 package com.silverwing.biz.ai.infrastructure.aspect;
 
+import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSON;
+import com.silverwing.common.constant.SaSessionConstants;
 import com.silverwing.biz.ai.infrastructure.dao.po.SysOperLogPO;
 import com.silverwing.biz.ai.infrastructure.mapper.SysOperLogMapper;
 import com.silverwing.common.annotation.Log;
@@ -94,10 +96,13 @@ public class OperLogAspect {
      * @param po 操作日志 PO
      */
     private void record(SysOperLogPO po) {
-        // MyBatis-Plus 自动填充仅对 MP 自带 insert 生效，自定义批量插入需手动补齐审计字段
+        // MyBatis-Plus 自动填充仅对 MP 自带 insert 生效，自定义批量插入需手动补齐审计字段；
+        // 其中 createBy/updateBy 取已采集的操作人（operName）
         po.setCreateTime(LocalDateTime.now());
         po.setUpdateTime(LocalDateTime.now());
         po.setDeleted(0);
+        po.setCreateBy(po.getOperName());
+        po.setUpdateBy(po.getOperName());
 
         Executor executor = DtpRegistry.getExecutor(DTP_EXECUTOR_NAME);
         CompletableFuture.runAsync(() -> {
@@ -144,6 +149,14 @@ public class OperLogAspect {
      */
     private void fillOperator(SysOperLogPO po) {
         try {
+            // 优先取登录时写入会话的用户名作为操作人
+            SaSession session = StpUtil.getSession();
+            String username = session.getString(SaSessionConstants.USERNAME);
+            if (username != null && !username.isBlank()) {
+                po.setOperName(username);
+                return;
+            }
+            // 兜底取 Sa-Token 登录标识（通常为 userId）
             Object loginId = StpUtil.getLoginIdDefaultNull();
             if (loginId != null) {
                 po.setOperName(String.valueOf(loginId));

@@ -38,8 +38,16 @@ public class BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
+    /**
+     * 创建者（插入时自动填充为当前登录用户）
+     */
+    @TableField(fill = FieldFill.INSERT)
     private String createBy;
 
+    /**
+     * 更新者（插入与更新时自动填充为当前登录用户）
+     */
+    @TableField(fill = FieldFill.INSERT_UPDATE)
     private String updateBy;
 
     /**

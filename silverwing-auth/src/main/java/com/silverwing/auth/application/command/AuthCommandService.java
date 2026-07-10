@@ -72,6 +72,7 @@ public class AuthCommandService {
         SaSession session = StpUtil.getSession();
         session.set(SaSessionConstants.ROLE_LIST, roleCodes);
         session.set(SaSessionConstants.PERMISSION_LIST, permissions);
+        session.set(SaSessionConstants.USERNAME, user.getUsername());
 
         log.info("登录成功：username={}, userId={}, roles={}, 权限数={}",
                 user.getUsername(), user.getId(), roleCodes, permissions.size());

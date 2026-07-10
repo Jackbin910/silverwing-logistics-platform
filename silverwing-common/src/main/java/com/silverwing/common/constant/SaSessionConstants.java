@@ -19,6 +19,11 @@ public class SaSessionConstants {
      */
     public static final String PERMISSION_LIST = "permissionList";
 
+    /**
+     * Session 中存放登录用户名的键（供审计字段 createBy/updateBy、操作人等使用）
+     */
+    public static final String USERNAME = "username";
+
     private SaSessionConstants() {
     }
 

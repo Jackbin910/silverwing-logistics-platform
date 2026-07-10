@@ -1,6 +1,10 @@
 package com.silverwing.common.config;
 
+import cn.dev33.satoken.session.SaSession;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.core.text.CharSequenceUtil;
 import com.baomidou.mybatisplus.annotation.DbType;
+import com.silverwing.common.constant.SaSessionConstants;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
@@ -71,16 +75,44 @@ public class MybatisPlusAutoConfiguration {
         return new MetaObjectHandler() {
             @Override
             public void insertFill(MetaObject metaObject) {
-                // 插入时自动填充创建时间
-                this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
-                // 插入时自动填充更新时间
-                this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+                // 插入时自动填充创建时间、更新时间
+                LocalDateTime now = LocalDateTime.now();
+                this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, now);
+                this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, now);
+                // 插入时自动填充创建人、更新人为当前登录用户
+                String user = currentUser();
+                if (user != null) {
+                    this.strictInsertFill(metaObject, "createBy", String.class, user);
+                    this.strictInsertFill(metaObject, "updateBy", String.class, user);
+                }
             }
 
             @Override
             public void updateFill(MetaObject metaObject) {
-                // 更新时自动填充更新时间
+                // 更新时自动填充更新时间、更新人
                 this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+                String user = currentUser();
+                if (user != null) {
+                    this.strictUpdateFill(metaObject, "updateBy", String.class, user);
+                }
+            }
+
+            /**
+             * 获取当前登录用户标识（Sa-Token），未登录或上下文不可用时返回 null
+             */
+            private String currentUser() {
+                try {
+                    // 优先取登录时写入会话的用户名
+                    SaSession session = StpUtil.getSession();
+                    String username = session.getString(SaSessionConstants.USERNAME);
+                    if (CharSequenceUtil.isNotBlank(username)) {
+                        return username;
+                    }
+                    return null;
+                } catch (Exception e) {
+                    log.error("获取当前登录用户失败，可能未登录或上下文不可用：{}", e.getMessage());
+                    return null;
+                }
             }
         };
     }
