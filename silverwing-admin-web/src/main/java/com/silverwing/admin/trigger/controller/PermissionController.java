@@ -40,7 +40,7 @@ public class PermissionController {
     @SaCheckPermission("system:permission:query")
     @Operation(summary = "根据ID查询权限")
     @GetMapping("/{id}")
-    public Result<PermissionResponse> getById(@PathVariable Long id) {
+    public Result<PermissionResponse> getById(@PathVariable("id") Long id) {
         return Result.success(permissionQueryService.getById(id));
     }
 
