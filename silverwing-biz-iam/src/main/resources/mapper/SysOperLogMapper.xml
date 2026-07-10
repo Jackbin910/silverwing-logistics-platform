@@ -20,32 +20,25 @@
         <result property="errorMsg" column="error_msg"/>
         <result property="operTime" column="oper_time"/>
         <result property="costTime" column="cost_time"/>
-        <result property="createBy" column="create_by"/>
-        <result property="updateBy" column="update_by"/>
-        <result property="createTime" column="create_time"/>
-        <result property="updateTime" column="update_time"/>
-        <result property="deleted" column="deleted"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id, title, business_type, method, request_method, operator_type, oper_name,
         dept_name, oper_url, oper_ip, oper_location, oper_param, json_result, status,
-        error_msg, oper_time, cost_time, create_by, update_by, create_time, update_time, deleted
+        error_msg, oper_time, cost_time
     </sql>
 
     <insert id="insertBatch">
         INSERT INTO sys_oper_log (
             title, business_type, method, request_method, operator_type, oper_name,
             dept_name, oper_url, oper_ip, oper_location, oper_param, json_result,
-            status, error_msg, oper_time, cost_time,
-            create_by, update_by, create_time, update_time, deleted
+            status, error_msg, oper_time, cost_time
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.title}, #{item.businessType}, #{item.method}, #{item.requestMethod},
              #{item.operatorType}, #{item.operName}, #{item.deptName}, #{item.operUrl},
              #{item.operIp}, #{item.operLocation}, #{item.operParam}, #{item.jsonResult},
-             #{item.status}, #{item.errorMsg}, #{item.operTime}, #{item.costTime},
-             #{item.createBy}, #{item.updateBy}, #{item.createTime}, #{item.updateTime}, #{item.deleted})
+             #{item.status}, #{item.errorMsg}, #{item.operTime}, #{item.costTime})
         </foreach>
     </insert>
 
