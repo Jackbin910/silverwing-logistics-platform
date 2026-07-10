@@ -1,5 +1,6 @@
 package com.silverwing.biz.iam.domain.model.aggregate;
 
+import cn.hutool.core.text.CharSequenceUtil;
 import com.silverwing.common.entity.DomainEntity;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.digest.DigestUtil;
@@ -72,7 +73,7 @@ public class SysUserAggregate extends DomainEntity {
      * @return 是否匹配
      */
     public boolean matchesPassword(String rawPassword) {
-        if (salt == null || salt.isBlank() || password == null || password.isBlank()) {
+        if (CharSequenceUtil.isBlank(salt) || CharSequenceUtil.isBlank(password)) {
             return false;
         }
         return password.equalsIgnoreCase(encrypt(rawPassword, salt));
