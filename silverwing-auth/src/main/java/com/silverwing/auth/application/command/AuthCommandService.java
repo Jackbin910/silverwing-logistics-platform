@@ -2,7 +2,9 @@ package com.silverwing.auth.application.command;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
 import com.silverwing.auth.application.dto.LoginResponse;
+import com.silverwing.auth.config.RsaKeyConfig;
 import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
 import com.silverwing.biz.iam.domain.model.aggregate.SysUserAggregate;
 import com.silverwing.biz.iam.domain.adapter.repository.PermissionRepository;
@@ -33,12 +35,16 @@ public class AuthCommandService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
+    private final RsaKeyConfig rsaKeyConfig;
 
     /**
      * 用户登录
-     * 流程：查询用户 → 状态校验 → 密码比对 → Sa-Token 签发 → 写入角色/权限到 Session
+     * 流程：RSA 解密密码 → 查询用户 → 状态校验 → 密码比对 → Sa-Token 签发 → 写入角色/权限到 Session
      */
     public LoginResponse login(LoginCommand command) {
+        // 0. RSA 解密前端传入的加密密码，得到明文
+        String rawPassword = decryptPassword(command.getPassword());
+
         // 1. 查询用户
         SysUserAggregate user = userRepository.findByUsername(command.getUsername());
         if (user == null) {
@@ -54,8 +60,8 @@ public class AuthCommandService {
                     "auth.login.account.disabled");
         }
 
-        // 3. 密码比对
-        if (!matchesPassword(command.getPassword(), user)) {
+        // 3. 校验密码是否匹配（BCrypt）
+        if (!matchesPassword(rawPassword, user)) {
             log.warn("登录失败：密码错误 username={}", command.getUsername());
             throw new BusinessException(ResultCode.UNAUTHORIZED,
                     "auth.login.username.or.password.error");
@@ -114,7 +120,7 @@ public class AuthCommandService {
     }
 
     /**
-     * 密码安全校验（MD5 + 盐）
+     * 密码安全校验（BCrypt）
      */
     private boolean matchesPassword(String rawPassword, SysUserAggregate user) {
         String encodedPassword = user.getPassword();
@@ -125,5 +131,22 @@ public class AuthCommandService {
                     "auth.login.account.config.error");
         }
         return user.matchesPassword(rawPassword);
+    }
+
+    /**
+     * RSA 解密前端传入的加密密码
+     * <p>前端使用公钥加密明文密码，后端使用私钥解密还原明文</p>
+     *
+     * @param encryptedPassword RSA 加密后的密码（Base64）
+     * @return 明文密码
+     */
+    private String decryptPassword(String encryptedPassword) {
+        try {
+            return rsaKeyConfig.getRsa().decryptStr(encryptedPassword, KeyType.PrivateKey);
+        } catch (Exception e) {
+            log.warn("登录失败：密码解密异常，可能未使用 RSA 加密或密钥不匹配");
+            throw new BusinessException(ResultCode.BAD_REQUEST,
+                    "auth.login.password.decrypt.error");
+        }
     }
 }

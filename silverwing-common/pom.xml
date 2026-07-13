@@ -134,6 +134,11 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
         </dependency>
+        <!-- Fastjson2 Spring 6 扩展（HTTP 消息转换器集成） -->
+        <dependency>
+            <groupId>com.alibaba.fastjson2</groupId>
+            <artifactId>fastjson2-extension-spring6</artifactId>
+        </dependency>
 
         <!-- JetCache (基于 Redis) -->
         <dependency>

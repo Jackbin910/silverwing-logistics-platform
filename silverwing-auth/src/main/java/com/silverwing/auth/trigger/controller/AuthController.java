@@ -5,6 +5,7 @@ import com.silverwing.auth.application.command.LoginCommand;
 import com.silverwing.auth.application.dto.AuthUserInfo;
 import com.silverwing.auth.application.dto.LoginResponse;
 import com.silverwing.auth.application.query.AuthQueryService;
+import com.silverwing.auth.config.RsaKeyConfig;
 import com.silverwing.common.annotation.SkipAuth;
 import com.silverwing.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,6 +33,18 @@ public class AuthController {
 
     private final AuthCommandService authCommandService;
     private final AuthQueryService authQueryService;
+    private final RsaKeyConfig rsaKeyConfig;
+
+    /**
+     * 获取 RSA 公钥
+     * <p>前端登录前先调用此接口获取公钥，用于加密明文密码</p>
+     */
+    @SkipAuth
+    @Operation(summary = "获取 RSA 公钥")
+    @GetMapping("/public-key")
+    public Result<String> getPublicKey() {
+        return Result.success(rsaKeyConfig.getPublicKeyBase64());
+    }
 
     @SkipAuth
     @Operation(summary = "用户登录")

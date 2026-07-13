@@ -12,8 +12,8 @@ DROP TABLE IF EXISTS `sys_user`;
 CREATE TABLE `sys_user` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username` VARCHAR(50) NOT NULL COMMENT '用户名',
-    `password` VARCHAR(255) NOT NULL COMMENT '密码(MD5(盐+明文))',
-    `salt` VARCHAR(64) DEFAULT '' COMMENT '密码盐值',
+    `password` VARCHAR(255) NOT NULL COMMENT '密码(BCrypt哈希)',
+    `salt` VARCHAR(64) DEFAULT '' COMMENT '已废弃(BCrypt盐值内嵌于哈希中)',
     `sex`   TINYINT default 0 COMMENT '用户性别（0男 1女 2未知）',
     `avatar` VARCHAR(255) COMMENT '头像',
     `phone` VARCHAR(20) COMMENT '手机号',
@@ -231,11 +231,12 @@ CREATE TABLE `sys_oper_log` (
 -- ========================================
 
 -- 插入默认用户
--- 密码采用 MD5(盐 + 明文) 方式存储，盐值见 salt 列
+-- 密码采用 BCrypt 哈希存储，盐值内嵌于哈希中，salt 列已废弃
 -- admin 密码: admin123，nurse1 密码: nurse123
+-- 如需重新生成哈希，运行 com.silverwing.auth.util.PasswordGenerator
 INSERT INTO `sys_user` (`username`, `password`, `salt`, `nickname`, `phone`, `email`, `status`) VALUES
-('admin', '594797df0f52acdfe042fbb5363d39eb', 'sw_admin_salt_01', '系统管理员', '13800138000', 'admin@silverwing.com', 1),
-('nurse1', '7d8317755b46e55a6784cb581e2dc941', 'sw_nurse_salt_01', '护士-手术室1', '13800138001', 'nurse1@hospital.com', 1);
+('admin', '$2b$12$M3RUtnVvgcubwjTe3X4Gveo6N9KLMr5Dj7rW/H0l3FPCoJuCxETxK', '', '系统管理员', '13800138000', 'admin@silverwing.com', 1),
+('nurse1', '$2b$12$tcpcuW3yKfugJz2e5KhgEeiKKCu6VV3VUQ0uoO568FclzYgexV13C', '', '护士-手术室1', '13800138001', 'nurse1@hospital.com', 1);
 
 -- 插入默认角色
 INSERT INTO `sys_role` (`role_code`, `role_name`, `description`, `status`) VALUES

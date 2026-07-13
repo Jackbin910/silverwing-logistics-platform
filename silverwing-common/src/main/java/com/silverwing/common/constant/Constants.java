@@ -18,7 +18,6 @@ public final class Constants {
      * UTF-8 编码
      */
     public static final String UTF8 = "UTF-8";
-
     /**
      * 默认当前页
      */

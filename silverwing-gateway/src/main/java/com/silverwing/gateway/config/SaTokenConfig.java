@@ -35,6 +35,7 @@ public class SaTokenConfig {
                                 // 认证接口
                                 "/auth/login",
                                 "/auth/logout",
+                                "/auth/public-key",
                                 // 文档接口 (Knife4j/Swagger)
                                 "/doc.html",
                                 "/webjars/**",
