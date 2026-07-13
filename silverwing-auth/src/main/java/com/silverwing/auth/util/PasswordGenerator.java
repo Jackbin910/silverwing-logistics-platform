@@ -14,8 +14,8 @@ import cn.hutool.crypto.digest.BCrypt;
 public class PasswordGenerator {
 
     public static void main(String[] args) {
-        generate("admin", "admin123");
-        generate("nurse1", "nurse123");
+        generate("admin", "123456");
+        generate("nurse1", "123456");
     }
 
     /**

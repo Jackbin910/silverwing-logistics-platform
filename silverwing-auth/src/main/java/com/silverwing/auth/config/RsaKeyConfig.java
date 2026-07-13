@@ -1,46 +1,50 @@
 package com.silverwing.auth.config;
 
+import cn.hutool.core.text.CharSequenceUtil;
 import cn.hutool.crypto.asymmetric.RSA;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
-
-import java.security.KeyPair;
 
 /**
  * RSA 密钥配置
  * <p>
  * 用于登录密码的传输加密：前端用公钥加密明文密码，后端用私钥解密。
- * 解密后的明文密码继续走 {@link com.silverwing.biz.iam.domain.model.aggregate.SysUserAggregate#matchesPassword}
- * 的 MD5(salt + 明文) 校验流程，不改变现有存储与比对方式。
+ * 解密后的明文密码继续走 BCrypt 校验流程。
  * </p>
  * <p>
- * 密钥来源（二选一）：
- * <ol>
- *   <li>配置文件指定：{@code silverwing.security.rsa.public-key} / {@code silverwing.security.rsa.private-key}（多实例部署必填）</li>
- *   <li>未配置时启动自动生成（单实例开发环境适用，重启后公钥变化）</li>
- * </ol>
+ * 密钥必须通过配置文件提供，不自动生成：
+ * <pre>
+ * silverwing:
+ *   security:
+ *     rsa:
+ *       public-key: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A..."
+ *       private-key: "MIIEvQIBADANBgkqhkiG9w0BAQEF..."
+ * </pre>
+ * 配置通常放在 Nacos 的 auth 服务配置文件中。
  * </p>
  *
  * @author silverwing
  */
 @Slf4j
 @Component
+@Setter
+@ConfigurationProperties(prefix = "silverwing.security.rsa")
 public class RsaKeyConfig {
 
     /**
-     * 可配置的 RSA 公钥（Base64），多实例部署时需统一配置
+     * RSA 公钥（Base64），前端加密用
      */
-    @Value("${silverwing.security.rsa.public-key:}")
-    private String configuredPublicKey;
+    private String publicKey;
 
     /**
-     * 可配置的 RSA 私钥（Base64），多实例部署时需统一配置
+     * RSA 私钥（Base64），后端解密用
      */
-    @Value("${silverwing.security.rsa.private-key:}")
-    private String configuredPrivateKey;
+    private String privateKey;
 
     /**
      * RSA 实例，持有密钥对
@@ -55,20 +59,18 @@ public class RsaKeyConfig {
     private String publicKeyBase64;
 
     /**
-     * 初始化 RSA 密钥对：优先使用配置的密钥，未配置则自动生成。
+     * 从配置加载 RSA 密钥对，密钥未配置时启动直接失败。
      */
     @PostConstruct
     public void init() {
-        if (configuredPublicKey != null && !configuredPublicKey.isBlank()
-                && configuredPrivateKey != null && !configuredPrivateKey.isBlank()) {
-            // 使用配置的密钥对（多实例部署）
-            rsa = new RSA(configuredPrivateKey, configuredPublicKey);
-            log.info("RSA 密钥对已从配置加载");
-        } else {
-            // 自动生成密钥对（单实例开发环境）
-            rsa = new RSA();
-            log.info("RSA 密钥对已自动生成（重启后公钥将变化，生产环境请配置固定密钥）");
+        if (CharSequenceUtil.isBlank(publicKey)
+                || CharSequenceUtil.isBlank(privateKey)) {
+            throw new IllegalStateException(
+                    "RSA 密钥未配置，请在配置文件中设置 silverwing.security.rsa.public-key 和 silverwing.security.rsa.private-key");
         }
+        rsa = new RSA(privateKey, publicKey);
         publicKeyBase64 = rsa.getPublicKeyBase64();
+        log.info("RSA 密钥对已从配置加载");
     }
+
 }
