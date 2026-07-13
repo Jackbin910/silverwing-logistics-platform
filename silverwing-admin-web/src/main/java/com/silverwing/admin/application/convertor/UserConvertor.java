@@ -27,7 +27,6 @@ public interface UserConvertor {
      */
     @Mapping(target = "password", ignore = true)
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "salt", ignore = true)
     @Mapping(target = "status", ignore = true)
     SysUserAggregate toEntity(CreateUserCommand command);
 

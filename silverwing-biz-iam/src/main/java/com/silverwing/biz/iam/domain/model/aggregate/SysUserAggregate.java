@@ -31,9 +31,6 @@ public class SysUserAggregate extends DomainEntity {
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
 
-    /** 密码盐值（BCrypt 模式下已废弃，盐值内嵌于 BCrypt 哈希中，此字段仅兼容旧表结构） */
-    private String salt;
-
     // ===== 领域行为 =====
 
     /** 用户是否处于启用状态 */
@@ -60,7 +57,6 @@ public class SysUserAggregate extends DomainEntity {
      * 修改密码（传入明文密码，内部使用 BCrypt 加密后存储）
      * <p>
      * BCrypt 自带随机盐，盐值内嵌于哈希结果中（格式：$2a$10$...），
-     * 无需单独维护 salt 字段。
      * </p>
      *
      * @param rawPassword 明文密码

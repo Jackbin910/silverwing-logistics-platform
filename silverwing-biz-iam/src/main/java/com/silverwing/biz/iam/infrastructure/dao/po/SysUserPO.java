@@ -32,5 +32,4 @@ public class SysUserPO extends BaseEntity {
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
 
-    private String salt;
 }

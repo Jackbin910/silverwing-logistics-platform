@@ -1,6 +1,15 @@
 package com.silverwing.auth.util;
 
+import cn.hutool.core.codec.Base64;
+import cn.hutool.crypto.KeyUtil;
+import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
+import cn.hutool.crypto.asymmetric.RSA;
 import cn.hutool.crypto.digest.BCrypt;
+
+import javax.crypto.SecretKey;
+import java.security.KeyPair;
+import java.util.Arrays;
 
 /**
  * 密码生成工具
@@ -14,8 +23,22 @@ import cn.hutool.crypto.digest.BCrypt;
 public class PasswordGenerator {
 
     public static void main(String[] args) {
-        generate("admin", "123456");
-        generate("nurse1", "123456");
+//        generate("admin", "123456");
+//        generate("nurse1", "123456");
+        // 生成 512 位 RSA 密钥对
+        RSA rsa = new RSA(
+                "MIIBVQIBADANBgkqhkiG9w0BAQEFAASCAT8wggE7AgEAAkEA5yuO3UhZdNyE8CCKCe/UFuXsjIlKlKRQlMGANEdWtpCefk9/s0MX7NzNSOilYZOHzBb3FQ2wSX0GuscdAPRUTQIDAQABAkAP/4g2ETU7rK04jw/uix3y7buWqEO0kMCQ4ulT9OHv5WWesFz3lCDXV3us6cYsEyKNTXrtQTuV9MziZ8fDc++zAiEA8/BzNq1DWS9jwH/jdTSeGzG88vdaswl7TbFr3DN6lu8CIQDymX0kByaVMwbOnlLSUYRN2D1/xUyqfjbJ7gdIophogwIhALWxjT9Wgml1YMlK+HKeRH1g6KnYD5h3IX5W/k2/kjnFAiEA0j4qsXpw+YRLNe0HobV7j2sDgSOfmXHgUYezUEN5CbkCID7WsdBmIzNo7LxocFwjUPwCOZdVM4JIRhyO2QQUsq0W",  // privateKey
+                "MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAOcrjt1IWXTchPAgignv1Bbl7IyJSpSkUJTBgDRHVraQnn5Pf7NDF+zczUjopWGTh8wW9xUNsEl9BrrHHQD0VE0CAwEAAQ=="   // publicKey
+        );
+
+        // 公钥加密
+        String cipherText = rsa.encryptBase64("123456".getBytes(), KeyType.PublicKey);
+        System.out.println("加密结果: " + cipherText);
+
+        // 私钥解密
+        String plainText = rsa.decryptStr(cipherText, KeyType.PrivateKey);
+        System.out.println("解密结果: " + plainText);  // hello123
+
     }
 
     /**
@@ -36,4 +59,5 @@ public class PasswordGenerator {
         System.out.println("INSERT 片段: ('" + username + "', '" + hash + "', ...) ");
         System.out.println();
     }
+
 }
