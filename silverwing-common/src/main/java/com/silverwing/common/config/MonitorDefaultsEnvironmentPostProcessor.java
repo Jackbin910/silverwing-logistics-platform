@@ -47,7 +47,7 @@ public class MonitorDefaultsEnvironmentPostProcessor implements EnvironmentPostP
         // Actuator 端点基础路径
         defaults.put("management.endpoints.web.base-path", "/actuator");
         // 暴露健康检查、应用信息、Prometheus 指标端点
-        defaults.put("management.endpoints.web.exposure.include", "health,info,prometheus");
+        defaults.put("management.endpoints.web.exposure.include", "health,info,prometheus,dynamictp");
         // 健康检查显示完整细节与组件信息，便于排障
         defaults.put("management.endpoint.health.show-details", "always");
         defaults.put("management.endpoint.health.show-components", "always");
