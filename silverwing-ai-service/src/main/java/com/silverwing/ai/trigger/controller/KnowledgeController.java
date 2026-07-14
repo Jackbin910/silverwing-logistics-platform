@@ -1,27 +1,23 @@
 package com.silverwing.ai.trigger.controller;
 
+import cn.hutool.core.text.CharSequenceUtil;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
 import com.silverwing.ai.application.rag.KnowledgeIngestService;
 import com.silverwing.ai.application.rag.KnowledgeQaService;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.domain.Result;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.dynamictp.core.DtpRegistry;
 import org.springframework.http.MediaType;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import reactor.core.publisher.Flux;
 
-import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Executor;
 
 /**
  * 知识库管理 Controller
@@ -84,71 +80,20 @@ public class KnowledgeController {
      * 通过 SSE 逐 token 推送回答，前端可实时展示打字效果
      */
     @Operation(summary = "知识库问答-流式", description = "基于向量相似度检索知识库并流式生成回答（SSE 逐 token 推送）")
-    @PostMapping(value = "/qa/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter qaStream(
-            @Parameter(description = "问题内容", required = true)
-            @RequestBody String question) {
-
-        if (question == null || question.isBlank()) {
-            SseEmitter emitter = new SseEmitter();
-            emitter.completeWithError(new IllegalArgumentException("问题不能为空"));
-            return emitter;
+    @GetMapping(value = "/qa/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> qaStream(@RequestParam("question") String question) {
+        if (CharSequenceUtil.isBlank(question)) {
+            return Flux.just(ServerSentEvent.<String>builder().event("error").data("问题不能为空").build());
         }
 
-        // 超时 5 分钟（LLM 生成可能较慢）
-        SseEmitter emitter = new SseEmitter(300_000L);
-        emitter.onCompletion(() -> log.debug("知识库流式问答完成: {}", question));
-        emitter.onTimeout(() -> {
-            log.warn("知识库流式问答超时: {}", question);
-            emitter.complete();
-        });
-        emitter.onError(throwable -> log.error("知识库流式问答连接异常: {}", question, throwable));
-        Executor chatStreamExecutor = DtpRegistry.getExecutor(EXECUTOR_NAME);
-        // 异步执行检索与流式推送，避免阻塞请求线程
-        chatStreamExecutor.execute(() -> {
-            try {
-                qaService.answerStream(question, new StreamingChatResponseHandler() {
-                    @Override
-                    public void onPartialResponse(String partialResponse) {
-                        try {
-                            emitter.send(SseEmitter.event().name("token").data(partialResponse));
-                        } catch (IOException e) {
-                            log.warn("SSE token 推送失败: {}", question, e);
-                        }
-                    }
-
-                    @Override
-                    public void onCompleteResponse(ChatResponse completeResponse) {
-                        try {
-                            emitter.send(SseEmitter.event().name("done").data("[DONE]"));
-                        } catch (IOException e) {
-                            log.warn("SSE done 推送失败: {}", question, e);
-                        }
-                        emitter.complete();
-                    }
-
-                    @Override
-                    public void onError(Throwable error) {
-                        try {
-                            emitter.send(SseEmitter.event().name("error").data("处理异常：" + error.getMessage()));
-                        } catch (IOException e) {
-                            log.warn("SSE error 推送失败: {}", question, e);
-                        }
-                        emitter.completeWithError(error);
-                    }
-                });
-            } catch (Exception e) {
-                try {
-                    emitter.send(SseEmitter.event().name("error").data("处理异常：" + e.getMessage()));
-                } catch (IOException ex) {
-                    log.warn("SSE error 推送失败: {}", question, ex);
-                }
-                emitter.completeWithError(e);
-            }
-        });
-
-        return emitter;
+        return qaService.answerStream(question)
+                .map(token -> ServerSentEvent.<String>builder().event("token").data(token).build())
+                .concatWith(Flux.just(ServerSentEvent.<String>builder().event("done").data("[DONE]").build()))
+                .onErrorResume(e -> Flux.just(
+                        ServerSentEvent.<String>builder().event("error").data("处理异常：" + e.getMessage()).build()
+                ));
     }
+
 
     /**
      * 根据文档 ID 删除知识库中的分片

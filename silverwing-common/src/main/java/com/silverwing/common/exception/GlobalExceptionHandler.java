@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
+import java.io.IOException;
 import java.util.stream.Collectors;
 
 /**
@@ -193,7 +194,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result<?> handleException(Exception e, HttpServletResponse response) {
         if (response.getContentType() != null && response.getContentType().contains("text/event-stream")) {
-            log.error("SSE 流处理异常: {}", e.getMessage());
+            // 客户端主动断开连接导致的 IO 异常，无需作为错误记录
+            if (e instanceof IOException || e.getCause() instanceof IOException) {
+                log.debug("SSE 连接已关闭: {}", e.getMessage());
+            } else {
+                log.error("SSE 流处理异常: {}", e.getMessage());
+            }
             return null;
         }
         Throwable rootCause = getRootCause(e);

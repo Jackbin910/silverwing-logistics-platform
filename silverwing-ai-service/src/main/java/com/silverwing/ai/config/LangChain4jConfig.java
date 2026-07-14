@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
+
 /**
  * LangChain4j 配置类
  * ChatModel 和 EmbeddingModel 均由 langchain4j-ollama-spring-boot-starter 自动配置
@@ -85,6 +87,7 @@ public class LangChain4jConfig {
                 .baseUrl(baseUrl)
                 .modelName(modelName)
                 .temperature(temperature)
+                .timeout(Duration.ofSeconds(300))
                 .build();
     }
 }
