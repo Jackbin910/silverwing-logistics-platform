@@ -45,36 +45,34 @@
 
 ### 2.1 登录流程
 
-登录采用 **RSA 非对称加密** 保护密码传输，流程如下：
+登录采用 **RSA 非对称加密** 保护密码传输。公钥硬编码在前端代码中，不通过接口获取。
 
 ```
-1. 前端 GET /api/auth/public-key        → 获取 RSA 公钥（Base64）
-2. 前端用公钥加密明文密码                → JSEncrypt / jsencrypt
-3. 前端 POST /api/auth/login             → 提交加密后的密码
-4. 后端 RSA 私钥解密 → MD5(salt+明文) 比对 → 返回 Token
+1. 前端用硬编码的 RSA 公钥加密明文密码    → JSEncrypt
+2. 前端 POST /api/auth/login              → 提交加密后的密码
+3. 后端 RSA 私钥解密 → BCrypt 校验 → Sa-Token 签发 → 返回 Token
 ```
 
-**步骤 1：获取公钥**
+**公钥硬编码**
 
-```
-GET /api/auth/public-key
-```
+RSA 公钥直接写在前端常量中（公钥本身就是公开的，硬编码无安全风险）：
 
-响应：
+```js
+// src/utils/crypto.js
+import JSEncrypt from 'jsencrypt'
 
-```json
-{
-    "code": 200,
-    "message": "操作成功",
-    "data": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...",
-    "timestamp": 1720857600000,
-    "traceId": "a1b2c3d4"
+const RSA_PUBLIC_KEY = 'MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...'
+
+export function encryptPassword(password) {
+  const encryptor = new JSEncrypt()
+  encryptor.setPublicKey(RSA_PUBLIC_KEY)
+  return encryptor.encrypt(password)
 }
 ```
 
-**步骤 2：加密密码并提交登录**
+**提交登录**
 
-```json
+```
 POST /api/auth/login
 
 {
@@ -83,7 +81,7 @@ POST /api/auth/login
 }
 ```
 
-> **注意**：`password` 字段必须传 RSA 加密后的密文，后端不接受明文密码。
+> `password` 字段必须传 RSA 加密后的密文，后端不接受明文密码。
 
 成功后返回：
 
@@ -101,7 +99,7 @@ POST /api/auth/login
 }
 ```
 
-前端将 `token` 存储到本地（localStorage / cookie），后续请求需携带。
+前端将 `token` 存储到 localStorage，后续请求需在 Header 中携带。
 
 ### 2.2 Token 传递
 
@@ -450,3 +448,86 @@ export default service;
 4. **检查请求路径**：确认使用了 `/api/{servicePrefix}/` 前缀
 5. **检查日期格式**：提交的日期参数需为 `yyyy-MM-dd HH:mm:ss`
 6. **查看接口文档**：访问 `/api/doc.html` 确认接口定义
+
+---
+
+## 12. SSE 流式接口（知识库问答）
+
+知识库问答提供**流式响应**版本，逐 token 推送回答内容，前端可实时展示打字效果。
+
+### 12.1 接口说明
+
+| 项目 | 说明                              |
+| --- |---------------------------------|
+| 地址 | `POST /api/ai/knowledge/qa/stream` |
+| 内部路径 | `/knowledge/qa/stream`          |
+| 响应类型 | `text/event-stream`（SSE）        |
+| 请求体 | 原始字符串（用户问题，非 JSON）              |
+
+### 12.2 SSE 事件格式
+
+流式响应通过 SSE 推送以下三类事件：
+
+| 事件名 | `data` 内容 | 说明 |
+| --- | --- | --- |
+| `token` | 文本片段（部分回答） | 每生成一个片段推送一次，前端追加展示 |
+| `done` | `[DONE]` | 回答生成完毕 |
+| `error` | 错误描述文本 | 处理异常时推送 |
+
+### 12.3 前端消费示例
+
+SSE 流式接口**不能使用普通 Axios 请求**（Axios 会缓冲完整响应），需使用 `fetch` + `ReadableStream` 解析：
+
+```javascript
+/**
+ * 知识库流式问答
+ * @param {string} question 用户问题
+ * @param {(token: string) => void} onToken 每收到一个文本片段时回调
+ * @param {() => void} onDone 完成时回调
+ */
+export async function streamKnowledgeQa(question, onToken, onDone) {
+    const response = await fetch('/api/ai/knowledge/qa/stream', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'satoken': localStorage.getItem('token')
+        },
+        body: question // 原始字符串，非 JSON
+    });
+
+    if (!response.ok) {
+        throw new Error('知识库问答请求失败：' + response.status);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // 保留未完整的行
+
+        let eventName = '';
+        for (const line of lines) {
+            if (line.startsWith('event:')) {
+                eventName = line.slice(6).trim();
+            } else if (line.startsWith('data:')) {
+                const data = line.slice(5).trim();
+                if (eventName === 'token') {
+                    onToken(data);
+                } else if (eventName === 'done') {
+                    onDone();
+                } else if (eventName === 'error') {
+                    throw new Error(data);
+                }
+            }
+        }
+    }
+}
+```
+
+> **注意**：SSE 流式接口为非阻塞长连接，前端需自行处理超时与断线重连；如需降级，可继续使用原有的非流式接口 `POST /api/ai/knowledge/qa`。

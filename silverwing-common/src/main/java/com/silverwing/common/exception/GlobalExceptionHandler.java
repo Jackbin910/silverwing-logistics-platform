@@ -7,6 +7,7 @@ import com.silverwing.common.domain.Result;
 import com.silverwing.common.domain.ResultCode;
 import com.silverwing.common.i18n.MessageUtils;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -190,7 +191,11 @@ public class GlobalExceptionHandler {
      * </p>
      */
     @ExceptionHandler(Exception.class)
-    public Result<?> handleException(Exception e) {
+    public Result<?> handleException(Exception e, HttpServletResponse response) {
+        if (response.getContentType() != null && response.getContentType().contains("text/event-stream")) {
+            log.error("SSE 流处理异常: {}", e.getMessage());
+            return null;
+        }
         Throwable rootCause = getRootCause(e);
         // 栈溢出特殊处理：常见于非法 BCrypt 哈希或递归调用，需要单独提示
         if (e instanceof ServletException && rootCause instanceof StackOverflowError) {

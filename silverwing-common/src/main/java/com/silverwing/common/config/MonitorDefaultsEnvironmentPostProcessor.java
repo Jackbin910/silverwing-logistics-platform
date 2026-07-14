@@ -43,7 +43,7 @@ public class MonitorDefaultsEnvironmentPostProcessor implements EnvironmentPostP
             return;
         }
 
-        Map<String, Object> defaults = new HashMap<>(8);
+        Map<String, Object> defaults = new HashMap<>();
         // Actuator 端点基础路径
         defaults.put("management.endpoints.web.base-path", "/actuator");
         // 暴露健康检查、应用信息、Prometheus 指标端点

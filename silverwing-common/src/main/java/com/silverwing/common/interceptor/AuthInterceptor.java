@@ -4,6 +4,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.silverwing.common.annotation.NeedLogin;
 import com.silverwing.common.annotation.NeedPermission;
 import com.silverwing.common.annotation.SkipAuth;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,10 @@ public class AuthInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 非控制器方法（如静态资源、错误页面），直接放行
         if (!(handler instanceof HandlerMethod)) {
+            return true;
+        }
+
+        if (request.getDispatcherType() == DispatcherType.ASYNC) {
             return true;
         }
 
