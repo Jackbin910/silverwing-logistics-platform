@@ -8,9 +8,11 @@ import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
@@ -62,6 +64,7 @@ public class LangChain4jConfig {
      * @return EmbeddingStore 实例
      */
     @Bean
+    @Primary
     public EmbeddingStore<TextSegment> embeddingStore() {
         return PgVectorEmbeddingStore.builder()
                 .host(pgHost)
@@ -104,15 +107,15 @@ public class LangChain4jConfig {
 
     /**
      * Redis 聊天记忆存储
-     * @param redisTemplate
      * @return
      */
     @Bean
-    public ChatMemoryStore chatMemoryStore(RedisTemplate<String, Object> redisTemplate) {
+    public ChatMemoryStore chatMemoryStore() {
         return new RedisChatMemoryStore.Builder()
                 .host(redisHost)
                 .port(Integer.parseInt(redisPort))
                 .build();
     }
+
 
 }

@@ -32,7 +32,7 @@
 
         <langchain4j.version>1.17.2</langchain4j.version>
         <langchain4j-starter.version>1.17.2-beta27</langchain4j-starter.version>
-        <langchain4j-community-redis.version>1.17.2-beta27</langchain4j-community-redis.version>
+        <langchain4j-community-bom.version>1.17.2-beta27</langchain4j-community-bom.version>
         <!-- JetCache -->
         <jetcache.version>2.7.8</jetcache.version>
         <postgresql.version>42.7.7</postgresql.version>
@@ -196,8 +196,10 @@
 
             <dependency>
                 <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-community-redis-spring-boot-starter</artifactId>
-                <version>${langchain4j-community-redis.version}</version>
+                <artifactId>langchain4j-community-bom</artifactId>
+                <version>${langchain4j-community-bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
 
             <!-- LangChain4j PGVector 向量存储（beta22，不在 BOM 中） -->

@@ -105,7 +105,7 @@
 
         <dependency>
             <groupId>dev.langchain4j</groupId>
-            <artifactId>langchain4j-community-redis-spring-boot-starter</artifactId>
+            <artifactId>langchain4j-community-redis</artifactId>
         </dependency>
 
         <!-- PostgreSQL 驱动（PGVector 向量存储需要） -->
