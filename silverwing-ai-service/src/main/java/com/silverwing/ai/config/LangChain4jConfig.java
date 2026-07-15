@@ -1,13 +1,17 @@
 package com.silverwing.ai.config;
 
+import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
+import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import java.time.Duration;
 
@@ -43,6 +47,12 @@ public class LangChain4jConfig {
 
     @Value("${langchain4j.vector-store.pgvector.create-table:true}")
     private Boolean pgCreateTable;
+
+    @Value("${spring.data.redis.host:localhost}")
+    private String redisHost;
+
+    @Value("${spring.data.redis.port:6379}")
+    private String redisPort;
 
     /**
      * PGVector 向量存储
@@ -90,4 +100,19 @@ public class LangChain4jConfig {
                 .timeout(Duration.ofSeconds(300))
                 .build();
     }
+
+
+    /**
+     * Redis 聊天记忆存储
+     * @param redisTemplate
+     * @return
+     */
+    @Bean
+    public ChatMemoryStore chatMemoryStore(RedisTemplate<String, Object> redisTemplate) {
+        return new RedisChatMemoryStore.Builder()
+                .host(redisHost)
+                .port(Integer.parseInt(redisPort))
+                .build();
+    }
+
 }

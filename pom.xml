@@ -30,8 +30,9 @@
         <hutool.version>5.8.46</hutool.version>
         <fastjson2.version>2.0.52</fastjson2.version>
 
-        <langchain4j.version>1.17.1</langchain4j.version>
-        <langchain4j-starter.version>1.17.1-beta27</langchain4j-starter.version>
+        <langchain4j.version>1.17.2</langchain4j.version>
+        <langchain4j-starter.version>1.17.2-beta27</langchain4j-starter.version>
+        <langchain4j-community-redis.version>1.17.2-beta27</langchain4j-community-redis.version>
         <!-- JetCache -->
         <jetcache.version>2.7.8</jetcache.version>
         <postgresql.version>42.7.7</postgresql.version>
@@ -91,6 +92,7 @@
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-jsqlparser</artifactId>
@@ -185,10 +187,17 @@
                 <artifactId>langchain4j-spring-boot-starter</artifactId>
                 <version>${langchain4j-starter.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-ollama-spring-boot-starter</artifactId>
                 <version>${langchain4j-starter.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-community-redis-spring-boot-starter</artifactId>
+                <version>${langchain4j-community-redis.version}</version>
             </dependency>
 
             <!-- LangChain4j PGVector 向量存储（beta22，不在 BOM 中） -->

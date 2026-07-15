@@ -6,6 +6,7 @@ import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.application.ai.AnswerFormatter;
 import com.silverwing.ai.application.rag.DatabaseRagService;
 import com.silverwing.ai.application.rag.KnowledgeQaService;
+import com.silverwing.common.exception.BusinessException;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
@@ -152,7 +153,7 @@ public class ConversationOrchestrator {
                     .answer(naturalAnswer)
                     .build();
 
-        } catch (com.silverwing.common.exception.BusinessException e) {
+        } catch (BusinessException e) {
             log.warn("业务处理异常: {}", e.getMessage());
             return ConversationResponse.builder()
                     .sessionId(sessionId)
