@@ -34,9 +34,6 @@ public class KnowledgeController {
 
     private final KnowledgeQaService qaService;
 
-    private static final String EXECUTOR_NAME = "chatStreamExecutor";
-
-
     /**
      * 上传文档文件并导入知识库
      * 支持 PDF / Word（doc、docx）/ Markdown（md）等格式
