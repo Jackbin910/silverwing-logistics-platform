@@ -27,7 +27,6 @@ public class DatabaseRagController {
      * 智能问答接口
      * 用户通过自然语言查询订单数据
      *
-     * @param question 用户问题
      * @return 回答结果
      */
     @PostMapping("/query")

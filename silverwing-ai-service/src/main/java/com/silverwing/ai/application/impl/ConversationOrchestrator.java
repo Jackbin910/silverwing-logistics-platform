@@ -11,10 +11,15 @@ import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
 import dev.langchain4j.service.AiServices;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +37,9 @@ public class ConversationOrchestrator {
     private final IntentRouter intentRouter;
     private final AnswerFormatter answerFormatter;
     private final ConversationMemoryManager memoryManager;
+
+    private final StreamingChatModel streamingChatModel;
+
 
     /**
      * RAG 知识库问答服务（可选，启用 langchain4j.rag.enabled=true 时注入）
@@ -56,11 +64,13 @@ public class ConversationOrchestrator {
     public ConversationOrchestrator(ChatModel chatModel,
                                     IntentRecognitionService intentService,
                                     IntentRouter intentRouter,
-                                    ConversationMemoryManager memoryManager) {
+                                    ConversationMemoryManager memoryManager,
+                                    StreamingChatModel streamingChatModel) {
         this.intentService = intentService;
         this.intentRouter = intentRouter;
         this.memoryManager = memoryManager;
         this.answerFormatter = AiServices.create(AnswerFormatter.class, chatModel);
+        this.streamingChatModel = streamingChatModel;
     }
 
     /**
@@ -166,6 +176,115 @@ public class ConversationOrchestrator {
                     .answer("抱歉，处理您的问题时出了点问题，请稍后重试。")
                     .build();
         }
+    }
+
+    /**
+     * 流式处理用户自然语言输入（带会话上下文，支持SSE流式输出）
+     *
+     * @param userMessage 用户自然语言输入
+     * @param sessionId   会话ID，null 表示单轮对话
+     * @return Flux<String> 流式响应片段
+     */
+    public Flux<String> chatStream(String userMessage, String sessionId) {
+        Sinks.Many<String> sink = Sinks.many().unicast().onBackpressureBuffer();
+
+        try {
+            // 1. 获取历史上下文
+            List<ChatMessage> history = memoryManager.getHistory(sessionId);
+            log.debug("对话历史: sessionId={}, 轮数={}", sessionId, history.size() / 2);
+
+            // 2. NLP 解析：意图 + 实体
+            NlpParseResult parseResult = intentService.parseWithEntities(userMessage);
+            log.info("NLP解析结果 - 意图: {}, 实体: {}", parseResult.getIntent(), parseResult.getEntities());
+
+            // 3. OTHER 意图：直接返回通用帮助提示
+            if (parseResult.getIntent() == IntentEnum.OTHER) {
+                String fallbackAnswer = buildFallbackAnswer(history);
+                saveMemory(sessionId, userMessage, fallbackAnswer);
+                emitFullResponse(sink, fallbackAnswer);
+                return sink.asFlux();
+            }
+
+            // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
+            if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
+                if (knowledgeQaService == null) {
+                    String answer = "抱歉，知识库问答功能尚未启用。请联系管理员配置后重试。";
+                    log.warn("知识库问答功能未启用，请设置 langchain4j.rag.enabled=true");
+                    saveMemory(sessionId, userMessage, answer);
+                    emitFullResponse(sink, answer);
+                    return sink.asFlux();
+                }
+                // 流式输出RAG回答
+                return knowledgeQaService.answerStream(userMessage);
+            }
+
+            // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
+            if ((parseResult.getIntent() == IntentEnum.DATABASE_QUERY
+                    || parseResult.getIntent() == IntentEnum.DATA_STATISTICS)
+                    && databaseRagService != null) {
+                String nl2sqlAnswer = databaseRagService.query(userMessage);
+                log.info("NL2SQL回答: {}", nl2sqlAnswer);
+                saveMemory(sessionId, userMessage, nl2sqlAnswer);
+                emitFullResponse(sink, nl2sqlAnswer);
+                return sink.asFlux();
+            }
+
+            // 6. 其他意图：走标准业务处理器路由
+            BizQueryResult bizResult = intentRouter.route(
+                    parseResult.getIntent(),
+                    userMessage,
+                    parseResult.getEntities()
+            );
+            log.info("业务查询结果: {}", bizResult);
+
+            // 7. LLM 将结构化数据转化为自然语言流式回答，带上历史上下文
+            String contextHint = buildContextHint(history);
+            String queryResultJson = JSON.toJSONString(bizResult.getData());
+            String prompt = contextHint + userMessage + "\n\n查询结果数据：" + queryResultJson;
+
+            List<ChatMessage> messages = new ArrayList<>(history);
+            messages.add(UserMessage.from(prompt));
+
+            StringBuilder fullAnswer = new StringBuilder();
+
+            streamingChatModel.chat(messages, new StreamingChatResponseHandler() {
+                @Override
+                public void onPartialResponse(String partialResponse) {
+                    fullAnswer.append(partialResponse);
+                    sink.tryEmitNext(partialResponse);
+                }
+
+                @Override
+                public void onCompleteResponse(ChatResponse completeResponse) {
+                    saveMemory(sessionId, userMessage, fullAnswer.toString());
+                    sink.tryEmitComplete();
+                }
+
+                @Override
+                public void onError(Throwable error) {
+                    log.error("流式回答生成异常", error);
+                    sink.tryEmitError(error);
+                }
+            });
+
+        } catch (BusinessException e) {
+            log.warn("业务处理异常: {}", e.getMessage());
+            String answer = "抱歉，" + e.getMessage() + "。请提供更多信息。";
+            emitFullResponse(sink, answer);
+        } catch (Exception e) {
+            log.error("对话处理异常", e);
+            sink.tryEmitError(e);
+        }
+
+        return sink.asFlux();
+    }
+
+    /**
+     * 非流式内容直接完整发送
+     */
+    private void emitFullResponse(Sinks.Many<String> sink, String content) {
+        sink.tryEmitNext(content);
+        sink.tryEmitComplete();
     }
 
     /**

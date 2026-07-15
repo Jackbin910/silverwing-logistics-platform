@@ -1,5 +1,6 @@
 package com.silverwing.ai.trigger.controller;
 
+import cn.hutool.core.text.CharSequenceUtil;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.domain.Result;
 import com.silverwing.ai.application.dto.ConversationResponse;
@@ -9,7 +10,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
 
 /**
  * 对话 Controller
@@ -40,6 +44,36 @@ public class ConversationController {
 
         ConversationResponse response = orchestrator.chat(request.getMessage(), sessionId);
         return Result.success(response);
+    }
+
+    /**
+     * 智能对话（流式响应）
+     * 通过 SSE 逐 token 推送回答，前端可实时展示打字效果
+     * 支持多轮对话上下文
+     */
+    @Operation(summary = "智能对话-流式", description = "自然语言交互入口，流式逐 token 推送回答，支持多轮对话上下文")
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatStream(
+            @RequestParam("message") String message,
+            @RequestParam(value = "sessionId", required = false) String sessionId) {
+        if (CharSequenceUtil.isBlank(message)) {
+            return Flux.just(ServerSentEvent.<String>builder().event("error").data("消息内容不能为空").build());
+        }
+
+        // sessionId 为空时自动生成一个
+        if (sessionId == null || sessionId.isBlank()) {
+            sessionId = java.util.UUID.randomUUID().toString().replace("-", "");
+        }
+
+        // 返回 sessionId in first event
+        return Flux.concat(
+                Flux.just(ServerSentEvent.<String>builder().event("sessionId").data(sessionId).build()),
+                orchestrator.chatStream(message, sessionId)
+                        .map(token -> ServerSentEvent.<String>builder().event("token").data(token).build()),
+                Flux.just(ServerSentEvent.<String>builder().event("done").data("[DONE]").build())
+        ).onErrorResume(e -> Flux.just(
+                ServerSentEvent.<String>builder().event("error").data("处理异常：" + e.getMessage()).build()
+        ));
     }
 
     /**
