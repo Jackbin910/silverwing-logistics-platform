@@ -27,22 +27,33 @@ public class SaTokenConfig {
                 // 拦截所有路径
                 .addInclude("/**")
                 // 认证函数：排除白名单后，其余请求均需登录
-                .setAuth(obj -> {
-                    SaRouter
+                .setAuth(obj -> SaRouter
                         .match("/**")
                         // 白名单：以下路径无需登录即可访问
                         .notMatch(
-                                // 认证接口
                                 "/auth/login",
                                 "/auth/logout",
                                 "/auth/public-key",
-                                // 文档接口 (Knife4j/Swagger)
                                 "/doc.html",
                                 "/webjars/**",
                                 "/v3/api-docs/**",
                                 "/swagger-resources/**",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
+                                "/auth/v3/api-docs/**",
+                                "/core/v3/api-docs/**",
+                                "/twin/v3/api-docs/**",
+                                "/ai/v3/api-docs/**",
+                                "/ops/v3/api-docs/**",
+                                "/integration/v3/api-docs/**",
+                                "/admin/v3/api-docs/**",
+                                "/auth/swagger-resources/**",
+                                "/core/swagger-resources/**",
+                                "/twin/swagger-resources/**",
+                                "/ai/swagger-resources/**",
+                                "/ops/swagger-resources/**",
+                                "/integration/swagger-resources/**",
+                                "/admin/swagger-resources/**",
                                 // 基础设施
                                 "/favicon.ico",
                                 "/actuator/**",
@@ -52,8 +63,7 @@ public class SaTokenConfig {
                                 "/public/**"
                         )
                         // 不在白名单内的，校验登录状态
-                        .check(r -> StpUtil.checkLogin());
-                })
+                        .check(r -> StpUtil.checkLogin()))
                 // 异常处理：Sa-Token 异常统一返回 401 JSON
                 .setError(e -> {
                     log.warn("Gateway 认证拦截：{}", e.getMessage());
