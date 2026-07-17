@@ -1,10 +1,10 @@
 package com.silverwing.ai.application.impl.handler;
 
-import com.silverwing.ai.application.dto.BizQueryResult;
-import com.silverwing.ai.application.dto.EntityResult;
+import com.silverwing.ai.domain.model.BizQueryResult;
+import com.silverwing.ai.domain.model.EntityResult;
 import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.application.impl.IntentHandler;
-import com.silverwing.ai.application.rag.DatabaseRagService;
+import com.silverwing.ai.domain.service.rag.DatabaseRagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

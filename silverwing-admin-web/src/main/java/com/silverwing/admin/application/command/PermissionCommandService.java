@@ -1,110 +1,50 @@
 package com.silverwing.admin.application.command;
 
-import cn.dev33.satoken.session.SaSession;
-import cn.dev33.satoken.stp.StpUtil;
-import com.silverwing.admin.application.convertor.PermissionConvertor;
 import com.silverwing.admin.application.dto.PermissionResponse;
-import com.silverwing.biz.iam.domain.adapter.repository.PermissionRepository;
-import com.silverwing.biz.iam.domain.adapter.repository.RoleRepository;
-import com.silverwing.biz.iam.domain.model.aggregate.SysPermissionAggregate;
-import com.silverwing.biz.iam.domain.service.IPermissionDomainService;
-import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
-import com.silverwing.common.constant.SaSessionConstants;
-import com.silverwing.common.domain.ResultCode;
-import com.silverwing.common.exception.BusinessException;
+import com.silverwing.admin.application.command.SavePermissionCommand;
+import com.silverwing.admin.client.IamPermissionCacheClient;
+import com.silverwing.admin.client.IamPermissionClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 权限命令服务（CQRS 写侧）
- * <p>
- * 包含权限 CRUD、Sa-Token Session 缓存刷新。
- * 缓存刷新通过 Redis 共享 Session 直接操作，无需跨服务调用。
- * </p>
+ * <p>仅做用例编排，通过 {@link IamPermissionClient} 与 {@link IamPermissionCacheClient}
+ * 防腐层端口访问 biz-iam 权限上下文与 Sa-Token 缓存，应用层本身不感知聚合根、仓储与
+ * 缓存刷新的具体实现。</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PermissionCommandService {
 
-    private final PermissionRepository permissionRepository;
-    private final RoleRepository roleRepository;
-    private final PermissionConvertor permissionConvertor;
-    private final IPermissionDomainService permissionDomainService;
+    private final IamPermissionClient iamPermissionClient;
+    private final IamPermissionCacheClient iamPermissionCacheClient;
 
-    @Transactional
     public PermissionResponse create(SavePermissionCommand command) {
-        SysPermissionAggregate permission = new SysPermissionAggregate();
-        permissionConvertor.applyCommandToEntity(permission, command);
-        permission.enable();
-
-        // 领域服务负责权限持久化
-        permission = permissionDomainService.save(permission);
-        log.info("新建权限成功 permissionCode={}, id={}",
-                command.getPermissionCode(), permission.getId());
-        return permissionConvertor.toResponse(permission);
+        return iamPermissionClient.create(command);
     }
 
-    @Transactional
     public void update(Long id, SavePermissionCommand command) {
-        SysPermissionAggregate permission = permissionRepository.findById(id);
-        if (permission == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "权限不存在");
-        }
-        permissionConvertor.applyCommandToEntity(permission, command);
-        // 领域服务负责权限持久化
-        permissionDomainService.save(permission);
-        log.info("更新权限 id={}", id);
+        iamPermissionClient.update(id, command);
     }
 
-    @Transactional
     public void delete(Long id) {
-        // 领域服务负责删除
-        permissionDomainService.deleteById(id);
-        log.info("删除权限 id={}", id);
+        iamPermissionClient.delete(id);
     }
 
     /**
      * 刷新指定用户的权限缓存
      */
     public void refreshUserPermissionCache(Long userId) {
-        try {
-            List<String> permissionCodes = permissionRepository.findPermissionCodesByUserId(userId);
-            List<SysRoleAggregate> roles = roleRepository.findRolesByUserId(userId);
-            List<String> roleCodes = roles.stream()
-                    .map(SysRoleAggregate::getRoleCode)
-                    .collect(Collectors.toList());
-
-            SaSession session = StpUtil.getSessionByLoginId(userId);
-            session.set(SaSessionConstants.PERMISSION_LIST, permissionCodes);
-            session.set(SaSessionConstants.ROLE_LIST, roleCodes);
-
-            log.info("刷新用户权限缓存成功 userId={}, 权限数={}, 角色数={}",
-                    userId, permissionCodes.size(), roleCodes.size());
-        } catch (Exception e) {
-            log.warn("刷新用户权限缓存失败 userId={}：{}", userId, e.getMessage());
-        }
+        iamPermissionCacheClient.refreshUserPermissionCache(userId);
     }
 
     /**
      * 批量刷新角色下所有在线用户的权限缓存
      */
     public void refreshRoleUserCache(Long roleId) {
-        try {
-            List<Long> userIds = roleRepository.findUserIdsByRoleId(roleId);
-            for (Long userId : userIds) {
-                if (StpUtil.isLogin(userId)) {
-                    refreshUserPermissionCache(userId);
-                }
-            }
-            log.info("批量刷新角色用户缓存 roleId={}, 用户数={}", roleId, userIds.size());
-        } catch (Exception e) {
-            log.warn("批量刷新角色用户缓存失败 roleId={}：{}", roleId, e.getMessage());
-        }
+        iamPermissionCacheClient.refreshRoleUserCache(roleId);
     }
 }

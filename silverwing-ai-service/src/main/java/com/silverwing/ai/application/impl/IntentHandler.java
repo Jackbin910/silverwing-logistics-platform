@@ -1,7 +1,7 @@
 package com.silverwing.ai.application.impl;
 
-import com.silverwing.ai.application.dto.EntityResult;
-import com.silverwing.ai.application.dto.BizQueryResult;
+import com.silverwing.ai.domain.model.EntityResult;
+import com.silverwing.ai.domain.model.BizQueryResult;
 import com.silverwing.biz.ai.domain.enums.IntentEnum;
 
 import java.util.List;

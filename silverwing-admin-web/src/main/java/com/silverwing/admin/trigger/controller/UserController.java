@@ -6,8 +6,8 @@ import com.silverwing.admin.application.command.CreateUserCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
 import com.silverwing.admin.application.command.UserCommandService;
 import com.silverwing.admin.application.dto.UserResponse;
+import com.silverwing.admin.application.query.UserPageQuery;
 import com.silverwing.admin.application.query.UserQueryService;
-import com.silverwing.biz.iam.domain.model.query.UserQuery;
 import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -37,7 +37,7 @@ public class UserController {
     @SaCheckPermission("system:user:list")
     @Operation(summary = "分页查询用户列表")
     @GetMapping("/list")
-    public Result<PageResult<UserResponse>> list(UserQuery query) {
+    public Result<PageResult<UserResponse>> list(UserPageQuery query) {
         return Result.success(userQueryService.list(query));
     }
 

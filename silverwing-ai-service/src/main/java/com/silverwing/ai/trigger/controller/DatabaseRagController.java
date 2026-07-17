@@ -1,6 +1,6 @@
 package com.silverwing.ai.trigger.controller;
 
-import com.silverwing.ai.application.rag.DatabaseRagService;
+import com.silverwing.ai.domain.service.rag.DatabaseRagService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

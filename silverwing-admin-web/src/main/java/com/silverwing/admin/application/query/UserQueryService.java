@@ -1,18 +1,19 @@
 package com.silverwing.admin.application.query;
 
 import com.silverwing.admin.application.dto.UserResponse;
-import com.silverwing.biz.iam.domain.model.query.UserQuery;
+import com.silverwing.admin.application.query.UserPageQuery;
 import com.silverwing.common.domain.PageResult;
 
 import java.util.List;
 
 /**
  * 用户查询服务（CQRS 读侧）
- * <p>返回经由 UserConvertor 映射的 {@link UserResponse}，避免直接暴露领域聚合根（含密码）。</p>
+ * <p>通过 {@link IamUserClient} 防腐层端口访问 biz-iam，返回本模块 {@link UserResponse}，
+ * 避免直接暴露领域聚合根（含密码）。</p>
  */
 public interface UserQueryService {
 
-    PageResult<UserResponse> list(UserQuery query);
+    PageResult<UserResponse> list(UserPageQuery query);
 
     UserResponse getById(Long id);
 

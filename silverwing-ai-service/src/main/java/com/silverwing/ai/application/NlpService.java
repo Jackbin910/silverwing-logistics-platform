@@ -3,6 +3,12 @@ package com.silverwing.ai.application;
 import com.silverwing.ai.application.dto.*;
 
 import java.util.List;
+import com.silverwing.ai.domain.model.IntentResult;
+import com.silverwing.ai.domain.model.EntityResult;
+import com.silverwing.ai.domain.model.ClassifyResult;
+import com.silverwing.ai.domain.model.SentimentResult;
+import com.silverwing.ai.domain.model.SummaryResult;
+import com.silverwing.ai.domain.model.NlpAnalyzeResult;
 
 /**
  * NLP 自然语言处理统一服务接口

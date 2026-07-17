@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
 import java.util.Map;
+import com.silverwing.ai.domain.model.IntentResult;
+import com.silverwing.ai.domain.model.ClassifyResult;
+import com.silverwing.ai.domain.model.SentimentResult;
+import com.silverwing.ai.domain.model.SummaryResult;
+import com.silverwing.ai.domain.model.NlpAnalyzeResult;
 
 /**
  * NLP 自然语言处理 Controller

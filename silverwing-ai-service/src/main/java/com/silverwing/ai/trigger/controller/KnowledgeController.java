@@ -2,8 +2,8 @@ package com.silverwing.ai.trigger.controller;
 
 import cn.hutool.core.text.CharSequenceUtil;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
-import com.silverwing.ai.application.rag.KnowledgeIngestService;
-import com.silverwing.ai.application.rag.KnowledgeQaService;
+import com.silverwing.ai.domain.service.rag.KnowledgeIngestService;
+import com.silverwing.ai.domain.service.rag.KnowledgeQaService;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;

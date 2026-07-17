@@ -3,18 +3,17 @@ package com.silverwing.ai.application.impl;
 import com.alibaba.fastjson2.JSON;
 import com.silverwing.ai.application.dto.*;
 import com.silverwing.biz.ai.domain.enums.IntentEnum;
-import com.silverwing.ai.application.ai.AnswerFormatter;
-import com.silverwing.ai.application.rag.DatabaseRagService;
-import com.silverwing.ai.application.rag.KnowledgeQaService;
+import com.silverwing.ai.domain.service.IntentRecognitionService;
+import com.silverwing.ai.domain.service.rag.DatabaseRagService;
+import com.silverwing.ai.domain.port.LlmPort;
+import com.silverwing.ai.domain.service.rag.KnowledgeQaService;
 import com.silverwing.common.exception.BusinessException;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
-import dev.langchain4j.service.AiServices;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -23,6 +22,9 @@ import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.List;
+import com.silverwing.ai.domain.model.NlpParseResult;
+import com.silverwing.ai.domain.model.BizQueryResult;
+import com.silverwing.ai.domain.repository.ConversationRepository;
 
 /**
  * 对话编排服务
@@ -33,10 +35,21 @@ import java.util.List;
 @Service
 public class ConversationOrchestrator {
 
+    private static final String ANSWER_FORMATTER_SYSTEM_PROMPT = """
+        你是物流智能平台的智能助手。请根据业务查询结果，用简洁友好的中文回答用户的问题。
+
+        要求：
+        1. 直接回答问题，不要重复用户的问题
+        2. 使用专业的物流/仓储领域术语
+        3. 如果查询结果为空，告知用户未找到相关信息
+        4. 适当组织信息，使用分点或分行让回答更清晰
+        5. 如果有数值数据，带上合适的单位
+        """;
+
     private final IntentRecognitionService intentService;
     private final IntentRouter intentRouter;
-    private final AnswerFormatter answerFormatter;
-    private final ConversationMemoryManager memoryManager;
+    private final LlmPort llmPort;
+    private final ConversationRepository conversationRepository;
 
     private final StreamingChatModel streamingChatModel;
 
@@ -61,15 +74,15 @@ public class ConversationOrchestrator {
      * @param intentRouter   意图路由器
      * @param memoryManager  对话记忆管理器
      */
-    public ConversationOrchestrator(ChatModel chatModel,
-                                    IntentRecognitionService intentService,
+    public ConversationOrchestrator(IntentRecognitionService intentService,
                                     IntentRouter intentRouter,
-                                    ConversationMemoryManager memoryManager,
+                                    ConversationRepository conversationRepository,
+                                    LlmPort llmPort,
                                     StreamingChatModel streamingChatModel) {
         this.intentService = intentService;
         this.intentRouter = intentRouter;
-        this.memoryManager = memoryManager;
-        this.answerFormatter = AiServices.create(AnswerFormatter.class, chatModel);
+        this.conversationRepository = conversationRepository;
+        this.llmPort = llmPort;
         this.streamingChatModel = streamingChatModel;
     }
 
@@ -93,7 +106,7 @@ public class ConversationOrchestrator {
     public ConversationResponse chat(String userMessage, String sessionId) {
         try {
             // 1. 获取历史上下文
-            List<ChatMessage> history = memoryManager.getHistory(sessionId);
+            List<ChatMessage> history = conversationRepository.getHistory(sessionId);
             log.debug("对话历史: sessionId={}, 轮数={}", sessionId, history.size() / 2);
 
             // 2. NLP 解析：意图 + 实体
@@ -150,7 +163,8 @@ public class ConversationOrchestrator {
             // 7. LLM 将结构化数据转化为自然语言回答，带上历史上下文
             String contextHint = buildContextHint(history);
             String queryResultJson = JSON.toJSONString(bizResult.getData());
-            String naturalAnswer = answerFormatter.format(contextHint + userMessage, queryResultJson);
+            String naturalAnswer = llmPort.complete(
+                    ANSWER_FORMATTER_SYSTEM_PROMPT, contextHint + userMessage + "\n" + queryResultJson);
             log.info("自然语言回答: {}", naturalAnswer);
 
             saveMemory(sessionId, userMessage, naturalAnswer);
@@ -190,7 +204,7 @@ public class ConversationOrchestrator {
 
         try {
             // 1. 获取历史上下文
-            List<ChatMessage> history = memoryManager.getHistory(sessionId);
+            List<ChatMessage> history = conversationRepository.getHistory(sessionId);
             log.debug("对话历史: sessionId={}, 轮数={}", sessionId, history.size() / 2);
 
             // 2. NLP 解析：意图 + 实体
@@ -293,7 +307,7 @@ public class ConversationOrchestrator {
      * @param sessionId 会话ID
      */
     public void clearMemory(String sessionId) {
-        memoryManager.clear(sessionId);
+        conversationRepository.clear(sessionId);
     }
 
     /**
@@ -321,7 +335,7 @@ public class ConversationOrchestrator {
             List<ChatMessage> messages = new ArrayList<>();
             messages.add(UserMessage.from(userMessage));
             messages.add(AiMessage.from(aiAnswer));
-            memoryManager.appendMessages(sessionId, messages);
+            conversationRepository.appendMessages(sessionId, messages);
         }
     }
 

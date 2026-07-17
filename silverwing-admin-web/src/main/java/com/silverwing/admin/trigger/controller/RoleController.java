@@ -5,8 +5,8 @@ import com.silverwing.common.annotation.Log;
 import com.silverwing.admin.application.command.RoleCommandService;
 import com.silverwing.admin.application.command.SaveRoleCommand;
 import com.silverwing.admin.application.dto.RoleResponse;
+import com.silverwing.admin.application.query.RolePageQuery;
 import com.silverwing.admin.application.query.RoleQueryService;
-import com.silverwing.biz.iam.domain.model.query.RoleQuery;
 import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +35,7 @@ public class RoleController {
     @SaCheckPermission("system:role:list")
     @Operation(summary = "分页查询角色列表")
     @GetMapping("/list")
-    public Result<PageResult<RoleResponse>> list(RoleQuery query) {
+    public Result<PageResult<RoleResponse>> list(RolePageQuery query) {
         return Result.success(roleQueryService.list(query));
     }
 

@@ -1,12 +1,22 @@
 package com.silverwing.ai.application.impl;
 
 import com.silverwing.ai.application.dto.*;
-import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.application.NlpService;
+import com.silverwing.ai.domain.service.IntentRecognitionService;
+import com.silverwing.ai.domain.service.SentimentAnalysisService;
+import com.silverwing.ai.domain.service.TextClassificationService;
+import com.silverwing.ai.domain.service.TextSummaryService;
+import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import com.silverwing.ai.domain.model.IntentResult;
+import com.silverwing.ai.domain.model.EntityResult;
+import com.silverwing.ai.domain.model.ClassifyResult;
+import com.silverwing.ai.domain.model.SentimentResult;
+import com.silverwing.ai.domain.model.SummaryResult;
+import com.silverwing.ai.domain.model.NlpAnalyzeResult;
 
 /**
  * NLP 自然语言处理服务实现

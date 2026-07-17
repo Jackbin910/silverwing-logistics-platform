@@ -1,60 +1,44 @@
 package com.silverwing.admin.application.query.impl;
 
-import com.silverwing.admin.application.convertor.RoleConvertor;
 import com.silverwing.admin.application.dto.RoleResponse;
+import com.silverwing.admin.application.query.RolePageQuery;
 import com.silverwing.admin.application.query.RoleQueryService;
-import com.silverwing.biz.iam.domain.adapter.repository.RoleRepository;
-import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
-import com.silverwing.biz.iam.domain.model.query.RoleQuery;
+import com.silverwing.admin.client.IamRoleClient;
 import com.silverwing.common.domain.PageResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 角色查询服务实现（CQRS 读侧）
- * <p>从仓储获取聚合根后，统一经 RoleConvertor 转换为 {@link RoleResponse} 再返回。</p>
+ * <p>委托 {@link IamRoleClient} 防腐层端口完成查询，本类不再依赖 biz-iam 仓储与聚合根。</p>
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RoleQueryServiceImpl implements RoleQueryService {
 
-    private final RoleRepository roleRepository;
-    private final RoleConvertor roleConvertor;
+    private final IamRoleClient iamRoleClient;
 
     @Override
-    @Transactional(readOnly = true)
-    public PageResult<RoleResponse> list(RoleQuery query) {
-        PageResult<SysRoleAggregate> page = roleRepository.findPage(query);
-        List<RoleResponse> records = page.getRecords().stream()
-                .map(roleConvertor::toResponse)
-                .collect(Collectors.toList());
-        return new PageResult<>(page.getCurrent(), page.getSize(), page.getTotal(), records);
+    public PageResult<RoleResponse> list(RolePageQuery query) {
+        return iamRoleClient.list(query);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<RoleResponse> listAllEnabled() {
-        return roleRepository.findAllEnabled().stream()
-                .map(roleConvertor::toResponse)
-                .collect(Collectors.toList());
+        return iamRoleClient.listAllEnabled();
     }
 
     @Override
-    @Transactional(readOnly = true)
     public RoleResponse getById(Long id) {
-        SysRoleAggregate role = roleRepository.findById(id);
-        return role == null ? null : roleConvertor.toResponse(role);
+        return iamRoleClient.getById(id);
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<Long> getRolePermissionIds(Long roleId) {
-        return roleRepository.findPermissionIdsByRoleId(roleId);
+        return iamRoleClient.getRolePermissionIds(roleId);
     }
 }

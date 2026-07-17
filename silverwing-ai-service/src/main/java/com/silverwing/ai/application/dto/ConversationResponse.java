@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 import java.util.Map;
+import com.silverwing.ai.domain.model.EntityResult;
 
 /**
  * 对话响应 DTO
