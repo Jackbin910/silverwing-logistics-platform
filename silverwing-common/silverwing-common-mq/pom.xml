@@ -7,56 +7,43 @@
 
     <parent>
         <groupId>com.silverwing</groupId>
-        <artifactId>sw-logistics-platform</artifactId>
+        <artifactId>silverwing-common</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>silverwing-biz-iam</artifactId>
+    <artifactId>silverwing-common-mq</artifactId>
     <packaging>jar</packaging>
-    <name>Biz IAM Domain Module</name>
-    <description>IAM 领域共享层：实体、仓储接口与实现，供需要 IAM 能力的微服务依赖</description>
+    <name>Common MQ Module</name>
+    <description>
+        RabbitMQ 消息队列公共能力：默认 JSON 消息转换器自动配置。
+        需要使用 RabbitMQ 的微服务引入本模块（依赖 base）。
+    </description>
 
     <dependencies>
-        <!-- Common（横切共享层：BaseEntity、各类 starter、JetCache 等配置） -->
-        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
+        <!-- 基础模块：提供通用工具与自动配置基类 -->
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Spring AMQP (RabbitMQ) -->
         <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-cache</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-auth</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
-        <!-- Lombok（@Data / @RequiredArgsConstructor 等编译期注解） -->
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- MapStruct（对象转换，编译期生成实现，运行时无需额外依赖） -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>silverwing-biz-iam</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -68,11 +55,6 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>1.18.36</version>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

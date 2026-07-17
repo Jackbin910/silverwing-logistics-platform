@@ -18,9 +18,25 @@
 
     <dependencies>
         <!-- Common -->
+        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
         <dependency>
             <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common</artifactId>
+            <artifactId>silverwing-common-base</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-web</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-cache</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-auth</artifactId>
             <version>${project.version}</version>
         </dependency>
 

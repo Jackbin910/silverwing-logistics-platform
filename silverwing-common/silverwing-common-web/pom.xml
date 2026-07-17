@@ -7,56 +7,46 @@
 
     <parent>
         <groupId>com.silverwing</groupId>
-        <artifactId>sw-logistics-platform</artifactId>
+        <artifactId>silverwing-common</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>silverwing-biz-iam</artifactId>
+    <artifactId>silverwing-common-web</artifactId>
     <packaging>jar</packaging>
-    <name>Biz IAM Domain Module</name>
-    <description>IAM 领域共享层：实体、仓储接口与实现，供需要 IAM 能力的微服务依赖</description>
+    <name>Common Web Module</name>
+    <description>
+        Web 层通用能力：认证拦截器 AuthInterceptor、请求链路追踪过滤器 RequestTraceFilter、
+        以及对应的 TraceFilterAutoConfiguration。仅 Servlet 服务需要引入。
+    </description>
 
     <dependencies>
-        <!-- Common（横切共享层：BaseEntity、各类 starter、JetCache 等配置） -->
-        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
             <version>${project.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-cache</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-auth</artifactId>
-            <version>${project.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Lombok（@Data / @RequiredArgsConstructor 等编译期注解） -->
+        <!-- AuthInterceptor 使用 Sa-Token 的 StpUtil -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-spring-boot3-starter</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
-
-        <!-- MapStruct（对象转换，编译期生成实现，运行时无需额外依赖） -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
-        <finalName>silverwing-biz-iam</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -68,11 +58,6 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>1.18.36</version>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

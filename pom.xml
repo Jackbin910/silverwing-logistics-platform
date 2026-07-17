@@ -245,10 +245,42 @@
             <!-- Dynamic-TP 动态线程池 BOM（Spring Boot 3.x） -->
             <dependency>
                 <groupId>org.dromara.dynamictp</groupId>
-                    <artifactId>dynamic-tp-dependencies</artifactId>
+                <artifactId>dynamic-tp-dependencies</artifactId>
                 <version>${dynamic-tp.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Common 子模块版本管理（按需引入，不再依赖整体 silverwing-common） -->
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-cache</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-mq</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-job</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
         </dependencies>

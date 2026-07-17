@@ -40,13 +40,13 @@ services:
 
   # Redis 缓存
   redis:
-    image: docker.1ms.run/library/redis:6.2.18
+    image: docker.1ms.run/redis/redis-stack-server:6.2.6-v20
     container_name: redis-server
     ports:
       - "${REDIS_PORT}:6379"
     volumes:
       - ./data/redis:/data
-    command: redis-server --appendonly yes
+    command: redis-stack-server --appendonly yes
     networks:
       silverwing-network:
         aliases:

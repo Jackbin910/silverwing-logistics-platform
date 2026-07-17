@@ -8,7 +8,7 @@ set -e
 # 基础设施镜像列表
 declare -a IMAGES=(
     "docker.1ms.run/library/mysql:8.0.40"
-    "docker.1ms.run/library/redis:6.2.18"
+    "docker.1ms.run/redis/redis-stack-server:6.2.6-v20"
     "docker.1ms.run/pgvector/pgvector:pg16"
     "docker.1ms.run/nacos/nacos-server:v2.4.3"
     "docker.1ms.run/library/rabbitmq:3.13.7-management"
