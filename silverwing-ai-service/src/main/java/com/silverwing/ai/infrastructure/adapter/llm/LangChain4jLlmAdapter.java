@@ -1,16 +1,8 @@
 package com.silverwing.ai.infrastructure.adapter.llm;
 
 import com.silverwing.ai.domain.port.LlmPort;
-import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ChatMessage;
-import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
-import dev.langchain4j.model.output.Response;
 import org.springframework.stereotype.Component;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * LLM 端口的 LangChain4j 实现。
@@ -32,12 +24,11 @@ public class LangChain4jLlmAdapter implements LlmPort {
 
     @Override
     public String complete(String systemPrompt, String userPrompt) {
-        List<ChatMessage> messages = new ArrayList<>();
-        if (systemPrompt != null && !systemPrompt.isBlank()) {
-            messages.add(SystemMessage.from(systemPrompt));
-        }
-        messages.add(UserMessage.from(userPrompt));
-        Response<AiMessage> response = chatModel.generate(messages);
-        return response.content().text();
+        // 与项目内已验证的用法一致：chat(String) 直接返回文本。
+        // 系统提示词与用户提示词拼接为单条请求，保持对底层框架版本的兼容。
+        String fullPrompt = (systemPrompt == null || systemPrompt.isBlank())
+                ? userPrompt
+                : systemPrompt + "\n\n" + userPrompt;
+        return chatModel.chat(fullPrompt);
     }
 }
