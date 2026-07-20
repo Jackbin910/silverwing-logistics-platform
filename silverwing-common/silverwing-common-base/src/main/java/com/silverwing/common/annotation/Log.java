@@ -6,6 +6,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.silverwing.common.enums.BusinessTypeEnum;
+
 /**
  * 操作日志注解
  * <p>
@@ -27,7 +29,7 @@ public @interface Log {
     /**
      * 业务类型（0其它 1新增 2修改 3删除）
      */
-    int businessType() default 0;
+    BusinessTypeEnum businessType() default BusinessTypeEnum.OTHER;
 
     /**
      * 操作类别（0其它 1后台用户 2手机端用户）

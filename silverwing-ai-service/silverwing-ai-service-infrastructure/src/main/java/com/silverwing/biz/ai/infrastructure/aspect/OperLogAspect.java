@@ -68,7 +68,7 @@ public class OperLogAspect {
             MethodSignature signature = (MethodSignature) joinPoint.getSignature();
             Log logAnno = signature.getMethod().getAnnotation(Log.class);
             po.setTitle(logAnno.title());
-            po.setBusinessType(logAnno.businessType());
+            po.setBusinessType(logAnno.businessType().getCode());
             po.setOperatorType(logAnno.operatorType());
             po.setMethod(signature.getDeclaringTypeName() + "." + signature.getName());
 

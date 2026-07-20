@@ -2,6 +2,7 @@ package com.silverwing.admin.trigger.controller;
 
 import cn.dev33.satoken.annotation.SaCheckPermission;
 import com.silverwing.common.annotation.Log;
+import com.silverwing.common.enums.BusinessTypeEnum;
 import com.silverwing.admin.application.command.CreateUserCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
 import com.silverwing.admin.application.command.UserCommandService;
@@ -48,7 +49,7 @@ public class UserController {
         return Result.success(userQueryService.getById(id));
     }
 
-    @Log(title = "用户管理-新建用户", businessType = 1)
+    @Log(title = "用户管理-新建用户", businessType = BusinessTypeEnum.INSERT)
     @SaCheckPermission("system:user:add")
     @Operation(summary = "新建用户")
     @PostMapping
@@ -56,7 +57,7 @@ public class UserController {
         return Result.success(userCommandService.create(command));
     }
 
-    @Log(title = "用户管理-更新用户", businessType = 2)
+    @Log(title = "用户管理-更新用户", businessType = BusinessTypeEnum.UPDATE)
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "更新用户信息")
     @PutMapping("/{id}")
@@ -65,7 +66,7 @@ public class UserController {
         return Result.success("更新成功");
     }
 
-    @Log(title = "用户管理-删除用户", businessType = 3)
+    @Log(title = "用户管理-删除用户", businessType = BusinessTypeEnum.DELETE)
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
@@ -74,7 +75,7 @@ public class UserController {
         return Result.success("删除成功");
     }
 
-    @Log(title = "用户管理-重置密码", businessType = 2)
+    @Log(title = "用户管理-重置密码", businessType = BusinessTypeEnum.UPDATE)
     @SaCheckPermission("system:user:resetPwd")
     @Operation(summary = "重置密码")
     @PutMapping("/{id}/password")

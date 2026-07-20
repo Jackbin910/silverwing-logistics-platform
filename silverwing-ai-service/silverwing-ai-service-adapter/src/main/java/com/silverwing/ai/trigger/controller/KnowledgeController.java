@@ -6,6 +6,7 @@ import com.silverwing.ai.domain.service.rag.KnowledgeIngestService;
 import com.silverwing.ai.domain.service.rag.KnowledgeQaService;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.domain.Result;
+import com.silverwing.common.enums.BusinessTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -38,7 +39,7 @@ public class KnowledgeController {
      * 上传文档文件并导入知识库
      * 支持 PDF / Word（doc、docx）/ Markdown（md）等格式
      */
-    @Log(title = "知识库-导入文档", businessType = 1, saveResult = false)
+    @Log(title = "知识库-导入文档", businessType = BusinessTypeEnum.INSERT, saveResult = false)
     @Operation(summary = "导入文档", description = "上传文档文件，自动解析、切分、向量化后存入知识库")
     @PostMapping(value = "/ingest", consumes = "multipart/form-data")
     public Result<KnowledgeIngestResult> ingest(
@@ -95,7 +96,7 @@ public class KnowledgeController {
     /**
      * 根据文档 ID 删除知识库中的分片
      */
-    @Log(title = "知识库-删除文档", businessType = 3)
+    @Log(title = "知识库-删除文档", businessType = BusinessTypeEnum.DELETE)
     @Operation(summary = "删除文档", description = "根据文档 ID 删除知识库中该文档的所有分片")
     @DeleteMapping("/delete/{documentId}")
     public Result<String> deleteByDocumentId(@PathVariable("documentId") String documentId) {
@@ -106,7 +107,7 @@ public class KnowledgeController {
     /**
      * 清空整个知识库
      */
-    @Log(title = "知识库-清空知识库", businessType = 3)
+    @Log(title = "知识库-清空知识库", businessType = BusinessTypeEnum.DELETE)
     @Operation(summary = "清空知识库", description = "清空知识库中所有向量数据，谨慎操作！")
     @DeleteMapping("/clear")
     public Result<String> clearAll() {

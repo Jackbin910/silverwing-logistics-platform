@@ -3,6 +3,7 @@ package com.silverwing.ai.trigger.controller;
 import cn.hutool.core.text.CharSequenceUtil;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.domain.Result;
+import com.silverwing.common.enums.BusinessTypeEnum;
 import com.silverwing.ai.application.dto.ConversationResponse;
 import com.silverwing.ai.application.dto.ChatRequest;
 import com.silverwing.ai.application.impl.ConversationOrchestrator;
@@ -80,7 +81,7 @@ public class ConversationController {
      * 清除对话记忆
      * 前端可以主动清除对话历史，重新开始对话
      */
-    @Log(title = "智能对话-清除对话记忆", businessType = 3)
+    @Log(title = "智能对话-清除对话记忆", businessType = BusinessTypeEnum.DELETE)
     @Operation(summary = "清除对话记忆", description = "清除指定会话的对话历史，重新开始")
     @DeleteMapping("/memory/{sessionId}")
     public Result<Void> clearMemory(@PathVariable String sessionId) {
