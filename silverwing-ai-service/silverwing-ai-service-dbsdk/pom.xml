@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.silverwing</groupId>
         <artifactId>sw-logistics-platform</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -20,17 +20,17 @@
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-ai-service-domain</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- MyBatis-Plus：Mapper 继承 BaseMapper、PO 使用 @TableName -->

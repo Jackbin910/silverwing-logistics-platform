@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.silverwing</groupId>
         <artifactId>sw-logistics-platform</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>silverwing-gateway</artifactId>

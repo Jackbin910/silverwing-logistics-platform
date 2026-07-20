@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.silverwing</groupId>
         <artifactId>silverwing-common</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -24,7 +24,7 @@
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <dependency>

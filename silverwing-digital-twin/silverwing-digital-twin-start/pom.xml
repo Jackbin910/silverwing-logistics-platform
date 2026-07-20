@@ -8,7 +8,7 @@
     <parent>
         <groupId>com.silverwing</groupId>
         <artifactId>sw-logistics-platform</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -21,39 +21,39 @@
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-digital-twin-domain</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-digital-twin-app</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-digital-twin-adapter</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- Common 子模块 -->
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-cache</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-auth</artifactId>
-            <version>${project.version}</version>
+            <version>${revision}</version>
         </dependency>
 
         <!-- Nacos Discovery -->

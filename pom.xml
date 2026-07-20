@@ -7,13 +7,15 @@
 
     <groupId>com.silverwing</groupId>
     <artifactId>sw-logistics-platform</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>SilverWing Smart Logistics Platform</name>
     <description>Hospital smart logistics comprehensive management platform</description>
 
     <properties>
+        <revision>1.0.0-SNAPSHOT</revision>
+        <flatten-maven-plugin.version>1.7.2</flatten-maven-plugin.version>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -253,32 +255,32 @@
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-base</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-web</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-cache</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-auth</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-mq</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-job</artifactId>
-                <version>${project.version}</version>
+                <version>${revision}</version>
             </dependency>
 
         </dependencies>
@@ -329,6 +331,35 @@
                 </plugin>
             </plugins>
         </pluginManagement>
+
+        <plugins>
+            <!-- 统一 revision 版本 -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten-maven-plugin.version}</version>
+                <configuration>
+                    <flattenMode>bom</flattenMode>
+                    <updatePomFile>true</updatePomFile>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                    </execution>
+                    <execution>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 
     <!-- 多环境配置 -->
