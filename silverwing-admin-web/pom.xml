@@ -12,107 +12,17 @@
     </parent>
 
     <artifactId>silverwing-admin-web</artifactId>
-    <packaging>jar</packaging>
-    <name>Admin Web Service</name>
-    <description>Comprehensive management web interface - inventory, reports, permission management</description>
+    <packaging>pom</packaging>
+    <name>Admin Web Service (COLA)</name>
+    <description>管理后台 Web 服务：按 COLA 分层拆分为 domain/app/client/infrastructure/dbsdk/adapter/start 子模块</description>
 
-    <dependencies>
-        <!-- Common -->
-        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-base</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-cache</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-auth</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Biz IAM 领域（实体与仓储） -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-biz-iam</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- MapStruct（应用层对象转换，编译期生成实现） -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
-
-        <!-- Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Nacos Config -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- OpenFeign -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
-        <!-- Thymeleaf -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <finalName>silverwing-admin-web</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.36</version>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${mapstruct.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
+    <modules>
+        <module>silverwing-admin-web-domain</module>
+        <module>silverwing-admin-web-dbsdk</module>
+        <module>silverwing-admin-web-infrastructure</module>
+        <module>silverwing-admin-web-client</module>
+        <module>silverwing-admin-web-app</module>
+        <module>silverwing-admin-web-adapter</module>
+        <module>silverwing-admin-web-start</module>
+    </modules>
 </project>

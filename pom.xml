@@ -46,8 +46,6 @@
 
     <modules>
         <module>silverwing-common</module>
-        <module>silverwing-biz-iam</module>
-        <module>silverwing-biz-ai</module>
         <module>silverwing-gateway</module>
         <module>silverwing-auth</module>
         <module>silverwing-core-service</module>

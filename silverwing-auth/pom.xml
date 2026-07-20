@@ -12,95 +12,16 @@
     </parent>
 
     <artifactId>silverwing-auth</artifactId>
-    <packaging>jar</packaging>
-    <name>Authentication Service</name>
-    <description>User authentication, authority management, and token issuance</description>
+    <packaging>pom</packaging>
+    <name>Auth Service (COLA)</name>
+    <description>认证授权服务：按 COLA 分层拆分为 domain/app/client/infrastructure/adapter/start 子模块</description>
 
-    <dependencies>
-        <!-- Common -->
-        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-base</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-cache</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-auth</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- Biz IAM 领域（实体与仓储） -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-biz-iam</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <!-- MapStruct（应用层对象转换，编译期生成实现） -->
-        <dependency>
-            <groupId>org.mapstruct</groupId>
-            <artifactId>mapstruct</artifactId>
-        </dependency>
-
-        <!-- Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Nacos Config -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <finalName>silverwing-auth</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.36</version>
-                        </path>
-                        <path>
-                            <groupId>org.mapstruct</groupId>
-                            <artifactId>mapstruct-processor</artifactId>
-                            <version>${mapstruct.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
+    <modules>
+        <module>silverwing-auth-domain</module>
+        <module>silverwing-auth-app</module>
+        <module>silverwing-auth-client</module>
+        <module>silverwing-auth-infrastructure</module>
+        <module>silverwing-auth-adapter</module>
+        <module>silverwing-auth-start</module>
+    </modules>
 </project>
