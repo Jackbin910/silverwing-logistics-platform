@@ -9,88 +9,19 @@
         <groupId>com.silverwing</groupId>
         <artifactId>sw-logistics-platform</artifactId>
         <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>silverwing-digital-twin</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <name>Digital Twin Service</name>
     <description>Visualization services, simulation prediction, physical modeling engine</description>
 
-    <dependencies>
-        <!-- Common -->
-        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-base</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-web</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-cache</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-auth</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-
-
-        <!-- Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Nacos Config -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- WebSocket -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-websocket</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <finalName>silverwing-digital-twin</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.36</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+    <modules>
+        <module>silverwing-digital-twin-domain</module>
+        <module>silverwing-digital-twin-app</module>
+        <module>silverwing-digital-twin-adapter</module>
+        <module>silverwing-digital-twin-start</module>
+    </modules>
 
 </project>
