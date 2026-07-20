@@ -4,6 +4,7 @@ import com.silverwing.ai.domain.model.EntityResult;
 import com.silverwing.ai.domain.model.BizQueryResult;
 import com.silverwing.biz.ai.domain.enums.EntityTypeEnum;
 import com.silverwing.biz.ai.domain.enums.IntentEnum;
+import com.silverwing.common.domain.ResultCode;
 import com.silverwing.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -64,7 +65,7 @@ public class IntentRouter {
 
         if (handler == null) {
             log.warn("未找到意图处理器: {}", intent);
-            throw new BusinessException("暂不支持该意图类型: " + intent.getName());
+            throw BusinessException.i18n(ResultCode.INTERNAL_SERVER_ERROR, "ai.intent.unsupported", intent.getName());
         }
 
         log.info("路由意图 [{}] 到处理器 [{}]", intent, handler.getClass().getSimpleName());
@@ -102,7 +103,7 @@ public class IntentRouter {
     public static String requireEntity(List<EntityResult> entities, EntityTypeEnum type, String fieldName) {
         String value = extractEntity(entities, type);
         if (value == null || value.isBlank()) {
-            throw new BusinessException("请提供" + fieldName + "信息");
+            throw BusinessException.i18n(ResultCode.INTERNAL_SERVER_ERROR, "ai.intent.field.required", fieldName);
         }
         return value;
     }

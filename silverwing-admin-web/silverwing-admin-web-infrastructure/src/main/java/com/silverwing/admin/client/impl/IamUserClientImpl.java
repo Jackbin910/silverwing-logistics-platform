@@ -52,7 +52,7 @@ public class IamUserClientImpl implements IamUserClient {
     public void update(Long id, UpdateUserCommand command) {
         SysUserAggregate user = userRepository.findById(id);
         if (user == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.user.notfound");
         }
         userConvertor.applyUpdate(user, command);
         // 领域服务负责持久化
@@ -73,7 +73,7 @@ public class IamUserClientImpl implements IamUserClient {
     public void resetPassword(Long id, String newPassword) {
         SysUserAggregate user = userRepository.findById(id);
         if (user == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.user.notfound");
         }
         // 领域服务负责密码加密与持久化
         userDomainService.changePassword(user, newPassword);
@@ -85,7 +85,7 @@ public class IamUserClientImpl implements IamUserClient {
     public void toggleStatus(Long id) {
         SysUserAggregate user = userRepository.findById(id);
         if (user == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "用户不存在");
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.user.notfound");
         }
         // 领域服务负责状态切换与持久化
         userDomainService.toggleStatus(user);

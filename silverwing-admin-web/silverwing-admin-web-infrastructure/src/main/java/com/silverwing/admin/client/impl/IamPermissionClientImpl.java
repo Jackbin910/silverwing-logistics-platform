@@ -48,7 +48,7 @@ public class IamPermissionClientImpl implements IamPermissionClient {
     public void update(Long id, SavePermissionCommand command) {
         SysPermissionAggregate permission = permissionRepository.findById(id);
         if (permission == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "权限不存在");
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.permission.notfound");
         }
         permissionConvertor.applyCommandToEntity(permission, command);
         // 领域服务负责权限持久化

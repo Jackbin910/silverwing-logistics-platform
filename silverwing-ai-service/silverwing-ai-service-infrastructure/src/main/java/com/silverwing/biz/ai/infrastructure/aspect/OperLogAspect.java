@@ -8,6 +8,7 @@ import com.silverwing.biz.ai.infrastructure.dao.po.SysOperLogPO;
 import com.silverwing.biz.ai.infrastructure.mapper.SysOperLogMapper;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.constant.SaSessionConstants;
+import com.silverwing.common.i18n.LocaleContextUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -97,13 +98,14 @@ public class OperLogAspect {
      */
     private void record(SysOperLogPO po) {
         Executor executor = DtpRegistry.getExecutor(DTP_EXECUTOR_NAME);
-        CompletableFuture.runAsync(() -> {
+        // 包装任务以传播请求线程的 Locale，保证异步线程内的国际化取值正确
+        CompletableFuture.runAsync(LocaleContextUtils.wrap(() -> {
             try {
                 sysOperLogMapper.insertBatch(Collections.singletonList(po));
             } catch (Exception e) {
                 log.error("操作日志异步落库失败", e);
             }
-        }, executor);
+        }), executor);
     }
 
     /**

@@ -48,7 +48,7 @@ public class IamRoleClientImpl implements IamRoleClient {
     public void update(Long id, SaveRoleCommand command) {
         SysRoleAggregate role = roleRepository.findById(id);
         if (role == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "角色不存在");
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.role.notfound");
         }
         if (command.getRoleCode() != null) {
             role.setRoleCode(command.getRoleCode());

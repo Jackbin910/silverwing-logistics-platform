@@ -156,4 +156,22 @@ public class BusinessException extends RuntimeException {
         this.i18nCode = i18nCode;
         this.i18nArgs = i18nArgs;
     }
+
+
+    /**
+     * 创建国际化业务异常（推荐用于无占位符参数场景）
+     * <p>
+     * 直接调用两参构造 {@code new BusinessException(resultCode, i18nCode)} 时，Java 重载
+     * 会优先命中 {@code (ResultCode, String message)} 非国际化构造，导致 i18nCode 丢失、
+     * 文案不翻译。本工厂显式走国际化路径，消除重载歧义。
+     * </p>
+     *
+     * @param resultCode 状态码枚举
+     * @param i18nCode   国际化消息 code，如 admin.user.notfound
+     * @param i18nArgs   占位符参数
+     * @return 携带 i18nCode 的业务异常
+     */
+    public static BusinessException i18n(ResultCode resultCode, String i18nCode, Object... i18nArgs) {
+        return new BusinessException(resultCode, i18nCode, i18nArgs);
+    }
 }
