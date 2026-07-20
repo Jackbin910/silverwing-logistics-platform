@@ -13,8 +13,8 @@
 
     <artifactId>silverwing-admin-web</artifactId>
     <packaging>pom</packaging>
-    <name>Admin Web Service (COLA)</name>
-    <description>管理后台 Web 服务：按 COLA 分层拆分为 domain/app/client/infrastructure/dbsdk/adapter/start 子模块</description>
+    <name>Admin Web Service</name>
+    <description>管理后台 Web 服务</description>
 
     <modules>
         <module>silverwing-admin-web-domain</module>

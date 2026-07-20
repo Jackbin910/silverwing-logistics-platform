@@ -13,8 +13,8 @@
 
     <artifactId>silverwing-ai-service</artifactId>
     <packaging>pom</packaging>
-    <name>AI Service (COLA)</name>
-    <description>AI 智能服务：按 COLA 分层拆分为 domain/dbsdk/infrastructure/client/app/adapter/start 子模块</description>
+    <name>AI Service</name>
+    <description>AI 智能服务</description>
 
     <modules>
         <module>silverwing-ai-service-domain</module>

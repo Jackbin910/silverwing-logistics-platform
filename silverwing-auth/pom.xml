@@ -13,8 +13,8 @@
 
     <artifactId>silverwing-auth</artifactId>
     <packaging>pom</packaging>
-    <name>Auth Service (COLA)</name>
-    <description>认证授权服务：按 COLA 分层拆分为 domain/app/client/infrastructure/adapter/start 子模块</description>
+    <name>Auth Service</name>
+    <description>认证授权服务</description>
 
     <modules>
         <module>silverwing-auth-domain</module>

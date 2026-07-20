@@ -59,9 +59,15 @@ fi
 echo "[2/5] 准备 Docker 构建目录..."
 for service in "${services[@]}"; do
     mkdir -p "docker/$service/target"
+    # 兼容两种模块结构：
+    #   单模块：silverwing-<svc>/target/silverwing-<svc>.jar
+    #   多模块：silverwing-<svc>/silverwing-<svc>-start/target/silverwing-<svc>.jar
     jar_file="silverwing-$service/target/silverwing-$service.jar"
     if [ ! -f "$jar_file" ]; then
-        echo "错误：找不到 JAR 文件：$jar_file" >&2
+        jar_file="silverwing-$service/silverwing-$service-start/target/silverwing-$service.jar"
+    fi
+    if [ ! -f "$jar_file" ]; then
+        echo "错误：找不到 JAR 文件：silverwing-$service 下无 silverwing-$service.jar" >&2
         exit 1
     fi
     cp "$jar_file" "docker/$service/target/"
