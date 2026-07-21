@@ -44,6 +44,9 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <!-- Dynamic-TP 动态线程池（Spring Boot 3.x 用 -x 后缀版本） -->
         <dynamic-tp.version>1.2.2-x</dynamic-tp.version>
+        <!-- AWS SDK for S3（兼容 RustFS / MinIO 等 S3 协议存储） -->
+        <aws-sdk-s3.version>2.29.51</aws-sdk-s3.version>
+        <pinyin4j.version>2.5.0</pinyin4j.version>
     </properties>
 
     <modules>
@@ -179,6 +182,12 @@
                 <version>${fastjson2.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.belerweb</groupId>
+                <artifactId>pinyin4j</artifactId>
+                <version>${pinyin4j.version}</version>
+            </dependency>
+
             <!-- LangChain4j BOM（稳定版，管理核心模块版本） -->
             <dependency>
                 <groupId>dev.langchain4j</groupId>
@@ -280,6 +289,22 @@
             <dependency>
                 <groupId>com.silverwing</groupId>
                 <artifactId>silverwing-common-job</artifactId>
+                <version>${revision}</version>
+            </dependency>
+
+            <!-- AWS SDK for S3 BOM（统一管理 s3 / apache-client 等版本，兼容 RustFS / MinIO） -->
+            <dependency>
+                <groupId>software.amazon.awssdk</groupId>
+                <artifactId>bom</artifactId>
+                <version>${aws-sdk-s3.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Common Storage 子模块版本管理 -->
+            <dependency>
+                <groupId>com.silverwing</groupId>
+                <artifactId>silverwing-common-storage</artifactId>
                 <version>${revision}</version>
             </dependency>
 

@@ -30,6 +30,8 @@ public class KnowledgeDocumentPO extends BaseEntity {
     private String fileName;
     private String fileType;
     private Long fileSize;
+    private String fileKey;
+    private String fileUrl;
     private Integer wordCount;
     private Integer chunkCount;
     private Integer status;

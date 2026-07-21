@@ -4,6 +4,7 @@ import cn.hutool.core.util.IdUtil;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
 import com.silverwing.biz.ai.domain.entity.KnowledgeDocumentAggregate;
 import com.silverwing.biz.ai.domain.repository.KnowledgeDocumentRepository;
+import com.silverwing.common.storage.core.FileStorageService;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
 import dev.langchain4j.data.segment.TextSegment;
@@ -12,6 +13,7 @@ import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.filter.Filter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -49,6 +51,11 @@ public class KnowledgeIngestService {
     private final DocumentParser documentParser;
 
     /**
+     * 对象存储服务（可选）：未启用 silverwing.storage.enabled 时为空，不影响原有导入流程
+     */
+    private final ObjectProvider<FileStorageService> storageProvider;
+
+    /**
      * 导入知识库文档（带元信息记录）
      * 自动解析上传的文件，提取纯文本后切分、向量化、存入向量数据库
      *
@@ -64,6 +71,16 @@ public class KnowledgeIngestService {
             title = stripExtension(fileName);
         }
 
+        // 0. 先持久化原始文件到对象存储（RustFS），记录 Key / URL
+        //    解析前落盘，便于原文档追溯与后续重新向量化；未启用存储时自动跳过
+        String fileKey = null;
+        String fileUrl = null;
+        FileStorageService storage = storageProvider.getIfAvailable();
+        if (storage != null) {
+            fileKey = storage.upload(file, "rag");
+            fileUrl = storage.getFileUrl(fileKey);
+        }
+
         // 1. 解析文件，提取纯文本
         String content = documentParser.parse(file);
         String fileType = documentParser.extractExtension(fileName);
@@ -72,7 +89,7 @@ public class KnowledgeIngestService {
         // 2. 生成文档ID
         String documentId = IdUtil.fastSimpleUUID();
 
-        // 3. 初始化文档记录（待处理状态）
+        // 3. 初始化文档记录（待处理状态，写入 fileKey / fileUrl）
         KnowledgeDocumentAggregate doc = new KnowledgeDocumentAggregate();
         doc.setDocumentId(documentId);
         doc.setTitle(title);
@@ -80,6 +97,8 @@ public class KnowledgeIngestService {
         doc.setFileType(fileType);
         doc.setFileSize(fileSize);
         doc.setWordCount(content.length());
+        doc.setFileKey(fileKey);
+        doc.setFileUrl(fileUrl);
         doc.setStatus(0); // 待处理
         documentRepository.insert(doc);
 
@@ -99,9 +118,19 @@ public class KnowledgeIngestService {
                     .wordCount(content.length())
                     .status("SUCCESS")
                     .message("文档导入成功")
+                    .fileKey(fileKey)
+                    .fileUrl(fileUrl)
                     .build();
 
         } catch (Exception e) {
+            // 向量化失败时清理已上传的原件，避免孤儿对象
+            if (storage != null && fileKey != null) {
+                try {
+                    storage.deleteFile(fileKey);
+                } catch (Exception ignore) {
+                    log.warn("导入失败清理原始文件失败: fileKey={}", fileKey, ignore);
+                }
+            }
             // 更新文档状态为导入失败
             doc.setStatus(2);
             doc.setErrorMsg(e.getMessage());

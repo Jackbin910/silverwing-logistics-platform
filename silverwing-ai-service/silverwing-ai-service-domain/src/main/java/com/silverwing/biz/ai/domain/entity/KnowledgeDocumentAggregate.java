@@ -32,6 +32,12 @@ public class KnowledgeDocumentAggregate extends DomainEntity {
     /** 文件大小（字节） */
     private Long fileSize;
 
+    /** 原始文件在对象存储（RustFS）中的 Key */
+    private String fileKey;
+
+    /** 原始文件在对象存储中的访问 URL */
+    private String fileUrl;
+
     /** 文档字数 */
     private Integer wordCount;
 

@@ -494,6 +494,8 @@ CREATE TABLE ai_knowledge_document (
                                        file_name VARCHAR(500) COMMENT '原始文件名',
                                        file_type VARCHAR(20) COMMENT '文件类型（如：pdf、docx、md）',
                                        file_size BIGINT DEFAULT 0 COMMENT '文件大小（字节）',
+                                       file_key VARCHAR(512) DEFAULT NULL COMMENT '原始文件在对象存储(RustFS)中的Key',
+                                       file_url VARCHAR(1024) DEFAULT NULL COMMENT '原始文件在对象存储中的访问URL',
                                        word_count INT DEFAULT 0 COMMENT '文档字数',
                                        chunk_count INT DEFAULT 0 COMMENT '导入的分片数量',
                                        status TINYINT DEFAULT 0 COMMENT '文档状态（0-待处理、1-已导入、2-导入失败）',

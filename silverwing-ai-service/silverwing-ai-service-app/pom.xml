@@ -47,6 +47,11 @@
             <artifactId>silverwing-common-auth</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-storage</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
         <!-- LangChain4j：RAG/知识库/文本转 SQL 等应用编排使用 ChatModel、EmbeddingStore 等 -->
         <dependency>

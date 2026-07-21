@@ -25,6 +25,8 @@ target/
 .mvn/
 mvnw
 mvnw.cmd
+# flatten-maven-plugin 生成产物（构建时自动生成，非源码）
+.flattened-pom.xml
 
 # OS文件
 .DS_Store

@@ -9,6 +9,8 @@
         <result property="fileName" column="file_name"/>
         <result property="fileType" column="file_type"/>
         <result property="fileSize" column="file_size"/>
+        <result property="fileKey" column="file_key"/>
+        <result property="fileUrl" column="file_url"/>
         <result property="wordCount" column="word_count"/>
         <result property="chunkCount" column="chunk_count"/>
         <result property="status" column="status"/>
@@ -21,7 +23,8 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, document_id, title, file_name, file_type, file_size, word_count,
+        id, document_id, title, file_name, file_type, file_size, file_key, file_url,
+        word_count,
         chunk_count, status, error_msg, create_by, update_by, create_time,
         update_time, deleted
     </sql>

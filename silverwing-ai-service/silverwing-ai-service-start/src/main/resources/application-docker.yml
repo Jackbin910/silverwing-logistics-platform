@@ -20,4 +20,20 @@ spring:
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         file-extension: yml
         timeout: 30000
+  # 文件上传大小限制（RAG 文档上传）
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
 
+# 对象存储（RustFS / MinIO 等 S3 协议，RAG 原始文件持久化）
+# 说明：Nacos 的 silverwing-ai-service.yml 中若已配置本段，将以 Nacos 为准；
+# 此处作为 Nacos 缺失时的本地兜底配置。
+silverwing:
+  storage:
+    enabled: true
+    endpoint: ${RUSTFS_ENDPOINT:-http://rustfs:9000}
+    access-key: ${RUSTFS_ACCESS_KEY:-rustfsadmin}
+    secret-key: ${RUSTFS_SECRET_KEY:-rustfsadmin}
+    bucket: ${RUSTFS_BUCKET:-silverwing}
+    region: ${RUSTFS_REGION:-us-east-1}

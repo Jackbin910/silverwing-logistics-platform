@@ -26,6 +26,7 @@
         <module>silverwing-common-auth</module>
         <module>silverwing-common-mq</module>
         <module>silverwing-common-job</module>
+        <module>silverwing-common-storage</module>
     </modules>
 
 </project>
