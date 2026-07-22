@@ -198,19 +198,6 @@ services:
 
   # ==================== 对象存储 ====================
 
-  # RustFS 权限初始化（数据卷需归属 rustfs 运行用户 uid:10001）
-  rustfs_perms:
-    image: docker.1ms.run/library/alpine:3.20
-    user: root
-    command: chown -R 10001:10001 /rustfs-data
-    volumes:
-      - rustfs-data:/rustfs-data
-    networks:
-      silverwing-network:
-        aliases:
-          - rustfs-perms
-    restart: "no"
-
   # RustFS 对象存储（S3 协议，兼容 MinIO 客户端，用于 RAG 原始文件持久化）
   rustfs:
     image: docker.1ms.run/rustfs/rustfs:1.0.0-beta.9
@@ -225,14 +212,11 @@ services:
       - "${RUSTFS_API_PORT:-9000}:9000"
       - "${RUSTFS_CONSOLE_PORT:-9001}:9001"
     volumes:
-      - rustfs-data:/data
+      - rustfs-data:/data:U
     networks:
       silverwing-network:
         aliases:
           - rustfs
-    depends_on:
-      rustfs_perms:
-        condition: service_completed_successfully
     healthcheck:
       test: ["CMD-SHELL", "timeout 3 sh -c 'cat < /dev/null > /dev/tcp/localhost/9000' || exit 1"]
       interval: 10s

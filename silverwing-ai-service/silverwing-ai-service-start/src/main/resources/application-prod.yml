@@ -32,10 +32,10 @@ spring:
 silverwing:
   storage:
     enabled: true
-    endpoint: ${RUSTFS_ENDPOINT:-192.168.31.94:9000}
-    access-key: ${RUSTFS_ACCESS_KEY:-rustfsadmin}
-    secret-key: ${RUSTFS_SECRET_KEY:-rustfsadmin}
-    bucket: ${RUSTFS_BUCKET:-silverwing}
-    region: ${RUSTFS_REGION:-us-east-1}
+    endpoint: ${RUSTFS_ENDPOINT:http://192.168.31.94:9000}
+    access-key: ${RUSTFS_ACCESS_KEY:silverwing}
+    secret-key: ${RUSTFS_SECRET_KEY:123456}
+    bucket: ${RUSTFS_BUCKET:silverwing}
+    region: ${RUSTFS_REGION:us-east-1}
     path-style-access: true
     auto-create-bucket: true

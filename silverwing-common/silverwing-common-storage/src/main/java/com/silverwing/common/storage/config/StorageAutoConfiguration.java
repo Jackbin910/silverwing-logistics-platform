@@ -38,7 +38,7 @@ public class StorageAutoConfiguration {
     public S3Client s3Client(StorageProperties properties) {
         AwsBasicCredentials credentials =
                 AwsBasicCredentials.create(properties.getAccessKey(), properties.getSecretKey());
-        String endpoint = normalizeEndpoint(properties.getEndpoint());
+        String endpoint = properties.getEndpoint();
         log.info("初始化对象存储客户端: endpoint={}, bucket={}", endpoint, properties.getBucket());
         return S3Client.builder()
                 .endpointOverride(URI.create(endpoint))
@@ -46,24 +46,6 @@ public class StorageAutoConfiguration {
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .forcePathStyle(properties.isPathStyleAccess())
                 .build();
-    }
-
-    /**
-     * 规范化 endpoint：去除首尾空白与 YAML 列表误写导致的前导 '-'
-     *
-     * @param endpoint 原始 endpoint
-     * @return 规范化后的 endpoint
-     */
-    private static String normalizeEndpoint(String endpoint) {
-        if (endpoint == null) {
-            return null;
-        }
-        String trimmed = endpoint.trim();
-        if (trimmed.startsWith("-")) {
-            log.warn("检测到 endpoint 含前导 '-'（疑似 YAML 列表误写），已自动剔除: {}", endpoint);
-            trimmed = trimmed.substring(1).trim();
-        }
-        return trimmed;
     }
 
     /**
