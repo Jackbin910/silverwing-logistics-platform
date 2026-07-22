@@ -1,10 +1,13 @@
 package com.silverwing.ai.trigger.controller;
 
 import cn.hutool.core.text.CharSequenceUtil;
+import com.silverwing.ai.application.dto.KnowledgeDocumentDTO;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
 import com.silverwing.ai.domain.service.rag.KnowledgeIngestService;
 import com.silverwing.ai.domain.service.rag.KnowledgeQaService;
 import com.silverwing.common.annotation.Log;
+import com.silverwing.common.domain.PageRequest;
+import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.Result;
 import com.silverwing.common.enums.BusinessTypeEnum;
 import io.swagger.v3.oas.annotations.Operation;
@@ -113,5 +116,35 @@ public class KnowledgeController {
     public Result<String> clearAll() {
         ingestService.clearAll();
         return Result.success("知识库已清空");
+    }
+
+    /**
+     * 分页查询知识库文档列表（管理页面）
+     * 支持关键词（标题）与状态（0待处理/1已导入/2失败）筛选
+     */
+    @Operation(summary = "文档列表", description = "分页查询知识库文档，支持关键词与状态筛选")
+    @GetMapping("/documents")
+    public Result<PageResult<KnowledgeDocumentDTO>> listDocuments(
+            PageRequest page,
+            @Parameter(description = "标题关键词（可选）")
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @Parameter(description = "文档状态：0待处理/1已导入/2失败（可选）")
+            @RequestParam(name = "status", required = false) Integer status) {
+        return Result.success(ingestService.pageDocuments(page, keyword, status));
+    }
+
+    /**
+     * 根据文档ID查询文档详情
+     */
+    @Operation(summary = "文档详情", description = "根据文档ID查询单条文档的元信息")
+    @GetMapping("/documents/{documentId}")
+    public Result<KnowledgeDocumentDTO> getDocument(
+            @Parameter(description = "文档唯一标识", required = true)
+            @PathVariable("documentId") String documentId) {
+        KnowledgeDocumentDTO dto = ingestService.getDocument(documentId);
+        if (dto == null) {
+            return Result.fail("文档不存在");
+        }
+        return Result.success(dto);
     }
 }

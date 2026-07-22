@@ -1,9 +1,13 @@
 package com.silverwing.ai.domain.service.rag;
 
 import cn.hutool.core.util.IdUtil;
+import com.silverwing.ai.application.convertor.AiConvertor;
+import com.silverwing.ai.application.dto.KnowledgeDocumentDTO;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
 import com.silverwing.biz.ai.domain.entity.KnowledgeDocumentAggregate;
 import com.silverwing.biz.ai.domain.repository.KnowledgeDocumentRepository;
+import com.silverwing.common.domain.PageRequest;
+import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.storage.core.FileStorageService;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
@@ -20,6 +24,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
 
@@ -50,6 +55,8 @@ public class KnowledgeIngestService {
 
     private final DocumentParser documentParser;
 
+    private final AiConvertor aiConvertor;
+
     /**
      * 对象存储服务（可选）：未启用 silverwing.storage.enabled 时为空，不影响原有导入流程
      */
@@ -76,10 +83,9 @@ public class KnowledgeIngestService {
         String fileKey = null;
         String fileUrl = null;
         FileStorageService storage = storageProvider.getIfAvailable();
-        if (storage != null) {
-            fileKey = storage.upload(file, "rag");
-            fileUrl = storage.getFileUrl(fileKey);
-        }
+        fileKey = storage.upload(file, "rag");
+        fileUrl = storage.getFileUrl(fileKey);
+
 
         // 1. 解析文件，提取纯文本
         String content = documentParser.parse(file);
@@ -99,7 +105,7 @@ public class KnowledgeIngestService {
         doc.setWordCount(content.length());
         doc.setFileKey(fileKey);
         doc.setFileUrl(fileUrl);
-        doc.setStatus(0); // 待处理
+        doc.setStatus(0);
         documentRepository.insert(doc);
 
         try {
@@ -124,7 +130,7 @@ public class KnowledgeIngestService {
 
         } catch (Exception e) {
             // 向量化失败时清理已上传的原件，避免孤儿对象
-            if (storage != null && fileKey != null) {
+            if (fileKey != null) {
                 try {
                     storage.deleteFile(fileKey);
                 } catch (Exception ignore) {
@@ -221,17 +227,17 @@ public class KnowledgeIngestService {
                         continue;
                     }
                     if (currentChunk.length() + lineTrimmed.length() + 1 > MAX_CHUNK_SIZE
-                            && currentChunk.length() > 0) {
+                            && !currentChunk.isEmpty()) {
                         chunks.add(createChunk(currentChunk.toString(), metadata, chunkIndex++));
                         currentChunk = new StringBuilder();
                     }
-                    if (currentChunk.length() > 0) {
+                    if (!currentChunk.isEmpty()) {
                         currentChunk.append("\n");
                     }
                     currentChunk.append(lineTrimmed);
                 }
             } else {
-                if (currentChunk.length() > 0) {
+                if (!currentChunk.isEmpty()) {
                     currentChunk.append("\n\n");
                 }
                 currentChunk.append(trimmed);
@@ -239,7 +245,7 @@ public class KnowledgeIngestService {
         }
 
         // 保存最后一个块
-        if (currentChunk.length() > 0) {
+        if (!currentChunk.isEmpty()) {
             chunks.add(createChunk(currentChunk.toString(), metadata, chunkIndex));
         }
 
@@ -316,6 +322,46 @@ public class KnowledgeIngestService {
         } catch (Exception e) {
             log.error("删除文档失败: documentId={}", documentId, e);
             throw new RuntimeException("删除文档失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 分页查询知识库文档（供管理页面列表展示）
+     *
+     * @param page    分页请求（current/size）
+     * @param keyword 标题关键词（可选）
+     * @param status  文档状态（可选）
+     * @return 分页后的文档 DTO
+     */
+    public PageResult<KnowledgeDocumentDTO> pageDocuments(PageRequest page, String keyword, Integer status) {
+        try {
+            page.normalize();
+            PageResult<KnowledgeDocumentAggregate> aggregatePage =
+                    documentRepository.pageDocuments(page.getCurrent(), page.getSize(), keyword, status);
+            List<KnowledgeDocumentDTO> dtoList = aggregatePage.getRecords().stream()
+                    .map(aiConvertor::toKnowledgeDocumentDto)
+                    .collect(Collectors.toList());
+            return new PageResult<>(aggregatePage.getCurrent(), aggregatePage.getSize(),
+                    aggregatePage.getTotal(), dtoList);
+        } catch (Exception e) {
+            log.error("查询知识库文档列表失败: keyword={}, status={}", keyword, status, e);
+            throw new RuntimeException("查询文档列表失败: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 根据文档ID查询文档详情
+     *
+     * @param documentId 文档唯一标识
+     * @return 文档 DTO，不存在时返回 null
+     */
+    public KnowledgeDocumentDTO getDocument(String documentId) {
+        try {
+            KnowledgeDocumentAggregate aggregate = documentRepository.findByDocumentId(documentId);
+            return aggregate == null ? null : aiConvertor.toKnowledgeDocumentDto(aggregate);
+        } catch (Exception e) {
+            log.error("查询知识库文档详情失败: documentId={}", documentId, e);
+            throw new RuntimeException("查询文档详情失败: " + e.getMessage(), e);
         }
     }
 

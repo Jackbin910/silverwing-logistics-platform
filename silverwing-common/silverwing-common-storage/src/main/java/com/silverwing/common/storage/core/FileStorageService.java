@@ -11,6 +11,7 @@ import net.sourceforge.pinyin4j.format.HanyuPinyinOutputFormat;
 import net.sourceforge.pinyin4j.format.HanyuPinyinToneType;
 import net.sourceforge.pinyin4j.format.exception.BadHanyuPinyinOutputFormatCombination;
 import org.springframework.web.multipart.MultipartFile;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
@@ -73,7 +74,9 @@ public class FileStorageService {
         }
         try {
             ensureBucketExists();
-        } catch (BusinessException e) {
+        } catch (Exception e) {
+            // 启动阶段存储桶检查（连通性 / 建桶）失败不阻塞应用启动：
+            // 可能因对象存储尚未就绪或网络不可达，首次上传时若仍不可达将抛出友好异常。
             log.warn("启动检查存储桶失败，应用将继续启动（首次上传时若仍不可达将报错）: bucket={}, reason={}",
                     storageConfig.getBucket(), e.getMessage());
         }
@@ -221,6 +224,10 @@ public class FileStorageService {
             throw BusinessException.i18n(ResultCode.BUSINESS_ERROR, "common.storage.read.failed");
         } catch (S3Exception e) {
             log.error("上传文件到对象存储失败: {}", e.getMessage(), e);
+            throw BusinessException.i18n(ResultCode.BUSINESS_ERROR, "common.storage.upload.failed", e.getMessage());
+        } catch (SdkClientException e) {
+            // 网络不可达（连接超时等）：转为友好的业务异常，避免向上裸抛底层 SDK 异常
+            log.error("连接对象存储失败（网络不可达）: {}", e.getMessage(), e);
             throw BusinessException.i18n(ResultCode.BUSINESS_ERROR, "common.storage.upload.failed", e.getMessage());
         }
     }
