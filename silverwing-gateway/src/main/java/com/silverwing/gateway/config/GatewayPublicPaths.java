@@ -24,10 +24,14 @@ public final class GatewayPublicPaths {
      * </p>
      */
     public static final List<String> PUBLIC_PATHS = List.of(
-            // 认证相关
+            // 认证相关（auth 前缀，网关默认路由）
             "/auth/login",
             "/auth/logout",
             "/auth/public-key",
+            // 认证相关（api 前缀，前端实际调用路径 /api/login 等）
+            "/api/login",
+            "/api/logout",
+            "/api/public-key",
             // API 文档（精确列举，覆盖各服务）
             "/doc.html",
             "/webjars/**",
@@ -49,14 +53,9 @@ public final class GatewayPublicPaths {
             "/ops/swagger-resources/**",
             "/integration/swagger-resources/**",
             "/admin/swagger-resources/**",
-            // API 文档（跨服务通配，自动覆盖新增服务）
-            "/**/v3/api-docs/**",
-            "/**/swagger-resources/**",
-            // 基础设施
             "/favicon.ico",
             "/actuator/**",
             "/error",
-            // 静态资源
             "/static/**",
             "/public/**"
     );

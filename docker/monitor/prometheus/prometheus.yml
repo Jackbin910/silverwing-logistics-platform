@@ -21,7 +21,7 @@ scrape_configs:
   - job_name: 'silverwing-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['silverwing-gateway:8080']
+      - targets: ['silverwing-gateway:9091']
         labels:
           service: gateway
 
