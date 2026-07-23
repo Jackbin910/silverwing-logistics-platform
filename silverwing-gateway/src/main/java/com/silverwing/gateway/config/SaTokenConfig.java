@@ -4,6 +4,7 @@ import cn.dev33.satoken.reactor.filter.SaReactorFilter;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
+import com.silverwing.gateway.config.GatewayPublicPaths;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,38 +31,7 @@ public class SaTokenConfig {
                 .setAuth(obj -> SaRouter
                         .match("/**")
                         // 白名单：以下路径无需登录即可访问
-                        .notMatch(
-                                "/auth/login",
-                                "/auth/logout",
-                                "/auth/public-key",
-                                "/doc.html",
-                                "/webjars/**",
-                                "/v3/api-docs/**",
-                                "/swagger-resources/**",
-                                "/swagger-ui.html",
-                                "/swagger-ui/**",
-                                "/auth/v3/api-docs/**",
-                                "/core/v3/api-docs/**",
-                                "/twin/v3/api-docs/**",
-                                "/ai/v3/api-docs/**",
-                                "/ops/v3/api-docs/**",
-                                "/integration/v3/api-docs/**",
-                                "/admin/v3/api-docs/**",
-                                "/auth/swagger-resources/**",
-                                "/core/swagger-resources/**",
-                                "/twin/swagger-resources/**",
-                                "/ai/swagger-resources/**",
-                                "/ops/swagger-resources/**",
-                                "/integration/swagger-resources/**",
-                                "/admin/swagger-resources/**",
-                                // 基础设施
-                                "/favicon.ico",
-                                "/actuator/**",
-                                "/error",
-                                // 静态资源
-                                "/static/**",
-                                "/public/**"
-                        )
+                        .notMatch(GatewayPublicPaths.PUBLIC_PATHS.toArray(new String[0]))
                         // 不在白名单内的，校验登录状态
                         .check(r -> StpUtil.checkLogin()))
                 // 异常处理：Sa-Token 异常统一返回 401 JSON

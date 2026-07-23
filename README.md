@@ -16,7 +16,7 @@
 | 框架 | Spring Boot + Spring Cloud + Spring Cloud Alibaba | 3.5.0 / 2025.0.0     |
 | 网关 | Spring Cloud Gateway + Sa-Token | - / 1.40.0           |
 | 数据库 | MySQL + MyBatis-Plus + Druid | 8.0 / 3.5.9 / 1.2.23 |
-| 缓存 | Redis + Redisson | 7.0 / 3.32.0         |
+| 缓存 | Redis + Redisson | 6.2.6 / 3.32.0       |
 | 注册/配置 | Nacos | 2.4.3                |
 | 消息队列 | RabbitMQ | 3.13                 |
 | 任务调度 | XXL-Job | 2.4.2                |

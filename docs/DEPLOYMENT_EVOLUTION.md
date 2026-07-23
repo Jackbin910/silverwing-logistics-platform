@@ -75,6 +75,7 @@
 │                                       │  │     Redis 6.2    ← 缓存            │
 │  ③ 监控 compose（2 容器）             │  │     RabbitMQ     ← 消息队列        │
 │     Prometheus · Grafana              │  │     XXL-Job      ← 任务调度        │
+│                                       │  │     RustFS       ← RAG 对象存储    │
 │                                       │  │     Nacos(单机)  ← 配置/注册       │
 │  Nginx（入口代理）                    │  │                                     │
 │                                       │  │  数据卷：                          │
@@ -90,7 +91,7 @@
 | 机器 | 角色 | CPU | 内存 | 磁盘 | 说明 |
 |------|------|-----|------|------|------|
 | 服务器 A | 应用机 | 16C | 16GB | 100GB SSD | 跑 8 微服务 + 监控 + Nginx |
-| 服务器 B | 数据库机 | 8C | 16GB | 500GB SSD | 跑 MySQL/Redis/PGVector/Nacos/RabbitMQ/XXL-Job |
+| 服务器 B | 数据库机 | 8C | 16GB | 500GB SSD | 跑 MySQL/Redis/PGVector/Nacos/RabbitMQ/XXL-Job/RustFS |
 
 > 应用机 16GB 足够：8 微服务 JVM 堆合计 ~8.6GB + 监控 ~0.5GB + Nginx/OS ~2GB = ~11GB，留 5GB 余量。
 
@@ -103,7 +104,7 @@
 ```yaml
 services:
   mysql:
-    image: mysql:8.0.45
+    image: mysql:8.0.40
     container_name: silverwing-mysql
     # 端口只对内网开放
     ports:
@@ -120,11 +121,11 @@ services:
     restart: always
 
   redis:
-    image: redis:6.2.18
+    image: redis/redis-stack-server:6.2.6-v20
     container_name: silverwing-redis
     ports:
       - "10.0.0.2:6379:6379"
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    command: redis-stack-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
       - redis-data:/data
     networks:
@@ -172,7 +173,7 @@ services:
     restart: always
 
   rabbitmq:
-    image: rabbitmq:3.13.7-management-alpine
+    image: rabbitmq:3.13.7-management
     container_name: silverwing-rabbitmq
     ports:
       - "10.0.0.2:5672:5672"
@@ -202,6 +203,25 @@ services:
       - silverwing-db-net
     restart: always
 
+  # RustFS 对象存储（S3 协议，RAG 原始文件持久化）
+  rustfs:
+    image: rustfs/rustfs:1.0.0-beta.9
+    container_name: silverwing-rustfs
+    ports:
+      - "10.0.0.2:9000:9000"
+      - "10.0.0.2:9001:9001"
+    environment:
+      RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY}
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "true"
+    command: ["/data"]
+    volumes:
+      - rustfs-data:/data
+    networks:
+      - silverwing-db-net
+    restart: always
+
   # 不再包含 nginx 服务，nginx 移到应用机
 
 volumes:
@@ -209,6 +229,7 @@ volumes:
   pgvector-data:
   redis-data:
   rabbitmq-data:
+  rustfs-data:
 
 networks:
   silverwing-db-net:
@@ -245,9 +266,83 @@ services:
       - silverwing-app-net
     restart: always
 
-  # silverwing-core-service、silverwing-digital-twin、silverwing-ai-service
-  # silverwing-ops-service、silverwing-integration、silverwing-admin-web
-  # 同上，NACOS_SERVER_ADDR 改为 10.0.0.2:8848
+  silverwing-core-service:
+    image: silverwing/core-service:latest
+    container_name: silverwing-core-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: ${CORE_SERVICE_JAVA_OPTS}
+      NACOS_SERVER_ADDR: 10.0.0.2:8848       # ← 改
+    networks:
+      - silverwing-app-net
+    restart: always
+
+  silverwing-digital-twin:
+    image: silverwing/digital-twin:latest
+    container_name: silverwing-digital-twin
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: ${DIGITAL_TWIN_JAVA_OPTS}
+      NACOS_SERVER_ADDR: 10.0.0.2:8848       # ← 改
+    networks:
+      - silverwing-app-net
+    restart: always
+
+  silverwing-ai-service:
+    image: silverwing/ai-service:latest
+    container_name: silverwing-ai-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: ${AI_SERVICE_JAVA_OPTS}
+      NACOS_SERVER_ADDR: 10.0.0.2:8848       # ← 改
+    networks:
+      - silverwing-app-net
+    restart: always
+
+  silverwing-ops-service:
+    image: silverwing/ops-service:latest
+    container_name: silverwing-ops-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: ${OPS_SERVICE_JAVA_OPTS}
+      NACOS_SERVER_ADDR: 10.0.0.2:8848       # ← 改
+    networks:
+      - silverwing-app-net
+    restart: always
+
+  silverwing-integration:
+    image: silverwing/integration:latest
+    container_name: silverwing-integration
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: ${INTEGRATION_JAVA_OPTS}
+      NACOS_SERVER_ADDR: 10.0.0.2:8848       # ← 改
+    networks:
+      - silverwing-app-net
+    restart: always
+
+  silverwing-admin-web:
+    image: silverwing/admin-web:latest
+    container_name: silverwing-admin-web
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      JAVA_OPTS: ${ADMIN_WEB_JAVA_OPTS}
+      NACOS_SERVER_ADDR: 10.0.0.2:8848       # ← 改
+    networks:
+      - silverwing-app-net
+    restart: always
 
   # 新增 Nginx（从基础设施层移过来）
   nginx:
@@ -281,6 +376,8 @@ networks:
 | `common-pgvector.yml` → `langchain4j.vector-store.pgvector.host` | `pgvector` | `10.0.0.2` |
 | `common-rabbitmq.yml` → `spring.rabbitmq.host` | `rabbitmq` | `10.0.0.2` |
 | `common-mysql.yml` → `spring.datasource.url` | `jdbc:mysql://mysql:3306/...` | `jdbc:mysql://10.0.0.2:3306/...` |
+| `silverwing-ai-service.yml` → `silverwing.storage.endpoint` | `http://rustfs:9000` | `http://10.0.0.2:9000` |
+| `silverwing-ai-service.yml` → `silverwing.storage.bucket` | `silverwing` | `silverwing` |
 
 #### 4）代码改动
 
@@ -536,7 +633,7 @@ spring:
 # RabbitMQ 集群配置（三节点）
 # 服务器 B
 rabbitmq-1:
-  image: rabbitmq:3.13.7-management-alpine
+  image: rabbitmq:3.13.7-management
   container_name: silverwing-rabbitmq-1
   hostname: rabbitmq-1
   environment:
@@ -552,7 +649,7 @@ rabbitmq-1:
 
 # 服务器 C
 rabbitmq-2:
-  image: rabbitmq:3.13.7-management-alpine
+  image: rabbitmq:3.13.7-management
   container_name: silverwing-rabbitmq-2
   hostname: rabbitmq-2
   environment:
@@ -1270,6 +1367,7 @@ watch -n 1 nvidia-smi
 | Redis | 空（无密码） | `onepanel-infra.env` + Nacos `common-redis.yml` | 所有微服务 |
 | Nacos | `123456` | `onepanel-infra.env` | Nacos 自身 |
 | RabbitMQ | `123456` | `onepanel-infra.env` | 消息队列 |
+| RustFS | `silverwing` / `123456` | `onepanel-infra.env` → `RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY` | RAG 对象存储 |
 
 建议使用环境变量注入，不同环境不同密码，生产密码通过 Vault/Sealed Secrets 管理。
 

@@ -504,11 +504,11 @@ docker image prune -f
 └── jenkins/home/                    # Jenkins 数据卷
 ```
 
-### 容器总览（约 16 个）
+### 容器总览（约 17 个）
 
 ```
-基础设施 7 个：mysql-server / redis-server / pgvector-server / nacos-standalone
-              rabbitmq-server / xxl-job-admin / nginx-server
+基础设施 8 个：mysql-server / redis-server / pgvector-server / nacos-standalone
+              rabbitmq-server / xxl-job-admin / nginx-server / rustfs-server
 微服务   8 个：silverwing-gateway / auth / core-service / digital-twin
               ai-service / ops-service / integration / admin-web
 工具     1 个：jenkins

@@ -577,11 +577,11 @@ docker image prune -f
 └── apache-maven-3.9.9/
 ```
 
-### 容器总览（约 17 个）
+### 容器总览（约 18 个）
 
 ```
-基础设施 7 个：mysql-server / redis-server / pgvector-server / nacos-standalone
-              rabbitmq-server / xxl-job-admin / nginx-server
+基础设施 8 个：mysql-server / redis-server / pgvector-server / nacos-standalone
+              rabbitmq-server / xxl-job-admin / nginx-server / rustfs-server
 微服务   8 个：silverwing-gateway / auth / core-service / digital-twin
               ai-service / ops-service / integration / admin-web
 工具     2 个：jenkins / gitea

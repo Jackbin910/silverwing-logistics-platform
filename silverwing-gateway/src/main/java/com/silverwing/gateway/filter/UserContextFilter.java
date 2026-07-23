@@ -2,17 +2,15 @@ package com.silverwing.gateway.filter;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
+import com.silverwing.gateway.config.GatewayPublicPaths;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
 
 /**
  * 用户信息传递过滤器
@@ -29,26 +27,6 @@ public class UserContextFilter implements GlobalFilter, Ordered {
     private static final String DEFAULT_USER_TYPE = "DEFAULT";
     private static final String USER_TYPE_SESSION_KEY = "userType";
 
-    private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
-
-    private static final List<String> PUBLIC_PATHS = List.of(
-            "/auth/login",
-            "/auth/logout",
-            "/doc.html",
-            "/webjars/**",
-            "/v3/api-docs/**",
-            "/**/v3/api-docs/**",
-            "/swagger-resources/**",
-            "/**/swagger-resources/**",
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/favicon.ico",
-            "/actuator/**",
-            "/error",
-            "/static/**",
-            "/public/**"
-    );
-
     /**
      * 为已登录请求添加用户上下文请求头。
      *
@@ -61,7 +39,7 @@ public class UserContextFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getPath().value();
 
-        if (isPublicPath(path)) {
+        if (GatewayPublicPaths.matches(path)) {
             return chain.filter(exchange);
         }
 
@@ -129,16 +107,6 @@ public class UserContextFilter implements GlobalFilter, Ordered {
             log.debug("读取用户类型失败 loginId={}：{}", loginId, e.getMessage());
             return DEFAULT_USER_TYPE;
         }
-    }
-
-    /**
-     * 判断当前路径是否为免登录路径。
-     *
-     * @param path 请求路径
-     * @return true 表示免登录路径
-     */
-    private boolean isPublicPath(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
     }
 
     /**

@@ -223,18 +223,18 @@ docker exec -it pgvector-server psql -U silverwing -d silverwing_vector -c "\dx"
 
 在 Nacos 控制台修改以下三个配置：
 
-**① `common-datasource.yml`** —— 将 `mysql` 改为 `localhost`，并将端口改为 `3307`（与 `onepanel-infra.env` 中 `MYSQL_PORT` 一致）：
+**① `common-datasource.yml`** —— 将 `mysql` 改为 `localhost`，端口保持 `3306`（与 `onepanel-infra.env` 中 `MYSQL_PORT` 默认 3306 一致；若本机 3306 已被占用，可在 env 中设 `MYSQL_PORT=3307` 并同步改为 `localhost:3307`）：
 
 ```yaml
 spring:
   datasource:
-    url: jdbc:mysql://localhost:3307/silverwing_logistics?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    #                 ^^^^^^^^^ ^^^^ 原为 mysql:3306，改为 localhost:3307
+    url: jdbc:mysql://localhost:3306/silverwing_logistics?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    #                 ^^^^^^^^^ ^^^^ 原为 mysql:3306，改为 localhost（端口与 MYSQL_PORT 一致，默认 3306）
     username: silverwing
     password: 123456
 ```
 
-> **端口说明**：Docker 容器内 MySQL 仍监听 3306，但通过 `MYSQL_PORT=3307` 映射到宿主机 3307 端口，避免与本地已安装的 MySQL 冲突。微服务在宿主机（IDE）中运行，因此 Nacos 配置里必须用 `localhost:3307`。
+> **端口说明**：Docker 容器内 MySQL 监听 3306，`onepanel-infra.env` 中 `MYSQL_PORT` 默认 3306，即映射到宿主机 3306。微服务在宿主机（IDE）中运行，因此 Nacos 配置里用 `localhost:3306` 即可。若本机已安装 MySQL 占用了 3306，可在 env 中设置 `MYSQL_PORT=3307` 并同步把此处改为 `localhost:3307`。
 
 **② `common-redis.yml`** —— 将 `redis` 改为 `localhost`：
 
@@ -715,6 +715,6 @@ pkill ollama
 ## 相关文档
 
 - [Docker 容器化部署](DOCKER_DEPLOYMENT.md) - 全 Docker 模式部署指南
-- [完整部署文档](DEPLOYMENT.md) - 生产环境部署
+- [部署演进文档](DEPLOYMENT_EVOLUTION.md) - 多阶段部署演进与高可用方案
 - [系统架构](ARCHITECTURE.md) - 系统架构说明
 - [项目 README](../README.md) - 项目概览

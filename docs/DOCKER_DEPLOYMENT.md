@@ -155,15 +155,33 @@ docker images | grep -E "mysql|redis|nacos|rabbitmq|nginx|silverwing/base"
 vi onepanel-infra.env
 ```
 
-环境变量示例：
+环境变量示例（与 `onepanel-infra.env` 字段一一对应）：
 
 ```env
+# ---------- MySQL ----------
 MYSQL_ROOT_PASSWORD=your_secure_password
-MYSQL_DATABASE=silverwing
+MYSQL_DATABASE=silverwing_logistics
 MYSQL_USER=silverwing
 MYSQL_PASSWORD=silverwing_password
+
+# ---------- Redis（预留：当前 Redis 未启用密码鉴权，保持占位即可） ----------
 REDIS_PASSWORD=redis_secure_password
+
+# ---------- Nacos ----------
 NACOS_PASSWORD=nacos_secure_password
+
+# ---------- PGVector ----------
+PGVECTOR_PASSWORD=pgvector_secure_password
+
+# ---------- RabbitMQ ----------
+RABBITMQ_PASSWORD=rabbitmq_secure_password
+
+# ---------- XXL-Job ----------
+XXLJOB_ACCESS_TOKEN=xxljob_token
+
+# ---------- RustFS 对象存储（S3，AI 服务 RAG 文件持久化） ----------
+RUSTFS_ACCESS_KEY=silverwing
+RUSTFS_SECRET_KEY=123456
 ```
 
 ```bash
@@ -198,7 +216,7 @@ docker compose -f onepanel-infra-compose.yml exec -T mysql \
 2. 新建命名空间：ID = `silverwing-prod`，名称 = 银翼生产环境
 3. 切换到 `silverwing-prod` 命名空间
 4. 配置管理 → 配置列表 → 导入配置
-5. 上传 Nacos 配置模板（`common-redis.yml`、`common-pgvector.yml`、`common-rabbitmq.yml`、`common-sa-token.yml`、`silverwing-ai-service.yml` 等）。**注意**：配置模板不随本仓库提交，需从配置管理中心/历史环境导出后导入；导入后请核对各 `spring.datasource`、`redis`、`pgvector` 连接信息与 `silverwing.storage.*`（RustFS 对象存储）端点。
+5. 上传 Nacos 配置模板（`common-datasource.yml` 即 MySQL 数据源、`common-redis.yml`、`common-rabbitmq.yml`、`common-sa-token.yml`、`common-pgvector.yml`、`silverwing-ai-service.yml` 等）。**注意**：配置模板不随本仓库提交，需从配置管理中心/历史环境导出后导入；导入后请核对各 `spring.datasource`、`redis`、`pgvector` 连接信息与 `silverwing.storage.*`（RustFS 对象存储）端点。
 6. 修改配置中的数据库密码为实际值并发布
 
 > **RustFS 对象存储**：AI 服务的 RAG 文件持久化依赖 RustFS。连接信息（`silverwing.storage.endpoint=http://rustfs:9000`、`access-key`、`secret-key`、`bucket=silverwing`）在 Nacos 的 `silverwing-ai-service.yml` 中配置；若 Nacos 缺失，则由 `application-docker.yml` 的本地兜底配置（指向 `http://rustfs:9000`）生效。RustFS 容器已在基础设施 compose 中随 `silverwing-network` 启动，服务名即 `rustfs`。
@@ -243,6 +261,8 @@ ADMIN_WEB_JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:
 ```
 
 > 每个微服务通过 `XXX_JAVA_OPTS` 独立配置 JVM 参数，通用参数含 G1GC 和 OOM 堆转储。按服务负载调整堆内存：AI 服务最大（2g），核心/孪生服务次之（1g），其余轻量服务 512m。
+
+> **AI 服务前置依赖**：AI 服务（RAG 问答 / 预测维护）依赖本地运行的 Ollama 大模型。需在内网某台机器安装 Ollama 并拉取 `qwen2.5:7b-instruct`（约 4.7GB），再将 `.env` 中的 `OLLAMA_BASE_URL` 指向其地址（与微服务同机用 `http://host.docker.internal:11434`，独立机器用 `http://<IP>:11434`）。未部署 Ollama 时，ai-service 启动会失败。
 
 ```bash
 # 确保网络已存在
