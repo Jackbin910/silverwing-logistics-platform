@@ -13,7 +13,7 @@ declare -a IMAGES=(
     "docker.1ms.run/nacos/nacos-server:v2.4.3"
     "docker.1ms.run/library/rabbitmq:3.13.7-management"
     "docker.1ms.run/xuxueli/xxl-job-admin:2.4.2"
-    "docker.1ms.run/library/nginx:1.26-alpine"
+    "docker.1ms.run/openresty/openresty:1.25.3.2-alpine"
     "docker.1ms.run/rustfs/rustfs:1.0.0-beta.9"
 )
 
@@ -102,7 +102,7 @@ cat > "$OUTPUT_DIR/INFRA-IMAGES-VERSION" << EOF
   - docker.1ms.run/nacos/nacos-server:v2.4.3
   - docker.1ms.run/library/rabbitmq:3.13.7-management
   - docker.1ms.run/xuxueli/xxl-job-admin:2.4.2
-  - docker.1ms.run/library/nginx:1.26-alpine
+  - docker.1ms.run/openresty/openresty:1.25.3.2-alpine
   - docker.1ms.run/rustfs/rustfs:1.0.0-beta.9
   - silverwing/base:1.0.0（本地构建）
 

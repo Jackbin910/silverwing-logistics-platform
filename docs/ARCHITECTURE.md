@@ -13,7 +13,7 @@ graph TB
     end
 
     subgraph Gateway["接入层"]
-        Nginx["Nginx 1.26<br/>· 负载均衡<br/>· SSL/TLS 终端<br/>· 静态资源服务<br/>· 访问控制<br/>· 限流防护"]
+        Nginx["OpenResty 1.25.3.2<br/>· 负载均衡<br/>· SSL/TLS 终端<br/>· 静态资源服务<br/>· 访问控制<br/>· 限流/WAF（Lua）"]
     end
 
     subgraph Microservices["微服务层"]
@@ -229,7 +229,7 @@ sequenceDiagram
 |------|------|------|------|
 | 容器化 | Docker | 24.0+ | 容器引擎 |
 | 容器编排 | Docker Compose | 2.20+ | 单机编排 |
-| 反向代理 / 负载均衡 | Nginx | 1.26-alpine | 统一入口 + 反向代理（非 OpenResty） |
+| 反向代理 / 负载均衡 | OpenResty | 1.25.3.2-alpine | 统一入口 + 反向代理 + 限流/WAF（Nginx + LuaJIT） |
 
 ## 4. 微服务详细说明
 

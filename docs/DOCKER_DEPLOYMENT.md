@@ -52,14 +52,14 @@
 
 | 文件/目录 | 说明 |
 |----------|------|
-| `*.tar` | 基础设施镜像（MySQL/Redis/Nacos/RabbitMQ/XXL-Job/Nginx/RustFS） |
+| `*.tar` | 基础设施镜像（MySQL/Redis/Nacos/RabbitMQ/XXL-Job/OpenResty/RustFS） |
 | `silverwing-base-1.0.0.tar` | 银翼基础镜像（本地构建） |
 | `onepanel-infra-compose.yml` | 基础设施编排文件 |
 | `onepanel-infra.env` | 环境变量模板 |
 | `load-infra-images.sh` | 镜像加载脚本（自动生成） |
 | `INFRA-IMAGES-VERSION` | 版本信息 |
 | `scripts/` | 数据库初始化 SQL |
-| `docker/` | Nginx 等服务配置文件 |
+| `docker/` | OpenResty 等服务配置文件 |
 
 包含的镜像版本：
 
@@ -70,7 +70,7 @@
 | Nacos | v2.4.3 |
 | RabbitMQ | 3.13.7-management |
 | XXL-Job | 2.4.2 |
-| Nginx | 1.26-alpine |
+| OpenResty | 1.25.3.2-alpine |
 | RustFS | 1.0.0-beta.9（S3 对象存储，RAG 文件持久化） |
 | 银翼基础镜像 | silverwing/base:1.0.0 |
 
@@ -145,7 +145,7 @@ cd silverwing-infra-images
 ./load-infra-images.sh
 
 # 验证
-docker images | grep -E "mysql|redis|nacos|rabbitmq|nginx|silverwing/base"
+docker images | grep -E "mysql|redis|nacos|rabbitmq|nginx|openresty|silverwing/base"
 ```
 
 ### 2. 配置并部署基础设施
@@ -192,7 +192,7 @@ docker network create silverwing-network
 docker compose -f onepanel-infra-compose.yml --env-file onepanel-infra.env up -d
 
 # 验证
-docker ps | grep -E "mysql|redis|nacos|rabbitmq|nginx"
+docker ps | grep -E "mysql|redis|nacos|rabbitmq|nginx|openresty"
 ```
 
 ### 3. 初始化数据库
@@ -595,7 +595,7 @@ sudo chown -R 472:472 ./data/grafana
 │   ├── *.tar                        # 基础设施镜像
 │   ├── silverwing-base-1.0.0.tar    # 银翼基础镜像
 │   ├── scripts/                     # 数据库 SQL
-│   └── docker/                      # Nginx 等配置
+│   └── docker/                      # OpenResty 等配置
 ├── docker-microservices-1.0.0/      # 微服务包（解压后）
 │   ├── MICROSERVICES-VERSION
 │   ├── load-microservices-images.sh

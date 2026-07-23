@@ -13,7 +13,7 @@
 │  ① 基础设施 compose（8 容器）         │
 │     MySQL · Redis · PGVector · RustFS │
 │     Nacos(单机) · RabbitMQ · XXL-Job  │
-│     Nginx                             │
+│     OpenResty                          │
 │                                       │
 │  ② 微服务 compose（8 容器）           │
 │     Gateway · Auth · Core · Twin      │
@@ -77,7 +77,7 @@
 │     Prometheus · Grafana              │  │     XXL-Job      ← 任务调度        │
 │                                       │  │     RustFS       ← RAG 对象存储    │
 │                                       │  │     Nacos(单机)  ← 配置/注册       │
-│  Nginx（入口代理）                    │  │                                     │
+│  OpenResty（入口代理）                  │  │                                     │
 │                                       │  │  数据卷：                          │
 │  ─────────────────────────────────── │  │  mysql-data / pgvector-data        │
 │  宿主机进程：无 Ollama（移到阶段4）   │  │  redis-data / rabbitmq-data        │
@@ -90,10 +90,10 @@
 
 | 机器 | 角色 | CPU | 内存 | 磁盘 | 说明 |
 |------|------|-----|------|------|------|
-| 服务器 A | 应用机 | 16C | 16GB | 100GB SSD | 跑 8 微服务 + 监控 + Nginx |
+| 服务器 A | 应用机 | 16C | 16GB | 100GB SSD | 跑 8 微服务 + 监控 + OpenResty |
 | 服务器 B | 数据库机 | 8C | 16GB | 500GB SSD | 跑 MySQL/Redis/PGVector/Nacos/RabbitMQ/XXL-Job/RustFS |
 
-> 应用机 16GB 足够：8 微服务 JVM 堆合计 ~8.6GB + 监控 ~0.5GB + Nginx/OS ~2GB = ~11GB，留 5GB 余量。
+> 应用机 16GB 足够：8 微服务 JVM 堆合计 ~8.6GB + 监控 ~0.5GB + OpenResty/OS ~2GB = ~11GB，留 5GB 余量。
 
 ### 具体改动
 
@@ -222,7 +222,7 @@ services:
       - silverwing-db-net
     restart: always
 
-  # 不再包含 nginx 服务，nginx 移到应用机
+  # 不再包含 openresty 服务，openresty 移到应用机
 
 volumes:
   mysql-data:
@@ -344,16 +344,16 @@ services:
       - silverwing-app-net
     restart: always
 
-  # 新增 Nginx（从基础设施层移过来）
+  # 新增 OpenResty（从基础设施层移过来）
   nginx:
-    image: nginx:1.26-alpine
+    image: docker.1ms.run/openresty/openresty:1.25.3.2-alpine
     container_name: silverwing-nginx
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./docker/nginx-conf/conf/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./docker/nginx-conf/conf/conf.d:/etc/nginx/conf.d:ro
+      - ./docker/nginx-conf/conf/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf:ro
+      - ./docker/nginx-conf/conf/conf.d:/usr/local/openresty/nginx/conf/conf.d:ro
     depends_on:
       - silverwing-gateway
     networks:
