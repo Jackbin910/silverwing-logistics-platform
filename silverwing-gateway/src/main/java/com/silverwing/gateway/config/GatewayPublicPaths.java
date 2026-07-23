@@ -24,14 +24,10 @@ public final class GatewayPublicPaths {
      * </p>
      */
     public static final List<String> PUBLIC_PATHS = List.of(
-            // 认证相关（auth 前缀，网关默认路由）
+            // 认证相关（auth 前缀，对应外部 /api/auth/login，Nginx 剥前缀后网关收到 /auth/login）
             "/auth/login",
             "/auth/logout",
             "/auth/public-key",
-            // 认证相关（api 前缀，前端实际调用路径 /api/login 等）
-            "/api/login",
-            "/api/logout",
-            "/api/public-key",
             // API 文档（精确列举，覆盖各服务）
             "/doc.html",
             "/webjars/**",
