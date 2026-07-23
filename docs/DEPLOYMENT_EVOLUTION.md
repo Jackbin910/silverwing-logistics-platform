@@ -10,8 +10,8 @@
 ┌─────────── 服务器 A（单机）──────────┐
 │  CPU 16C / 内存 32GB / 磁盘 200GB    │
 │                                       │
-│  ① 基础设施 compose（7 容器）         │
-│     MySQL · Redis · PGVector          │
+│  ① 基础设施 compose（8 容器）         │
+│     MySQL · Redis · PGVector · RustFS │
 │     Nacos(单机) · RabbitMQ · XXL-Job  │
 │     Nginx                             │
 │                                       │
@@ -26,7 +26,7 @@
 │     Ollama (Qwen2.5 7B)               │
 │     Docker daemon                     │
 │                                       │
-│  合计 17 容器 + 1 宿主机进程          │
+│  合计 18 容器 + 1 宿主机进程          │
 │  内存峰值 ~20GB（含 Ollama CPU 推理） │
 └───────────────────────────────────────┘
 ```

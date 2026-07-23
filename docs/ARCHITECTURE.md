@@ -5,40 +5,41 @@
 ```mermaid
 graph TB
     subgraph Client["客户端层"]
-        Web[Web浏览器<br/>管理后台]
-        Mobile[移动端APP<br/>员工应用]
-        Voice[语音设备<br/>智能音箱]
-        IoT[IoT设备<br/>传感器/摄像头]
-        ThirdParty[第三方系统<br/>HRP/SPD/WMS]
+        Web["Web浏览器<br/>管理后台"]
+        Mobile["移动端APP<br/>员工应用"]
+        Voice["语音设备<br/>智能音箱"]
+        IoT["IoT设备<br/>传感器/摄像头"]
+        ThirdParty["第三方系统<br/>HRP/SPD/WMS"]
     end
 
     subgraph Gateway["接入层"]
-        Nginx[OpenResty/Nginx<br/>• 负载均衡<br/>• SSL/TLS 终端<br/>• 静态资源服务<br/>• 访问控制<br/>• 限流防护]
+        Nginx["Nginx 1.26<br/>· 负载均衡<br/>· SSL/TLS 终端<br/>· 静态资源服务<br/>· 访问控制<br/>· 限流防护"]
     end
 
     subgraph Microservices["微服务层"]
-        GW[silverwing-gateway<br/>API网关<br/>8080]
-        Auth[silverwing-auth<br/>认证服务<br/>8081]
-        Core[silverwing-core-service<br/>核心服务<br/>8082]
-        AI[silverwing-ai-service<br/>AI分析服务<br/>8084]
-        Twin[silverwing-digital-twin<br/>数字孪生<br/>8083]
-        Ops[silverwing-ops-service<br/>运维服务<br/>8085]
-        Integration[silverwing-integration<br/>集成服务<br/>8086]
-        Admin[silverwing-admin-web<br/>管理后台<br/>8087]
+        GW["silverwing-gateway<br/>API网关<br/>8080"]
+        Auth["silverwing-auth<br/>认证服务<br/>8081"]
+        Core["silverwing-core-service<br/>核心服务<br/>8082"]
+        AI["silverwing-ai-service<br/>AI分析服务<br/>8084"]
+        Twin["silverwing-digital-twin<br/>数字孪生<br/>8083"]
+        Ops["silverwing-ops-service<br/>运维服务<br/>8085"]
+        Integration["silverwing-integration<br/>集成服务<br/>8086"]
+        Admin["silverwing-admin-web<br/>管理后台<br/>8087"]
     end
 
     subgraph Middleware["中间件层"]
-        Nacos[Nacos 2.2.3<br/>服务注册/配置中心<br/>8848]
-        Redis[Redis 7.4<br/>缓存/会话/分布式锁<br/>6379]
-        MySQL[MySQL 8.0<br/>业务数据库<br/>3306]
-        RabbitMQ[RabbitMQ 3.13<br/>消息队列<br/>5672/15672]
-        PGVector[PGVector<br/>向量数据库<br/>5432]
-        XXLJob[XXL-Job 2.4<br/>任务调度<br/>19080]
+        Nacos["Nacos 2.4.3<br/>服务注册/配置中心<br/>8848"]
+        Redis["Redis 6.2.6<br/>redis-stack 缓存/会话<br/>6379"]
+        MySQL["MySQL 8.0.40<br/>业务数据库<br/>3306"]
+        RabbitMQ["RabbitMQ 3.13.7<br/>消息队列<br/>5672/15672"]
+        PGVector["PGVector<br/>PostgreSQL 16 + pgvector<br/>5432"]
+        RustFS["RustFS 1.0.0-beta.9<br/>S3 对象存储 (RAG 文件)<br/>9000/9001"]
+        XXLJob["XXL-Job 2.4.2<br/>任务调度<br/>19080"]
     end
 
     subgraph AI_Engine["AI引擎层"]
-        Ollama[Ollama<br/>Qwen2.5 7B<br/>本地LLM]
-        BGE[bge-m3<br/>多语言向量嵌入模型<br/>1024维]
+        Ollama["Ollama<br/>Qwen2.5 7B<br/>本地LLM"]
+        BGE["bge-m3<br/>多语言向量嵌入模型<br/>1024维"]
     end
 
     Web -->|HTTPS| Nginx
@@ -89,6 +90,7 @@ graph TB
     AI --> PGVector
     AI --> Ollama
     AI --> BGE
+    AI --> RustFS
 
     Core --> XXLJob
     Ops --> XXLJob
@@ -102,7 +104,7 @@ graph TB
     class Web,Mobile,Voice,IoT,ThirdParty client
     class Nginx,GW gateway
     class Auth,Core,AI,Twin,Ops,Integration,Admin service
-    class Nacos,Redis,MySQL,RabbitMQ,PGVector,XXLJob middleware
+    class Nacos,Redis,MySQL,RabbitMQ,PGVector,RustFS,XXLJob middleware
     class Ollama,BGE ai
 ```
 
@@ -184,21 +186,26 @@ sequenceDiagram
 | 开发语言 | Java | 17 | 主语言 |
 | 应用框架 | Spring Boot | 3.5.0 | 应用框架 |
 | 微服务框架 | Spring Cloud | 2025.0.0 | 微服务基础 |
-| 阿里云组件 | Spring Cloud Alibaba | 2025.0.0 | Nacos/Sentinel |
-| API网关 | Spring Cloud Gateway | 4.1 | 统一入口 |
-| 权限认证 | Sa-Token | 1.40.0 | 无状态认证 |
-| 持久层 | MyBatis-Plus | 3.5.9 | ORM框架 |
-| 数据库连接池 | Druid | 1.2.23 | 连接池 |
-| 缓存 | Redis + Redisson | 7.4 / 3.32.0 | 缓存/分布式锁 |
-| 注册/配置 | Nacos | 2.2.3 | 服务发现/配置中心 |
-| 消息队列 | RabbitMQ | 3.13 | 异步消息 |
+| 阿里云组件 | Spring Cloud Alibaba | 2025.0.0.0 | Nacos/Sentinel |
+| API网关 | Spring Cloud Gateway | 4.x（随 SC 2025.0.0） | 统一入口 |
+| 权限认证 | Sa-Token | 1.45.0 | 无状态认证 |
+| 持久层 | MyBatis-Plus | 3.5.15 | ORM框架 |
+| 数据库连接池 | Druid | 1.2.27 | 连接池 |
+| 缓存 | Redis + Redisson | 6.2.6 / 3.52.0 | 缓存/分布式锁（redis-stack） |
+| 多级缓存 | JetCache | 2.7.8 | 本地 + 远程缓存 |
+| 注册/配置 | Nacos | 2.4.3 | 服务发现/配置中心 |
+| 消息队列 | RabbitMQ | 3.13.7 | 异步消息 |
 | 任务调度 | XXL-Job | 2.4.2 | 定时任务 |
-| AI框架 | LangChain4j | 1.12.2 | LLM编排 |
-| 大模型 | Qwen2.5 | 7B | 本地LLM |
+| 动态线程池 | Dynamic-TP | 1.2.2-x | 线程池监控/动态调优 |
+| AI框架 | LangChain4j | 1.17.2 | LLM编排 |
+| 大模型 | Qwen2.5 | 7B | 本地LLM（Ollama 托管） |
 | 向量模型 | bge-m3 | Ollama | 多语言向量嵌入（1024维） |
-| 向量数据库 | PGVector | 0.5+ | 向量存储 |
+| 向量数据库 | PGVector | PostgreSQL 16 + pgvector | 向量存储 |
+| 对象存储客户端 | AWS SDK for S3 | 2.29.51 | RustFS / MinIO 兼容（RAG 文件） |
+| 对象转换 | MapStruct | 1.6.3 | 编译期 DTO 转换 |
+| Excel 处理 | EasyExcel | 3.3.4 | 报表导入导出 |
 | API文档 | Knife4j | 4.5.0 | OpenAPI 3.0 |
-| 工具库 | Hutool | 5.8+ | 工具类 |
+| 工具库 | Hutool | 5.8.46 | 工具类 |
 
 ### 3.2 前端技术栈
 
@@ -214,14 +221,15 @@ sequenceDiagram
 | 3D可视化 | Three.js / ECharts | - | 3D/图表 |
 | 数字孪生 | 自研 | - | 可视化引擎 |
 
+> **说明**：前端工程（Vue 3 + Vite + Element Plus 等）独立交付，**不在本后端仓库内**。仓库内的 `silverwing-admin-web` 是后端服务（提供报表统计、配置管理、用户管理等接口）。前端统一经由 Nginx → Gateway 的 `/api/{servicePrefix}/**` 与 `/admin/**` 访问后端，详见 `docs/ROUTING.md`。
+
 ### 3.3 基础设施
 
 | 层级 | 技术 | 版本 | 用途 |
 |------|------|------|------|
 | 容器化 | Docker | 24.0+ | 容器引擎 |
 | 容器编排 | Docker Compose | 2.20+ | 单机编排 |
-| 反向代理 | OpenResty | 1.25+ | 高性能网关 |
-| 负载均衡 | Nginx | 1.25+ | 反向代理 |
+| 反向代理 / 负载均衡 | Nginx | 1.26-alpine | 统一入口 + 反向代理（非 OpenResty） |
 
 ## 4. 微服务详细说明
 
@@ -309,7 +317,8 @@ sequenceDiagram
 **AI能力：**
 - LangChain4j + Ollama (Qwen2.5 7B)
 - bge-m3 多语言向量嵌入（1024维，Ollama 托管）
-- PGVector 向量数据库
+- PGVector 向量数据库（PostgreSQL 16 + pgvector）
+- RustFS 对象存储（S3 协议，RAG 原始文件持久化，bucket: `silverwing`，前缀 `rag/`）
 - 时序异常检测算法
 
 #### silverwing-digital-twin（数字孪生服务）
@@ -446,6 +455,25 @@ sequenceDiagram
 - 设备健康检查
 - 数据统计分析
 
+### 5.7 RustFS（对象存储）
+
+**用途：**
+- RAG 知识库原始文档持久化（上传的 PDF/Word/Excel 等先落到对象存储，再做向量化）
+- 通用文件/附件存储（基于 S3 协议，兼容 MinIO 客户端）
+- 通过 AWS SDK for S3 客户端访问
+
+**配置：**
+- 镜像：`rustfs/rustfs:1.0.0-beta.9`
+- S3 API 端口：`9000`，控制台端口：`9001`
+- 访问密钥：`RUSTFS_ACCESS_KEY` / `RUSTFS_SECRET_KEY`（默认 `silverwing` / `123456`）
+- 存储桶：`silverwing`（启动时按需自动创建）
+- 文件 Key 规则：`{prefix}/yyyy/MM/dd/{uuid}_{安全文件名}`，RAG 场景前缀为 `rag/`
+- 客户端封装：`silverwing-common-storage` 模块 `FileStorageService`（upload / download / deleteFile / fileExists / getFileUrl）
+
+**文件生命周期说明：**
+- 上传：文档先 `upload` 到 RustFS 得到 `fileKey`，向量化入库；仅当导入失败时清理已上传对象。
+- 删除：删除知识库文档（`KnowledgeController.deleteByDocumentId` / `clearAll`）当前清理 PGVector 向量与 MySQL 记录；RustFS 中的原始对象需在删除逻辑中同步调用 `FileStorageService.deleteFile(fileKey)` 清理，否则会残留孤儿文件。运维可通过 RustFS 控制台（`:9001`）按 `rag/` 前缀检索与人工清理。
+
 ## 6. 数据库设计
 
 ### 6.1 核心数据表
@@ -465,6 +493,8 @@ sequenceDiagram
 | knowledge_vector | 知识向量 | ai (PGVector) |
 | conversation_session | 对话会话 | ai |
 | integration_log | 集成日志 | integration |
+
+> **数据库划分**：实际部署使用三个 MySQL 库——业务主库 `silverwing_logistics`（用户、订单、设备、工单、集成日志等）、AI 专用库 `silverwing_ai`（知识库文档等）、以及 Nacos 配置库 `nacos_config`；向量数据独立存放在 PostgreSQL（`silverwing_vector`）。初始化脚本见 `scripts/init.sql`（含主库与 `nacos_config`、`silverwing_ai`）。
 
 ### 6.2 索引策略
 

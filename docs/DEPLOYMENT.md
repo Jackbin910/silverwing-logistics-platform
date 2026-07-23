@@ -57,7 +57,8 @@
 │  │ - Nacos          │      │ - Core Svc      │         │
 │  │ - RabbitMQ       │      │ - Digital Twin  │         │
 │  │ - PGVector       │      │ - AI Service    │         │
-│  │ - OpenResty      │      │ - Ops Svc       │         │
+│  │ - RustFS         │      │ - Ops Svc       │         │
+│  │ - Nginx          │      │ - Integration   │         │
 │  └──────────────────┘      │ - Integration   │         │
 │         │                 │ - Admin Web     │         │
 │         └─────────────────┴──────────────────┘         │

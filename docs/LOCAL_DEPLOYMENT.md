@@ -2,7 +2,9 @@
 
 本文档介绍如何在本地开发环境搭建、测试和运行银翼智驭医流综合管理平台。
 
-> 本文档基于项目实际配置（`onepanel-infra-compose.yml`、各服务 `application.yml`、`nacos-config-templates/`、`scripts/`）编写，覆盖旧版本文档。
+> 本文档基于项目实际配置（`onepanel-infra-compose.yml`、各服务 `application.yml`、`scripts/`）编写，覆盖旧版本文档。
+>
+> **注意**：Nacos 配置模板（`common-*.yml`、`silverwing-*-service.yml` 等）**不随本仓库提交**，需从配置管理中心或历史环境导出后导入 Nacos；对象存储 RustFS 已包含在基础设施 compose 中，AI 服务的 RAG 文件默认持久化到 RustFS（bucket: `silverwing`，前缀 `rag/`）。
 
 ## 目录
 
@@ -29,11 +31,12 @@
 | JDK | 17 | 推荐 Eclipse Temurin / OpenJDK         |
 | Maven | 3.8+ | 项目构建工具                               |
 | Docker Desktop | 最新版 | 用于启动基础设施（含 Compose）                  |
-| MySQL | 8.0+ | 业务数据库（由 Docker 提供 8.0.45，宿主机映射 3307） |
-| Redis | 6.2+ | 缓存和会话存储（由 Docker 提供 6.2.18）          |
+| MySQL | 8.0+ | 业务数据库（由 Docker 提供 8.0.40） |
+| Redis | 6.2+ | 缓存和会话存储（由 Docker 提供 6.2.6 redis-stack-server） |
 | Nacos | 2.4.3 | 服务注册和配置中心（由 Docker 提供）               |
-| RabbitMQ | 3.13+ | 消息队列（由 Docker 提供，core-service 依赖）    |
-| PostgreSQL | 14+（含 pgvector） | 向量数据库（AI 服务依赖）                       |
+| RabbitMQ | 3.13+ | 消息队列（由 Docker 提供 3.13.7，core-service 依赖） |
+| PostgreSQL | 16（含 pgvector） | 向量数据库（AI 服务依赖，镜像 pgvector/pgvector:pg16） |
+| RustFS | 1.0.0-beta.9 | S3 对象存储（AI 服务的 RAG 文件持久化，由 Docker 提供） |
 | Ollama | 最新版 | 本地大模型运行（AI 服务依赖）                     |
 | IDE | IntelliJ IDEA | 推荐，便于调试微服务                           |
 | 内存 | >= 16GB | 运行全部基础设施 + 微服务 + Ollama              |

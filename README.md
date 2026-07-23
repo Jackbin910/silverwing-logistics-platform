@@ -38,7 +38,7 @@ silverwing-logistics-platform/
 ├── silverwing-admin-web       # 管理后台（8087，报表统计）
 ├── docker/                    # 各服务 Dockerfile
 ├── scripts/                   # 数据库初始化 SQL
-└── nacos-config-templates/    # Nacos 配置中心模板
+└── docker/                    # Nginx / 基础镜像等部署配置
 ```
 
 ## 部署
@@ -63,7 +63,8 @@ mysql -u root -p < scripts/init.sql
 # 2. 启动基础设施（MySQL/Redis/Nacos）
 docker compose -f onepanel-infra-compose.yml up -d mysql redis nacos
 
-# 3. 在 Nacos 导入配置模板（nacos-config-templates/ 目录）
+# 3. 在 Nacos 导入配置模板（common-*.yml、silverwing-*-service.yml 等，
+#    注意：配置模板不随仓库提交，需从配置管理中心或历史环境导出）
 
 # 4. 构建并启动
 mvn clean install -DskipTests

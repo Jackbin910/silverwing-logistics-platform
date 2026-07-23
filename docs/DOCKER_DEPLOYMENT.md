@@ -52,7 +52,7 @@
 
 | 文件/目录 | 说明 |
 |----------|------|
-| `*.tar` | 基础设施镜像（MySQL/Redis/Nacos/RabbitMQ/XXL-Job/Nginx） |
+| `*.tar` | 基础设施镜像（MySQL/Redis/Nacos/RabbitMQ/XXL-Job/Nginx/RustFS） |
 | `silverwing-base-1.0.0.tar` | 银翼基础镜像（本地构建） |
 | `onepanel-infra-compose.yml` | 基础设施编排文件 |
 | `onepanel-infra.env` | 环境变量模板 |
@@ -66,11 +66,12 @@
 | 组件 | 镜像版本 |
 |------|---------|
 | MySQL | 8.0.40 |
-| Redis | 6.2.18 |
+| Redis | 6.2.6-v20（redis-stack-server） |
 | Nacos | v2.4.3 |
 | RabbitMQ | 3.13.7-management |
 | XXL-Job | 2.4.2 |
 | Nginx | 1.26-alpine |
+| RustFS | 1.0.0-beta.9（S3 对象存储，RAG 文件持久化） |
 | 银翼基础镜像 | silverwing/base:1.0.0 |
 
 ### 2. 构建微服务镜像包
@@ -197,8 +198,10 @@ docker compose -f onepanel-infra-compose.yml exec -T mysql \
 2. 新建命名空间：ID = `silverwing-prod`，名称 = 银翼生产环境
 3. 切换到 `silverwing-prod` 命名空间
 4. 配置管理 → 配置列表 → 导入配置
-5. 上传 `nacos-config-templates/` 目录下所有 `.yml` 文件
+5. 上传 Nacos 配置模板（`common-redis.yml`、`common-pgvector.yml`、`common-rabbitmq.yml`、`common-sa-token.yml`、`silverwing-ai-service.yml` 等）。**注意**：配置模板不随本仓库提交，需从配置管理中心/历史环境导出后导入；导入后请核对各 `spring.datasource`、`redis`、`pgvector` 连接信息与 `silverwing.storage.*`（RustFS 对象存储）端点。
 6. 修改配置中的数据库密码为实际值并发布
+
+> **RustFS 对象存储**：AI 服务的 RAG 文件持久化依赖 RustFS。连接信息（`silverwing.storage.endpoint=http://rustfs:9000`、`access-key`、`secret-key`、`bucket=silverwing`）在 Nacos 的 `silverwing-ai-service.yml` 中配置；若 Nacos 缺失，则由 `application-docker.yml` 的本地兜底配置（指向 `http://rustfs:9000`）生效。RustFS 容器已在基础设施 compose 中随 `silverwing-network` 启动，服务名即 `rustfs`。
 
 ### 5. 加载微服务镜像
 
