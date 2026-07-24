@@ -12,8 +12,6 @@
 #       微服务启动后自动从 Nacos 拉取，无需在 Docker 环境变量中配置。
 # ========================================
 
-version: '3.8'
-
 # 公共环境变量（所有微服务共享，只需配一份 Nacos 连接信息）
 x-common-env: &common-env
   NACOS_SERVER_ADDR: nacos:8848
@@ -37,7 +35,7 @@ services:
       - silverwing-network
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9091/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:9091/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3

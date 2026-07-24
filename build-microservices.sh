@@ -121,11 +121,11 @@ set -e
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # 检查基础镜像
-if ! docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "silverwing/base:1.0.0"; then
-    echo "错误：缺少基础镜像 silverwing/base:1.0.0" >&2
-    echo "请先加载基础设施镜像包（silverwing-infra-images）" >&2
-    exit 1
-fi
+#if ! docker images --format "{{.Repository}}:{{.Tag}}" | grep -q "silverwing/base:1.0.0"; then
+#    echo "错误：缺少基础镜像 silverwing/base:1.0.0" >&2
+#    echo "请先加载基础设施镜像包（silverwing-infra-images）" >&2
+#    exit 1
+#fi
 
 total=$(ls -1 silverwing-*.tar 2>/dev/null | wc -l)
 if [ "$total" -eq 0 ]; then
