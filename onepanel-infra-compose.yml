@@ -165,7 +165,8 @@ services:
         aliases:
           - xxl-job-admin
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/xxl-job-admin/"]
+      # xxl-job 基于 JDK 镜像、不含 curl；改用 bash 的 /dev/tcp 探测 8080 端口
+      test: ["CMD-SHELL", "bash -c 'cat < /dev/null > /dev/tcp/localhost/8080' || exit 1"]
       interval: 15s
       timeout: 10s
       retries: 5
@@ -219,7 +220,8 @@ services:
         aliases:
           - rustfs
     healthcheck:
-      test: ["CMD-SHELL", "timeout 3 sh -c 'cat < /dev/null > /dev/tcp/localhost/9000' || exit 1"]
+      # busybox 的 ash 不支持 bash 专有伪设备 /dev/tcp，改用 busybox 自带的 nc 做 TCP 端口探测
+      test: ["CMD-SHELL", "busybox nc -z -w 3 localhost 9000 || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
