@@ -7,6 +7,7 @@ import com.silverwing.common.enums.BusinessTypeEnum;
 import com.silverwing.ai.application.dto.ConversationResponse;
 import com.silverwing.ai.application.dto.ChatRequest;
 import com.silverwing.ai.application.impl.ConversationOrchestrator;
+import com.silverwing.ai.application.tool.IntentScopedAssistant;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 /**
  * 对话 Controller
@@ -28,6 +30,7 @@ import reactor.core.publisher.Flux;
 public class ConversationController {
 
     private final ConversationOrchestrator orchestrator;
+    private final IntentScopedAssistant intentScopedAssistant;
 
     /**
      * 智能对话（支持多轮对话上下文）
@@ -45,6 +48,59 @@ public class ConversationController {
 
         ConversationResponse response = orchestrator.chat(request.getMessage(), sessionId);
         return Result.success(response);
+    }
+
+    /**
+     * 智能对话（意图限定 Agent 模式）
+     * 先由意图识别引擎定下意图边界，再在该意图对应的工具域内由 LLM 自主调用工具执行，
+     * 兼顾可控性与灵活性。与 {@link ConversationOrchestrator} 的纯意图路由链路并存、互不干扰。
+     */
+    @Operation(summary = "智能对话-意图限定Agent", description = "意图识别 + LLM 工具调用混合模式，按意图执行，带多轮记忆")
+    @PostMapping("/agent")
+    public Mono<Result<ConversationResponse>> chatAgent(@Valid @RequestBody ChatRequest request) {
+        // 只赋值一次，保证 sessionId 为 effectively final，可在后续 lambda 中安全捕获
+        final String sessionId = (request.getSessionId() == null || request.getSessionId().isBlank())
+                ? java.util.UUID.randomUUID().toString().replace("-", "")
+                : request.getSessionId();
+
+        // 复用 chatStream 的流式能力，收集完整结果后整体返回（响应式，无阻塞）
+        return intentScopedAssistant.chatStream(request.getMessage(), sessionId)
+                .collectList()
+                .map(tokens -> Result.success(ConversationResponse.builder()
+                        .sessionId(sessionId)
+                        .answer(String.join("", tokens))
+                        .build()));
+    }
+
+    /**
+     * 智能对话（意图限定 Agent 模式，流式 + 记忆）
+     * 先由意图识别引擎定下意图边界，再在该意图对应的工具域内由 LLM 自主调用工具执行，
+     * 通过 SSE 逐 token 推送，并按 sessionId 维护多轮对话记忆。
+     * 记忆与 {@link ConversationController#clearMemory(String)} 共用同一 Redis 空间。
+     */
+    @Operation(summary = "智能对话-意图限定Agent流式", description = "意图识别 + LLM 工具调用混合模式，流式逐 token 推送，带多轮记忆")
+    @GetMapping(value = "/agent/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<ServerSentEvent<String>> chatAgentStream(
+            @RequestParam("message") String message,
+            @RequestParam(value = "sessionId", required = false) String sessionId) {
+        if (CharSequenceUtil.isBlank(message)) {
+            return Flux.just(ServerSentEvent.<String>builder().event("error").data("消息内容不能为空").build());
+        }
+
+        // sessionId 为空时自动生成一个
+        if (sessionId == null || sessionId.isBlank()) {
+            sessionId = java.util.UUID.randomUUID().toString().replace("-", "");
+        }
+
+        // 返回 sessionId in first event
+        return Flux.concat(
+                Flux.just(ServerSentEvent.<String>builder().event("sessionId").data(sessionId).build()),
+                intentScopedAssistant.chatStream(message, sessionId)
+                        .map(token -> ServerSentEvent.<String>builder().event("token").data(token).build()),
+                Flux.just(ServerSentEvent.<String>builder().event("done").data("[DONE]").build())
+        ).onErrorResume(e -> Flux.just(
+                ServerSentEvent.<String>builder().event("error").data("处理异常：" + e.getMessage()).build()
+        ));
     }
 
     /**
