@@ -12,11 +12,22 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>silverwing-ai-service-client</artifactId>
+    <artifactId>silverwing-ops-service-adapter</artifactId>
     <packaging>jar</packaging>
-    <name>AI Service Client</name>
+    <name>Ops Service Adapter</name>
+    <description>运维服务适配层：REST Controller 等对外接口</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-ops-service-app</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-ops-service-client</artifactId>
+            <version>${revision}</version>
+        </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
@@ -27,22 +38,15 @@
             <artifactId>silverwing-common-web</artifactId>
             <version>${revision}</version>
         </dependency>
-
-        <!-- 引入 ops-service 开门 Feign 契约 -->
         <dependency>
             <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-ops-service-client</artifactId>
+            <artifactId>silverwing-common-cache</artifactId>
             <version>${revision}</version>
         </dependency>
-
-        <!-- OpenFeign：跨服务 Feign 客户端接口与降级工厂 -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-auth</artifactId>
+            <version>${revision}</version>
         </dependency>
 
         <dependency>
@@ -54,7 +58,7 @@
     </dependencies>
 
     <build>
-        <finalName>silverwing-ai-service-client</finalName>
+        <finalName>silverwing-ops-service-adapter</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

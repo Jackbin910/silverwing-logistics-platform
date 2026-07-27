@@ -12,85 +12,17 @@
     </parent>
 
     <artifactId>silverwing-ops-service</artifactId>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <name>Operations and Maintenance Service</name>
     <description>Device health management, work order management, predictive maintenance</description>
 
-    <dependencies>
-        <!-- Common -->
-        <!-- Common：按需引入拆分后的子模块（base/web/cache/auth） -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-base</artifactId>
-            <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-web</artifactId>
-            <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-cache</artifactId>
-            <version>${revision}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-common-auth</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-
-
-        <!-- Nacos Discovery -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- Nacos Config -->
-        <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- XXL-Job -->
-        <dependency>
-            <groupId>com.xuxueli</groupId>
-            <artifactId>xxl-job-core</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.36</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <finalName>silverwing-ops-service</finalName>
-        <plugins>
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.36</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
+    <modules>
+        <module>silverwing-ops-service-domain</module>
+        <module>silverwing-ops-service-dbsdk</module>
+        <module>silverwing-ops-service-infrastructure</module>
+        <module>silverwing-ops-service-client</module>
+        <module>silverwing-ops-service-app</module>
+        <module>silverwing-ops-service-adapter</module>
+        <module>silverwing-ops-service-start</module>
+    </modules>
 </project>

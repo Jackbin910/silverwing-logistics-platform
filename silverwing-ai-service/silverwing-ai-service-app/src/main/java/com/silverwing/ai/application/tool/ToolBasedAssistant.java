@@ -3,6 +3,7 @@ package com.silverwing.ai.application.tool;
 import com.silverwing.ai.client.DeviceClient;
 import com.silverwing.ai.client.OrderClient;
 import com.silverwing.ai.client.WorkOrderClient;
+import com.silverwing.ops.client.OpsWarehouseClient;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Component;
  * 
  * @see DeviceTools 设备查询工具
  * @see OrderTools 订单查询工具
+ * @see OpsTools 运维服务工具（H800 开门等）
  */
 @Slf4j
 @Component
@@ -34,17 +36,19 @@ public class ToolBasedAssistant {
             ChatModel chatModel,
             DeviceClient deviceClient,
             OrderClient orderClient,
-            WorkOrderClient workOrderClient) {
-        
+            WorkOrderClient workOrderClient,
+            OpsWarehouseClient opsWarehouseClient) {
+
         // 初始化工具实例
         DeviceTools deviceTools = new DeviceTools(deviceClient);
         OrderTools orderTools = new OrderTools(orderClient);
         WorkOrderTools workOrderTools = new WorkOrderTools(workOrderClient);
+        OpsTools opsTools = new OpsTools(opsWarehouseClient);
 
         // 构建 AiServices，绑定工具
         this.assistant = AiServices.builder(LogisticsAssistant.class)
                 .chatModel(chatModel)
-                .tools(deviceTools, orderTools, workOrderTools)
+                .tools(deviceTools, orderTools, workOrderTools, opsTools)
                 .build();
     }
 

@@ -12,11 +12,17 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>silverwing-ai-service-client</artifactId>
+    <artifactId>silverwing-ops-service-dbsdk</artifactId>
     <packaging>jar</packaging>
-    <name>AI Service Client</name>
+    <name>Ops Service DBSdk</name>
+    <description>运维服务数据访问层：Mapper、DAO、仓储实现</description>
 
     <dependencies>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-ops-service-domain</artifactId>
+            <version>${revision}</version>
+        </dependency>
         <dependency>
             <groupId>com.silverwing</groupId>
             <artifactId>silverwing-common-base</artifactId>
@@ -28,23 +34,6 @@
             <version>${revision}</version>
         </dependency>
 
-        <!-- 引入 ops-service 开门 Feign 契约 -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-ops-service-client</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-        <!-- OpenFeign：跨服务 Feign 客户端接口与降级工厂 -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -54,7 +43,7 @@
     </dependencies>
 
     <build>
-        <finalName>silverwing-ai-service-client</finalName>
+        <finalName>silverwing-ops-service-dbsdk</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

@@ -12,9 +12,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>silverwing-ai-service-client</artifactId>
+    <artifactId>silverwing-ops-service-domain</artifactId>
     <packaging>jar</packaging>
-    <name>AI Service Client</name>
+    <name>Ops Service Domain</name>
+    <description>运维服务领域层：聚合、实体、领域服务、仓储接口</description>
 
     <dependencies>
         <dependency>
@@ -27,22 +28,15 @@
             <artifactId>silverwing-common-web</artifactId>
             <version>${revision}</version>
         </dependency>
-
-        <!-- 引入 ops-service 开门 Feign 契约 -->
         <dependency>
             <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-ops-service-client</artifactId>
+            <artifactId>silverwing-common-cache</artifactId>
             <version>${revision}</version>
         </dependency>
-
-        <!-- OpenFeign：跨服务 Feign 客户端接口与降级工厂 -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-auth</artifactId>
+            <version>${revision}</version>
         </dependency>
 
         <dependency>
@@ -51,10 +45,14 @@
             <version>1.18.36</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
-        <finalName>silverwing-ai-service-client</finalName>
+        <finalName>silverwing-ops-service-domain</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -66,6 +64,11 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                             <version>1.18.36</version>
+                        </path>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${mapstruct.version}</version>
                         </path>
                     </annotationProcessorPaths>
                 </configuration>

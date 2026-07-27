@@ -12,9 +12,10 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>silverwing-ai-service-client</artifactId>
+    <artifactId>silverwing-ops-service-client</artifactId>
     <packaging>jar</packaging>
-    <name>AI Service Client</name>
+    <name>Ops Service Client</name>
+    <description>运维服务对外 Feign 客户端接口（供其他服务调用）</description>
 
     <dependencies>
         <dependency>
@@ -28,14 +29,7 @@
             <version>${revision}</version>
         </dependency>
 
-        <!-- 引入 ops-service 开门 Feign 契约 -->
-        <dependency>
-            <groupId>com.silverwing</groupId>
-            <artifactId>silverwing-ops-service-client</artifactId>
-            <version>${revision}</version>
-        </dependency>
-
-        <!-- OpenFeign：跨服务 Feign 客户端接口与降级工厂 -->
+        <!-- OpenFeign：对外 Feign 契约接口与降级工厂 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
@@ -54,7 +48,7 @@
     </dependencies>
 
     <build>
-        <finalName>silverwing-ai-service-client</finalName>
+        <finalName>silverwing-ops-service-client</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
