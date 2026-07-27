@@ -29,6 +29,8 @@ public enum IntentEnum {
 
     DATABASE_QUERY("DATABASE_QUERY", "数据库查询", "通过自然语言直接查询数据库，如订单列表、数据统计等"),
 
+    OPEN_WAREHOUSE("OPEN_WAREHOUSE", "开门", "打开 H800 仓储接驳库位的仓门，驱动库位放料/取料"),
+
     OTHER("OTHER", "其他", "无法明确识别的意图");
 
     private final String code;

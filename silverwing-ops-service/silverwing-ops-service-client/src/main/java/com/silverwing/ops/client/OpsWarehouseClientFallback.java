@@ -16,12 +16,9 @@ public class OpsWarehouseClientFallback implements FallbackFactory<OpsWarehouseC
     @Override
     public OpsWarehouseClient create(Throwable cause) {
         log.error("运维服务开门调用失败，启用降级策略", cause);
-        return new OpsWarehouseClient() {
-            @Override
-            public Result<OpenWarehouseResult> openWarehouse(OpenWarehouseRequest request) {
-                log.warn("降级：ops-service 不可用，未发送开门指令 location={}", request.getLocation());
-                return Result.fail("运维服务暂不可用，开门指令未发送");
-            }
+        return request -> {
+            log.warn("降级：ops-service 不可用，未发送开门指令 location={}", request.getLocation());
+            return Result.fail("运维服务暂不可用，开门指令未发送");
         };
     }
 }

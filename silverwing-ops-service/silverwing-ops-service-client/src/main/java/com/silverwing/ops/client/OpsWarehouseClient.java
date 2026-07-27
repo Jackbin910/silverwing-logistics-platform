@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(
     name = "silverwing-ops-service",
     contextId = "opsWarehouseClient",
-    path = "/api/ops/warehouse",
+    path = "/h800",
     fallbackFactory = OpsWarehouseClientFallback.class
 )
 public interface OpsWarehouseClient {

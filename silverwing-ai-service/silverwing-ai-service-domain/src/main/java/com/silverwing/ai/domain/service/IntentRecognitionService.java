@@ -41,6 +41,7 @@ public class IntentRecognitionService {
         - KNOWLEDGE_QA：智能问答
         - DATA_STATISTICS：数据统计
         - DATABASE_QUERY：数据库查询
+        - OPEN_WAREHOUSE：开门（打开 H800 仓储接驳库位的仓门，如"开 h800 12-1-1 的库位门""帮我开门放料"）
         - OTHER：无法识别
 
         可提取的实体类型：
@@ -55,6 +56,7 @@ public class IntentRecognitionService {
         - TIME：时间信息（如 今天、昨天、最近一周、上午）
         - DEVICE_TYPE：设备类型（如 AGV、机器狗、配送机器人、气动物流）
         - PERSON：人员姓名
+        - BIN_LOCATION：库位编号（如 12-1-11、3-2-5），即仓储接驳库的库位编号
 
         返回要求：
         1. 只返回一个 JSON 对象，不要返回其他说明

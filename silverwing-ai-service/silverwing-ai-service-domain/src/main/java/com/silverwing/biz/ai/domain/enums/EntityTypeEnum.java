@@ -19,6 +19,8 @@ public enum EntityTypeEnum {
 
     LOCATION("LOCATION", "位置", "具体的物理位置描述"),
 
+    BIN_LOCATION("BIN_LOCATION", "库位编号", "仓储接驳库的库位编号，形如 12-1-11"),
+
     TIME("TIME", "时间", "如 今天、昨天、上周、具体日期"),
 
     PERSON("PERSON", "人员", "如 张三、维修工程师"),

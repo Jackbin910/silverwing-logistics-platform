@@ -6,6 +6,17 @@ spring:
     active: @spring.profiles.active@
   application:
     name: silverwing-ai-service
+
+# OpenFeign 调用超时配置
+# 说明：调用 ops-service 的 /h800/open 为同步等待 H800 真实成败，最长约 60 秒返回，
+# 因此 Feign 读超时需大于 60 秒并预留余量，避免对话侧先超时失败。
+# 注意：本段为本地 dev 配置；生产环境请将此 feign 超时同步到 Nacos 的 silverwing-ai-service.yml。
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 5000
+        read-timeout: 70000
   # Dynamic-TP 动态线程池配置（生产环境建议将此段移入 Nacos: silverwing-ai-service.yml 以支持动态刷新）
   dynamic:
     tp:

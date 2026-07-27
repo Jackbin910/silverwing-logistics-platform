@@ -19,4 +19,6 @@ public class OpenWarehouseRequest {
      * 库位编号，例如 12-A-01
      */
     private String location;
+
+    private String requestId;
 }

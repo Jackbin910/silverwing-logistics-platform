@@ -7,8 +7,4 @@ spring:
   application:
     name: silverwing-ops-service
 
-# H800 转换服务地址（生产环境建议由 Nacos 配置中心下发）
-h800:
-  converter:
-    host: 127.0.0.1
-    port: 8081
+
