@@ -287,13 +287,26 @@ public class KnowledgeIngestService {
 
     /**
      * 清空知识库中所有向量数据
+     * <p>先清理对象存储中的全部原始文件，再清空向量库与 MySQL 记录，避免残留孤儿文件。</p>
      */
     @Transactional(rollbackFor = Exception.class)
     public void clearAll() {
         try {
-            // 清空向量库
+            // 1. 遍历全部文档，清理对象存储（bucket）中的原始文件
+            List<KnowledgeDocumentAggregate> allDocs = documentRepository.listAll();
+            FileStorageService storage = storageProvider.getIfAvailable();
+            if (storage != null) {
+                for (KnowledgeDocumentAggregate doc : allDocs) {
+                    if (doc.getFileKey() != null && !doc.getFileKey().isBlank()) {
+                        storage.deleteFile(doc.getFileKey());
+                    }
+                }
+                log.info("已删除对象存储文件: count={}", allDocs.size());
+            }
+
+            // 2. 清空向量库
             embeddingStore.removeAll();
-            // 清空MySQL文档记录
+            // 3. 清空MySQL文档记录
             documentRepository.deleteAll();
             log.info("知识库已清空");
         } catch (Exception e) {
@@ -303,20 +316,37 @@ public class KnowledgeIngestService {
     }
 
     /**
-     * 根据文档ID删除知识库中的向量数据
-     * 同时删除 MySQL 文档记录和 PGVector 中该文档的所有分片向量
+     * 根据文档ID删除知识库中的文档
+     * 依次清理：对象存储（bucket）中的原始文件 -> PGVector 向量分片 -> MySQL 文档记录，
+     * 避免只删库而残留对象存储中的孤儿文件。
      *
      * @param documentId 文档ID
      */
     @Transactional(rollbackFor = Exception.class)
     public void deleteByDocumentId(String documentId) {
         try {
-            // 1. 按 documentId 过滤条件删除 PGVector 中的所有向量分片
+            // 1. 先查询文档记录，获取对象存储 Key（用于清理 bucket 中的原始文件）
+            KnowledgeDocumentAggregate doc = documentRepository.findByDocumentId(documentId);
+
+            // 2. 删除对象存储（bucket）中的原始文件，避免残留孤儿文件
+            //    对象存储独立于点事务，先删存储以便失败时可重试且不污染库记录
+            if (doc != null && doc.getFileKey() != null && !doc.getFileKey().isBlank()) {
+                FileStorageService storage = storageProvider.getIfAvailable();
+                if (storage != null) {
+                    storage.deleteFile(doc.getFileKey());
+                    log.info("已删除对象存储文件: documentId={}, fileKey={}", documentId, doc.getFileKey());
+                } else {
+                    log.warn("对象存储未启用，跳过 bucket 文件删除: documentId={}, fileKey={}",
+                            documentId, doc.getFileKey());
+                }
+            }
+
+            // 3. 按 documentId 过滤条件删除 PGVector 中的所有向量分片
             Filter filter = metadataKey("documentId").isEqualTo(documentId);
             embeddingStore.removeAll(filter);
             log.info("已删除向量数据: documentId={}", documentId);
 
-            // 2. 逻辑删除 MySQL 中的文档记录
+            // 4. 删除 MySQL 中的文档记录
             documentRepository.deleteByDocumentId(documentId);
             log.info("已删除文档记录: documentId={}", documentId);
         } catch (Exception e) {

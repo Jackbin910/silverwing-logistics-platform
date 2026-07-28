@@ -76,4 +76,12 @@ public class KnowledgeDocumentRepositoryImpl implements KnowledgeDocumentReposit
         KnowledgeDocumentPO po = knowledgeDocumentMapper.selectOne(wrapper);
         return po == null ? null : KnowledgeDocumentInfraConvertor.INSTANCE.toDomain(po);
     }
+
+    @Override
+    public List<KnowledgeDocumentAggregate> listAll() {
+        List<KnowledgeDocumentPO> pos = knowledgeDocumentMapper.selectList(null);
+        return pos.stream()
+                .map(KnowledgeDocumentInfraConvertor.INSTANCE::toDomain)
+                .collect(Collectors.toList());
+    }
 }

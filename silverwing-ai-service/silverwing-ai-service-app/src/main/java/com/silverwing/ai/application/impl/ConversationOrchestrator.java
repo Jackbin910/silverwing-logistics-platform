@@ -113,8 +113,21 @@ public class ConversationOrchestrator {
             NlpParseResult parseResult = intentService.parseWithEntities(userMessage);
             log.info("NLP解析结果 - 意图: {}, 实体: {}", parseResult.getIntent(), parseResult.getEntities());
 
-            // 3. OTHER 意图：直接返回通用帮助提示
+            // 3. OTHER 意图：识别不出 -> 兜底进知识库查询
+            //    命中知识库则返回相关知识答案；未命中由 RAG 服务返回"抱歉"兜底文案
             if (parseResult.getIntent() == IntentEnum.OTHER) {
+                if (knowledgeQaService != null) {
+                    String ragAnswer = knowledgeQaService.answer(userMessage);
+                    log.info("未知意图兜底知识库回答: {}", ragAnswer);
+                    saveMemory(sessionId, userMessage, ragAnswer);
+                    return ConversationResponse.builder()
+                            .sessionId(sessionId)
+                            .intent(IntentEnum.OTHER.name())
+                            .entities(parseResult.getEntities())
+                            .answer(ragAnswer)
+                            .build();
+                }
+                // 知识库未启用时降级为通用帮助提示
                 String fallbackAnswer = buildFallbackAnswer(history);
                 saveMemory(sessionId, userMessage, fallbackAnswer);
                 return ConversationResponse.builder()
@@ -211,8 +224,14 @@ public class ConversationOrchestrator {
             NlpParseResult parseResult = intentService.parseWithEntities(userMessage);
             log.info("NLP解析结果 - 意图: {}, 实体: {}", parseResult.getIntent(), parseResult.getEntities());
 
-            // 3. OTHER 意图：直接返回通用帮助提示
+            // 3. OTHER 意图：识别不出 -> 兜底进知识库查询（流式）
+            //    命中知识库则流式返回答案；未命中由 RAG 服务返回"抱歉"兜底文案
             if (parseResult.getIntent() == IntentEnum.OTHER) {
+                if (knowledgeQaService != null) {
+                    // 流式输出，并在流结束时落记忆（主路径为流式）
+                    return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
+                }
+                // 知识库未启用时降级为通用帮助提示
                 String fallbackAnswer = buildFallbackAnswer(history);
                 saveMemory(sessionId, userMessage, fallbackAnswer);
                 emitFullResponse(sink, fallbackAnswer);
@@ -228,8 +247,8 @@ public class ConversationOrchestrator {
                     emitFullResponse(sink, answer);
                     return sink.asFlux();
                 }
-                // 流式输出RAG回答
-                return knowledgeQaService.answerStream(userMessage);
+                // 流式输出RAG回答，并在流结束时落记忆
+                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
             }
 
             // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
@@ -299,6 +318,24 @@ public class ConversationOrchestrator {
     private void emitFullResponse(Sinks.Many<String> sink, String content) {
         sink.tryEmitNext(content);
         sink.tryEmitComplete();
+    }
+
+    /**
+     * 流式响应记忆包装器
+     * <p>主路径为流式输出，需在 token 流结束后把完整答案落对话记忆，
+     * 以支持多轮上下文。用户消息与完整回答一并保存。</p>
+     *
+     * @param source      原始流式 token 源
+     * @param sessionId   会话ID，null 不保存
+     * @param userMessage 用户消息
+     * @return 透传的流式 token 源（仅叠加记忆副作用）
+     */
+    private Flux<String> withMemory(Flux<String> source, String sessionId, String userMessage) {
+        StringBuilder fullAnswer = new StringBuilder();
+        return source
+                .doOnNext(fullAnswer::append)
+                .doOnComplete(() -> saveMemory(sessionId, userMessage, fullAnswer.toString()))
+                .doOnError(e -> log.error("流式回答生成异常", e));
     }
 
     /**

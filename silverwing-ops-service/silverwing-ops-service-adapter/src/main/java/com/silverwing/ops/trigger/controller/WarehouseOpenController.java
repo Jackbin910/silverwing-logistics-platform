@@ -18,9 +18,13 @@ import org.springframework.web.context.request.async.DeferredResult;
  * 仓储开门控制器
  * 对外暴露 H800 接驳仓开门接口
  * <p>
- * 该接口为内部服务间调用（仅 ai-service 经服务发现调用，网关未对外暴露 /h800），
- * 鉴权已在 ai-service 边缘侧完成，故标记 {@link SkipAuth} 免重复登录校验，
- * 避免内部 Feign 调用因令牌无法透传/校验而 401。
+ * 鉴权说明（采用「网关统一鉴权 + 服务免校验」模式）：
+ * <ul>
+ *   <li>直接请求（外部经网关 {@code /ops/h800/open}）：由网关 SaReactorFilter 统一做登录校验，
+ *       未登录返回 401，本服务不再重复校验（标记 {@link SkipAuth}）</li>
+ *   <li>ai-service 大模型工具经 Feign 内部调用：绕过网关、无用户令牌，
+ *       依托 AI 模块边缘（网关 {@code /ai/**}）已完成用户鉴权，本服务免登录放行</li>
+ * </ul>
  * </p>
  */
 @RestController

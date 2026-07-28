@@ -30,6 +30,10 @@ import java.util.Arrays;
  * 3. 标记 @NeedPermission 的方法/类，先校验登录再校验权限
  * 4. 其余方法（含 @NeedLogin 或无注解）默认校验登录
  * </p>
+ * <p>
+ * 说明：外部请求的登录校验统一在网关层（SaReactorFilter）完成；本拦截器负责
+ * 服务内部接口粒度的免登录（{@code @SkipAuth}）与权限校验（{@code @NeedPermission}）。
+ * </p>
  *
  * @author silverwing
  */

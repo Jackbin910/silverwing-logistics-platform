@@ -3,6 +3,8 @@ package com.silverwing.biz.ai.domain.repository;
 import com.silverwing.biz.ai.domain.entity.KnowledgeDocumentAggregate;
 import com.silverwing.common.domain.PageResult;
 
+import java.util.List;
+
 /**
  * 知识库文档领域仓储接口
  */
@@ -52,4 +54,12 @@ public interface KnowledgeDocumentRepository {
      * @return 文档聚合根，不存在时返回 null
      */
     KnowledgeDocumentAggregate findByDocumentId(String documentId);
+
+    /**
+     * 查询全部文档记录
+     * <p>用于清空知识库时遍历清理对象存储中的原始文件。</p>
+     *
+     * @return 全部文档聚合根
+     */
+    List<KnowledgeDocumentAggregate> listAll();
 }
