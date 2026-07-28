@@ -27,8 +27,9 @@ public class KnowledgeDocumentRepositoryImpl implements KnowledgeDocumentReposit
 
     @Override
     public void insert(KnowledgeDocumentAggregate document) {
-        knowledgeDocumentMapper.insert(
-                KnowledgeDocumentInfraConvertor.INSTANCE.toPo(document));
+        KnowledgeDocumentPO po = KnowledgeDocumentInfraConvertor.INSTANCE.toPo(document);
+        knowledgeDocumentMapper.insert(po);
+        document.setId(po.getId());
     }
 
     @Override
@@ -46,6 +47,16 @@ public class KnowledgeDocumentRepositoryImpl implements KnowledgeDocumentReposit
     public void deleteByDocumentId(String documentId) {
         LambdaQueryWrapper<KnowledgeDocumentPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(KnowledgeDocumentPO::getDocumentId, documentId);
+        knowledgeDocumentMapper.delete(wrapper);
+    }
+
+    @Override
+    public void deleteByDocumentIds(List<String> documentIds) {
+        if (documentIds == null || documentIds.isEmpty()) {
+            return;
+        }
+        LambdaQueryWrapper<KnowledgeDocumentPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(KnowledgeDocumentPO::getDocumentId, documentIds);
         knowledgeDocumentMapper.delete(wrapper);
     }
 

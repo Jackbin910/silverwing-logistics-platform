@@ -45,7 +45,7 @@ public class UserController {
     @SaCheckPermission("system:user:query")
     @Operation(summary = "根据ID查询用户")
     @GetMapping("/{id}")
-    public Result<UserResponse> getById(@PathVariable Long id) {
+    public Result<UserResponse> getById(@PathVariable("id") Long id) {
         return Result.success(userQueryService.getById(id));
     }
 
@@ -61,7 +61,7 @@ public class UserController {
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "更新用户信息")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @RequestBody UpdateUserCommand command) {
+    public Result<Void> update(@PathVariable("id") Long id, @RequestBody UpdateUserCommand command) {
         userCommandService.update(id, command);
         return Result.success("更新成功");
     }
@@ -70,7 +70,7 @@ public class UserController {
     @SaCheckPermission("system:user:delete")
     @Operation(summary = "删除用户")
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable("id") Long id) {
         userCommandService.delete(id);
         return Result.success("删除成功");
     }
@@ -79,7 +79,7 @@ public class UserController {
     @SaCheckPermission("system:user:resetPwd")
     @Operation(summary = "重置密码")
     @PutMapping("/{id}/password")
-    public Result<Void> resetPassword(@PathVariable Long id,
+    public Result<Void> resetPassword(@PathVariable("id") Long id,
                                        @RequestParam String newPassword) {
         userCommandService.resetPassword(id, newPassword);
         return Result.success("重置成功");
@@ -88,7 +88,7 @@ public class UserController {
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "启用/禁用用户")
     @PutMapping("/{id}/status")
-    public Result<Void> toggleStatus(@PathVariable Long id) {
+    public Result<Void> toggleStatus(@PathVariable("id") Long id) {
         userCommandService.toggleStatus(id);
         return Result.success("操作成功");
     }
@@ -96,7 +96,7 @@ public class UserController {
     @SaCheckPermission("system:user:assignRole")
     @Operation(summary = "为用户分配角色")
     @PutMapping("/{id}/roles")
-    public Result<Void> assignRoles(@PathVariable Long id, @RequestBody List<Long> roleIds) {
+    public Result<Void> assignRoles(@PathVariable("id") Long id, @RequestBody List<Long> roleIds) {
         userCommandService.assignRoles(id, roleIds);
         return Result.success("分配成功");
     }
@@ -104,7 +104,7 @@ public class UserController {
     @SaCheckPermission("system:user:query")
     @Operation(summary = "查询用户已分配的角色ID列表")
     @GetMapping("/{id}/roles")
-    public Result<List<Long>> getUserRoles(@PathVariable Long id) {
+    public Result<List<Long>> getUserRoles(@PathVariable("id") Long id) {
         return Result.success(userQueryService.getUserRoleIds(id));
     }
 }

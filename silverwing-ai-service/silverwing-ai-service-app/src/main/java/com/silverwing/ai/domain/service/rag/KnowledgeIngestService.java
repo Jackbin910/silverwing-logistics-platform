@@ -356,6 +356,34 @@ public class KnowledgeIngestService {
     }
 
     /**
+     * 批量根据文档ID删除知识库中的多个文档
+     * 逐个复用单条删除逻辑：清理对象存储原始文件 -> 删除 PGVector 向量分片 -> 删除 MySQL 文档记录。
+     * 单条失败不影响其余文档的删除，失败项仅记录日志，最终返回成功删除的数量。
+     *
+     * @param documentIds 文档ID列表
+     * @return 成功删除的文档数量
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteByDocumentIds(List<String> documentIds) {
+        if (documentIds == null || documentIds.isEmpty()) {
+            log.warn("批量删除文档失败：文档ID列表为空");
+            return 0;
+        }
+        int successCount = 0;
+        for (String documentId : documentIds) {
+            try {
+                deleteByDocumentId(documentId);
+                successCount++;
+            } catch (Exception e) {
+                // 单条失败不阻断其余文档，记录日志便于排查
+                log.error("批量删除中单个文档失败，已跳过: documentId={}", documentId, e);
+            }
+        }
+        log.info("批量删除文档完成: total={}, success={}", documentIds.size(), successCount);
+        return successCount;
+    }
+
+    /**
      * 分页查询知识库文档（供管理页面列表展示）
      *
      * @param page    分页请求（current/size）

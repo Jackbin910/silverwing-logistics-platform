@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -116,6 +117,22 @@ public class KnowledgeController {
     public Result<String> clearAll() {
         ingestService.clearAll();
         return Result.success("知识库已清空");
+    }
+
+    /**
+     * 批量删除知识库中的多个文档
+     */
+    @Log(title = "知识库-批量删除文档", businessType = BusinessTypeEnum.DELETE)
+    @Operation(summary = "批量删除文档", description = "根据文档ID列表批量删除知识库中的多个文档及其向量分片")
+    @DeleteMapping("/documents/batch")
+    public Result<String> batchDeleteDocuments(
+            @Parameter(description = "文档ID列表", required = true)
+            @RequestBody List<String> documentIds) {
+        if (documentIds == null || documentIds.isEmpty()) {
+            return Result.fail("文档ID列表不能为空");
+        }
+        int count = ingestService.deleteByDocumentIds(documentIds);
+        return Result.success("已删除 " + count + " 个文档");
     }
 
     /**

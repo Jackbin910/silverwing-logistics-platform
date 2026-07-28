@@ -37,6 +37,13 @@ public interface KnowledgeDocumentRepository {
     void deleteByDocumentId(String documentId);
 
     /**
+     * 批量根据文档唯一标识删除文档记录
+     *
+     * @param documentIds 文档唯一标识列表
+     */
+    void deleteByDocumentIds(List<String> documentIds);
+
+    /**
      * 分页查询知识库文档列表
      *
      * @param current 当前页（从 1 开始）

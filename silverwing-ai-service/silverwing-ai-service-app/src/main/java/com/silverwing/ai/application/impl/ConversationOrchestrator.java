@@ -57,7 +57,6 @@ public class ConversationOrchestrator {
     /**
      * RAG 知识库问答服务（可选，启用 langchain4j.rag.enabled=true 时注入）
      */
-    @Autowired(required = false)
     private KnowledgeQaService knowledgeQaService;
 
     /**
@@ -113,31 +112,6 @@ public class ConversationOrchestrator {
             NlpParseResult parseResult = intentService.parseWithEntities(userMessage);
             log.info("NLP解析结果 - 意图: {}, 实体: {}", parseResult.getIntent(), parseResult.getEntities());
 
-            // 3. OTHER 意图：识别不出 -> 兜底进知识库查询
-            //    命中知识库则返回相关知识答案；未命中由 RAG 服务返回"抱歉"兜底文案
-            if (parseResult.getIntent() == IntentEnum.OTHER) {
-                if (knowledgeQaService != null) {
-                    String ragAnswer = knowledgeQaService.answer(userMessage);
-                    log.info("未知意图兜底知识库回答: {}", ragAnswer);
-                    saveMemory(sessionId, userMessage, ragAnswer);
-                    return ConversationResponse.builder()
-                            .sessionId(sessionId)
-                            .intent(IntentEnum.OTHER.name())
-                            .entities(parseResult.getEntities())
-                            .answer(ragAnswer)
-                            .build();
-                }
-                // 知识库未启用时降级为通用帮助提示
-                String fallbackAnswer = buildFallbackAnswer(history);
-                saveMemory(sessionId, userMessage, fallbackAnswer);
-                return ConversationResponse.builder()
-                        .sessionId(sessionId)
-                        .intent(IntentEnum.OTHER.name())
-                        .entities(parseResult.getEntities())
-                        .answer(fallbackAnswer)
-                        .build();
-            }
-
             // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
             if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
                 String answer = handleKnowledgeQa(userMessage);
@@ -148,6 +122,21 @@ public class ConversationOrchestrator {
                         .entities(parseResult.getEntities())
                         .answer(answer)
                         .build();
+            }
+
+            // 3. OTHER 意图：识别不出 -> 兜底进知识库查询
+            //    命中知识库则返回相关知识答案；未命中由 RAG 服务返回"抱歉"兜底文案
+            if (parseResult.getIntent() == IntentEnum.OTHER) {
+                String ragAnswer = knowledgeQaService.answer(userMessage);
+                log.info("未知意图兜底知识库回答: {}", ragAnswer);
+                saveMemory(sessionId, userMessage, ragAnswer);
+                return ConversationResponse.builder()
+                        .sessionId(sessionId)
+                        .intent(IntentEnum.OTHER.name())
+                        .entities(parseResult.getEntities())
+                        .answer(ragAnswer)
+                        .build();
+
             }
 
             // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
