@@ -6,6 +6,7 @@ import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.P;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
@@ -15,6 +16,7 @@ import java.util.Map;
  * LLM 会根据用户意图自动选择合适的工具
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class OrderTools {
 

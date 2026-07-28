@@ -49,21 +49,21 @@ public class AuthCommandService {
         AuthUserAggregate user = userRepository.findByUsername(command.getUsername());
         if (user == null) {
             log.warn("登录失败：用户不存在 username={}", command.getUsername());
-            throw new BusinessException(ResultCode.UNAUTHORIZED,
+            throw BusinessException.i18n(ResultCode.UNAUTHORIZED,
                     "auth.login.username.or.password.error");
         }
 
         // 2. 状态校验（领域行为）
         if (!user.isActive()) {
             log.warn("登录失败：用户已禁用 username={}", command.getUsername());
-            throw new BusinessException(ResultCode.FORBIDDEN,
+            throw BusinessException.i18n(ResultCode.FORBIDDEN,
                     "auth.login.account.disabled");
         }
 
         // 3. 校验密码是否匹配（BCrypt）
         if (!matchesPassword(rawPassword, user)) {
             log.warn("登录失败：密码错误 username={}", command.getUsername());
-            throw new BusinessException(ResultCode.UNAUTHORIZED,
+            throw BusinessException.i18n(ResultCode.UNAUTHORIZED,
                     "auth.login.username.or.password.error");
         }
 
@@ -127,7 +127,7 @@ public class AuthCommandService {
         if (encodedPassword == null || encodedPassword.isBlank()) {
             log.error("登录失败：用户密码哈希为空 userId={}, username={}",
                     user.getId(), user.getUsername());
-            throw new BusinessException(ResultCode.INTERNAL_SERVER_ERROR,
+            throw BusinessException.i18n(ResultCode.INTERNAL_SERVER_ERROR,
                     "auth.login.account.config.error");
         }
         return user.matchesPassword(rawPassword);
@@ -145,7 +145,7 @@ public class AuthCommandService {
             return rsaKeyConfig.getRsa().decryptStr(encryptedPassword, KeyType.PrivateKey);
         } catch (Exception e) {
             log.warn("登录失败：密码解密异常，可能未使用 RSA 加密或密钥不匹配");
-            throw new BusinessException(ResultCode.BAD_REQUEST,
+            throw BusinessException.i18n(ResultCode.BAD_REQUEST,
                     "auth.login.password.decrypt.error");
         }
     }

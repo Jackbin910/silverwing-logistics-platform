@@ -35,7 +35,7 @@ public class AuthQueryServiceImpl implements AuthQueryService {
     public AuthUserInfo getCurrentUserInfo() {
         Object loginId = StpUtil.getLoginIdDefaultNull();
         if (loginId == null) {
-            throw new BusinessException(ResultCode.UNAUTHORIZED, "auth.not.login");
+            throw BusinessException.i18n(ResultCode.UNAUTHORIZED, "auth.not.login");
         }
 
         Long userId = Long.parseLong(loginId.toString());

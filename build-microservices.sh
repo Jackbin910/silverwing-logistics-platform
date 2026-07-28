@@ -49,7 +49,13 @@ else
     echo "[1/5] Maven 构建..."
     mvn_modules=""
     for s in "${services[@]}"; do
-        mvn_modules="${mvn_modules},silverwing-${s}"
+        # 多模块服务（含 -start 启动模块）需指向可运行的 start 模块，
+        # 单模块服务则直接用服务根模块；-am 仍会顺带构建其依赖模块。
+        if [ -d "silverwing-$s/silverwing-$s-start" ]; then
+            mvn_modules="${mvn_modules},silverwing-$s/silverwing-$s-start"
+        else
+            mvn_modules="${mvn_modules},silverwing-$s"
+        fi
     done
     mvn_modules="${mvn_modules#,}"
     mvn clean package -Pdocker -DskipTests -U -pl "$mvn_modules" -am

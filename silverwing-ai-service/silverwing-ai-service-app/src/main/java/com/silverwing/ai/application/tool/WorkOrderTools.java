@@ -6,6 +6,7 @@ import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.agent.tool.P;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 import java.util.Map;
 
@@ -14,6 +15,7 @@ import java.util.Map;
  * 通过 @Tool 注解将 Java 方法暴露给 LLM 调用
  */
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class WorkOrderTools {
 
