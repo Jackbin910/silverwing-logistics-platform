@@ -79,7 +79,7 @@ public class RoleController {
     @SaCheckPermission("system:role:assignPerm")
     @Operation(summary = "为角色分配权限")
     @PutMapping("/{id}/permissions")
-    public Result<Void> assignPermissions(@PathVariable Long id,
+    public Result<Void> assignPermissions(@PathVariable("id") Long id,
                                            @RequestBody List<Long> permissionIds) {
         roleCommandService.assignPermissions(id, permissionIds);
         return Result.success("分配成功");
@@ -88,7 +88,7 @@ public class RoleController {
     @SaCheckPermission("system:role:query")
     @Operation(summary = "查询角色已分配的权限ID列表")
     @GetMapping("/{id}/permissions")
-    public Result<List<Long>> getRolePermissions(@PathVariable Long id) {
+    public Result<List<Long>> getRolePermissions(@PathVariable("id") Long id) {
         return Result.success(roleQueryService.getRolePermissionIds(id));
     }
 }
