@@ -2,6 +2,8 @@ package com.silverwing.admin.client;
 
 import com.silverwing.admin.application.command.SavePermissionCommand;
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.query.PermissionPageQuery;
+import com.silverwing.common.domain.PageResult;
 
 import java.util.List;
 
@@ -30,6 +32,11 @@ public interface IamPermissionClient {
      * 查询全部权限
      */
     List<PermissionResponse> listAll();
+
+    /**
+     * 分页查询权限列表
+     */
+    PageResult<PermissionResponse> page(PermissionPageQuery query);
 
     /**
      * 根据ID查询权限

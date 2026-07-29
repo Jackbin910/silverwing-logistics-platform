@@ -1,6 +1,8 @@
 package com.silverwing.admin.application.query;
 
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.query.PermissionPageQuery;
+import com.silverwing.common.domain.PageResult;
 
 import java.util.List;
 
@@ -12,6 +14,11 @@ import java.util.List;
 public interface PermissionQueryService {
 
     List<PermissionResponse> listAll();
+
+    /**
+     * 分页查询权限列表
+     */
+    PageResult<PermissionResponse> page(PermissionPageQuery query);
 
     PermissionResponse getById(Long id);
 }

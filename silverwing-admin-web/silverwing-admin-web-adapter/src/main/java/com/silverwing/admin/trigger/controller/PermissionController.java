@@ -6,7 +6,9 @@ import com.silverwing.common.enums.BusinessTypeEnum;
 import com.silverwing.admin.application.command.PermissionCommandService;
 import com.silverwing.admin.application.command.SavePermissionCommand;
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.query.PermissionPageQuery;
 import com.silverwing.admin.application.query.PermissionQueryService;
+import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -32,9 +34,16 @@ public class PermissionController {
     private final PermissionQueryService permissionQueryService;
 
     @SaCheckPermission("system:permission:list")
-    @Operation(summary = "查询全部权限列表")
+    @Operation(summary = "分页查询权限列表", description = "支持关键词（权限编码/名称）与状态筛选")
     @GetMapping("/list")
-    public Result<List<PermissionResponse>> list() {
+    public Result<PageResult<PermissionResponse>> list(PermissionPageQuery query) {
+        return Result.success(permissionQueryService.page(query));
+    }
+
+    @SaCheckPermission("system:permission:list")
+    @Operation(summary = "查询全部权限", description = "用于分配权限等需全量展示的场景")
+    @GetMapping("/all")
+    public Result<List<PermissionResponse>> listAll() {
         return Result.success(permissionQueryService.listAll());
     }
 

@@ -1,6 +1,7 @@
 package com.silverwing.ai.trigger.controller;
 
 import cn.hutool.core.text.CharSequenceUtil;
+import com.silverwing.ai.application.dto.FileDownloadResult;
 import com.silverwing.ai.application.dto.KnowledgeDocumentDTO;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
 import com.silverwing.ai.domain.service.rag.KnowledgeIngestService;
@@ -15,12 +16,18 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Flux;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -163,5 +170,29 @@ public class KnowledgeController {
             return Result.fail("文档不存在");
         }
         return Result.success(dto);
+    }
+
+    /**
+     * 下载知识库中的原始文档文件
+     * 以附件形式返回对象存储中的原始文件，文件名携带中文（RFC5987 编码，避免乱码）
+     */
+    @Operation(summary = "下载文档", description = "根据文档ID下载知识库中的原始文档文件")
+    @GetMapping("/documents/{documentId}/download")
+    public ResponseEntity<Resource> downloadDocument(
+            @Parameter(description = "文档唯一标识", required = true)
+            @PathVariable("documentId") String documentId) {
+        FileDownloadResult result = ingestService.downloadDocument(documentId);
+        byte[] content = result.getContent() == null ? new byte[0] : result.getContent();
+        ByteArrayResource resource = new ByteArrayResource(content);
+        String fileName = (result.getFileName() == null || result.getFileName().isBlank())
+                ? "document" : result.getFileName();
+        ContentDisposition cd = ContentDisposition.attachment()
+                .filename(fileName, StandardCharsets.UTF_8)
+                .build();
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .contentLength(content.length)
+                .header(HttpHeaders.CONTENT_DISPOSITION, cd.toString())
+                .body(resource);
     }
 }

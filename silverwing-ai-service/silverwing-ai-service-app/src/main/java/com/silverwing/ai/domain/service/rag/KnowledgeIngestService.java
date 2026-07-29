@@ -2,12 +2,15 @@ package com.silverwing.ai.domain.service.rag;
 
 import cn.hutool.core.util.IdUtil;
 import com.silverwing.ai.application.convertor.AiConvertor;
+import com.silverwing.ai.application.dto.FileDownloadResult;
 import com.silverwing.ai.application.dto.KnowledgeDocumentDTO;
 import com.silverwing.ai.application.dto.KnowledgeIngestResult;
 import com.silverwing.biz.ai.domain.entity.KnowledgeDocumentAggregate;
 import com.silverwing.biz.ai.domain.repository.KnowledgeDocumentRepository;
 import com.silverwing.common.domain.PageRequest;
 import com.silverwing.common.domain.PageResult;
+import com.silverwing.common.domain.ResultCode;
+import com.silverwing.common.exception.BusinessException;
 import com.silverwing.common.storage.core.FileStorageService;
 import dev.langchain4j.data.document.Metadata;
 import dev.langchain4j.data.embedding.Embedding;
@@ -421,6 +424,31 @@ public class KnowledgeIngestService {
             log.error("查询知识库文档详情失败: documentId={}", documentId, e);
             throw new RuntimeException("查询文档详情失败: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 下载知识库文档的原始文件
+     * <p>根据文档ID定位对象存储（RustFS）中的原始文件并返回字节流，便于前端溯源与离线查看。
+     * 文件不存在、未启用对象存储等异常均转换为友好业务异常（i18n）。</p>
+     *
+     * @param documentId 文档唯一标识
+     * @return 文件下载结果（含字节与原始文件名）
+     */
+    public FileDownloadResult downloadDocument(String documentId) {
+        KnowledgeDocumentAggregate doc = documentRepository.findByDocumentId(documentId);
+        if (doc == null) {
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "ai.knowledge.document.notfound");
+        }
+        String fileKey = doc.getFileKey();
+        if (fileKey == null || fileKey.isBlank()) {
+            throw BusinessException.i18n(ResultCode.BUSINESS_ERROR, "ai.knowledge.document.nofile");
+        }
+        FileStorageService storage = storageProvider.getIfAvailable();
+        if (storage == null) {
+            throw BusinessException.i18n(ResultCode.BUSINESS_ERROR, "ai.knowledge.storage.unavailable");
+        }
+        byte[] content = storage.downloadFile(fileKey);
+        return new FileDownloadResult(content, doc.getFileName());
     }
 
     /**

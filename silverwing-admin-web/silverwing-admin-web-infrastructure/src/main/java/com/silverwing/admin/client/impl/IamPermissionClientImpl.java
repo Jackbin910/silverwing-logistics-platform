@@ -2,11 +2,14 @@ package com.silverwing.admin.client.impl;
 
 import com.silverwing.admin.application.command.SavePermissionCommand;
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.query.PermissionPageQuery;
 import com.silverwing.admin.client.IamPermissionClient;
 import com.silverwing.admin.client.convertor.PermissionConvertor;
 import com.silverwing.biz.iam.domain.adapter.repository.PermissionRepository;
 import com.silverwing.biz.iam.domain.model.aggregate.SysPermissionAggregate;
+import com.silverwing.biz.iam.domain.model.query.PermissionQuery;
 import com.silverwing.biz.iam.domain.service.IPermissionDomainService;
+import com.silverwing.common.domain.PageResult;
 import com.silverwing.common.domain.ResultCode;
 import com.silverwing.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -74,8 +77,31 @@ public class IamPermissionClientImpl implements IamPermissionClient {
 
     @Override
     @Transactional(readOnly = true)
+    public PageResult<PermissionResponse> page(PermissionPageQuery query) {
+        PermissionQuery permissionQuery = toPermissionQuery(query);
+        PageResult<SysPermissionAggregate> page = permissionRepository.findPage(permissionQuery);
+        List<PermissionResponse> records = page.getRecords().stream()
+                .map(permissionConvertor::toResponse)
+                .collect(Collectors.toList());
+        return new PageResult<>(page.getCurrent(), page.getSize(), page.getTotal(), records);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public PermissionResponse getById(Long id) {
         SysPermissionAggregate permission = permissionRepository.findById(id);
         return permission == null ? null : permissionConvertor.toResponse(permission);
+    }
+
+    /**
+     * 将本模块权限分页查询条件翻译为 biz-iam 领域查询对象
+     */
+    private PermissionQuery toPermissionQuery(PermissionPageQuery query) {
+        PermissionQuery permissionQuery = new PermissionQuery();
+        permissionQuery.setCurrent(query.getCurrent());
+        permissionQuery.setSize(query.getSize());
+        permissionQuery.setKeyword(query.getKeyword());
+        permissionQuery.setStatus(query.getStatus());
+        return permissionQuery;
     }
 }

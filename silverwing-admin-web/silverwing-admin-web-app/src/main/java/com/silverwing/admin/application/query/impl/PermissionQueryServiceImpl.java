@@ -1,8 +1,10 @@
 package com.silverwing.admin.application.query.impl;
 
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.query.PermissionPageQuery;
 import com.silverwing.admin.application.query.PermissionQueryService;
 import com.silverwing.admin.client.IamPermissionClient;
+import com.silverwing.common.domain.PageResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,11 @@ public class PermissionQueryServiceImpl implements PermissionQueryService {
     @Override
     public List<PermissionResponse> listAll() {
         return iamPermissionClient.listAll();
+    }
+
+    @Override
+    public PageResult<PermissionResponse> page(PermissionPageQuery query) {
+        return iamPermissionClient.page(query);
     }
 
     @Override

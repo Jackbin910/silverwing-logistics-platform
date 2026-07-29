@@ -55,9 +55,11 @@ public class ConversationOrchestrator {
 
 
     /**
-     * RAG 知识库问答服务（可选，启用 langchain4j.rag.enabled=true 时注入）
+     * RAG 知识库问答服务
+     * <p>知识库为常驻能力，该依赖由构造器强制注入；若其底层依赖（向量库 / EmbeddingModel）未配置，
+     * 应用启动即失败（fail-fast），符合"知识库永远启用"的预期。</p>
      */
-    private KnowledgeQaService knowledgeQaService;
+    private final KnowledgeQaService knowledgeQaService;
 
     /**
      * NL2SQL数据库查询服务（可选，启用 database-rag 相关配置时注入）
@@ -77,12 +79,14 @@ public class ConversationOrchestrator {
                                     IntentRouter intentRouter,
                                     ConversationRepository conversationRepository,
                                     LlmPort llmPort,
-                                    StreamingChatModel streamingChatModel) {
+                                    StreamingChatModel streamingChatModel,
+                                    KnowledgeQaService knowledgeQaService) {
         this.intentService = intentService;
         this.intentRouter = intentRouter;
         this.conversationRepository = conversationRepository;
         this.llmPort = llmPort;
         this.streamingChatModel = streamingChatModel;
+        this.knowledgeQaService = knowledgeQaService;
     }
 
     /**
@@ -136,7 +140,6 @@ public class ConversationOrchestrator {
                         .entities(parseResult.getEntities())
                         .answer(ragAnswer)
                         .build();
-
             }
 
             // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
@@ -216,26 +219,12 @@ public class ConversationOrchestrator {
             // 3. OTHER 意图：识别不出 -> 兜底进知识库查询（流式）
             //    命中知识库则流式返回答案；未命中由 RAG 服务返回"抱歉"兜底文案
             if (parseResult.getIntent() == IntentEnum.OTHER) {
-                if (knowledgeQaService != null) {
-                    // 流式输出，并在流结束时落记忆（主路径为流式）
-                    return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
-                }
-                // 知识库未启用时降级为通用帮助提示
-                String fallbackAnswer = buildFallbackAnswer(history);
-                saveMemory(sessionId, userMessage, fallbackAnswer);
-                emitFullResponse(sink, fallbackAnswer);
-                return sink.asFlux();
+                // 流式输出，并在流结束时落记忆（主路径为流式）
+                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
             }
 
             // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
             if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
-                if (knowledgeQaService == null) {
-                    String answer = "抱歉，知识库问答功能尚未启用。请联系管理员配置后重试。";
-                    log.warn("知识库问答功能未启用，请设置 langchain4j.rag.enabled=true");
-                    saveMemory(sessionId, userMessage, answer);
-                    emitFullResponse(sink, answer);
-                    return sink.asFlux();
-                }
                 // 流式输出RAG回答，并在流结束时落记忆
                 return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
             }
@@ -340,10 +329,6 @@ public class ConversationOrchestrator {
      * 处理知识库问答意图
      */
     private String handleKnowledgeQa(String userMessage) {
-        if (knowledgeQaService == null) {
-            log.warn("知识库问答功能未启用，请设置 langchain4j.rag.enabled=true");
-            return "抱歉，知识库问答功能尚未启用。请联系管理员配置后重试。";
-        }
         String answer = knowledgeQaService.answer(userMessage);
         log.info("RAG知识库回答: {}", answer);
         return answer;
