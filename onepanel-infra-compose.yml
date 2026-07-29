@@ -186,6 +186,7 @@ services:
       - ./docker/nginx-conf/lua:/usr/local/openresty/nginx/conf/lua:ro
       - ./docker/nginx-conf/logs:/usr/local/openresty/nginx/logs
       - ./data/nginx/cert:/usr/local/openresty/nginx/cert:ro
+      - /data/www/silverwing:/data/www/silverwing:ro
     networks:
       silverwing-network:
         aliases:
