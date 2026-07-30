@@ -24,7 +24,7 @@ public class SysPermissionPO extends BaseEntity {
     /** 权限名称 */
     private String permissionName;
 
-    /** 资源类型: menu-菜单, button-按钮, api-接口 */
+    /** 菜单类型（M目录 C菜单 F按钮） */
     private String resourceType;
 
     /** 父级ID，0为顶级 */

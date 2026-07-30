@@ -91,7 +91,7 @@ public class PermissionController {
     @SaCheckPermission("system:permission:manage")
     @Operation(summary = "批量刷新角色下用户权限缓存")
     @PostMapping("/refresh/role/{roleId}")
-    public Result<Void> refreshRoleCache(@PathVariable Long roleId) {
+    public Result<Void> refreshRoleCache(@PathVariable("roleId") Long roleId) {
         permissionCommandService.refreshRoleUserCache(roleId);
         return Result.success("刷新成功");
     }
