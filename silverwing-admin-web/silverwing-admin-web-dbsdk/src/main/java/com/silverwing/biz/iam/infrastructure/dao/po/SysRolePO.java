@@ -27,7 +27,6 @@ public class SysRolePO extends BaseLogicEntity {
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
 
-
     private Integer roleSort;
 
     private Integer dataScope;

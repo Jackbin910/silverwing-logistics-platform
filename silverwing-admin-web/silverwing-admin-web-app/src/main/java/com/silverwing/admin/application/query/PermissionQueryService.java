@@ -1,6 +1,9 @@
 package com.silverwing.admin.application.query;
 
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.dto.RolePermissionTreeSelectResponse;
+import com.silverwing.admin.application.dto.RouterVo;
+import com.silverwing.admin.application.dto.TreeSelect;
 import com.silverwing.admin.application.query.PermissionPageQuery;
 import com.silverwing.common.domain.PageResult;
 
@@ -21,4 +24,19 @@ public interface PermissionQueryService {
     PageResult<PermissionResponse> page(PermissionPageQuery query);
 
     PermissionResponse getById(Long id);
+
+    /**
+     * 权限树形下拉列表
+     */
+    List<TreeSelect> treeSelect(PermissionPageQuery query);
+
+    /**
+     * 角色关联权限树（含已勾选权限ID）
+     */
+    RolePermissionTreeSelectResponse rolePermissionTreeSelect(Long roleId);
+
+    /**
+     * 获取登录用户前端路由菜单
+     */
+    List<RouterVo> getRouters(Long userId);
 }

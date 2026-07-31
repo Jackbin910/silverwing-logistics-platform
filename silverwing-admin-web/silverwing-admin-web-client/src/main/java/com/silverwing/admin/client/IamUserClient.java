@@ -1,7 +1,10 @@
 package com.silverwing.admin.client;
 
 import com.silverwing.admin.application.command.CreateUserCommand;
+import com.silverwing.admin.application.command.UpdateProfileCommand;
+import com.silverwing.admin.application.command.UpdateProfilePasswordCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
+import com.silverwing.admin.application.command.UserImportCommand;
 import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.application.query.UserPageQuery;
 import com.silverwing.common.domain.PageResult;
@@ -87,4 +90,43 @@ public interface IamUserClient {
      * 批量为角色授予用户
      */
     void addRoleToUsers(Long roleId, List<Long> userIds);
+
+    /**
+     * 导出查询：按条件返回用户列表（非分页）
+     */
+    List<UserResponse> exportList(UserPageQuery query);
+
+    /**
+     * 导入用户（Excel 解析结果）
+     *
+     * @param rows          解析后的用户行
+     * @param updateSupport 已存在用户是否覆盖更新
+     * @return 成功导入/更新条数
+     */
+    int importUsers(List<UserImportCommand> rows, boolean updateSupport);
+
+    /**
+     * 修改个人资料（昵称、邮箱、手机号、性别），含手机号/邮箱唯一性校验
+     *
+     * @param userId  用户 ID
+     * @param command 资料修改命令
+     */
+    void updateProfile(Long userId, UpdateProfileCommand command);
+
+    /**
+     * 修改密码（校验旧密码且新密码不得与旧密码相同）
+     *
+     * @param userId       用户 ID
+     * @param oldPassword  旧密码
+     * @param newPassword  新密码
+     */
+    void updateSelfPassword(Long userId, String oldPassword, String newPassword);
+
+    /**
+     * 更新头像地址
+     *
+     * @param userId    用户 ID
+     * @param avatarUrl 头像访问地址
+     */
+    void updateAvatar(Long userId, String avatarUrl);
 }

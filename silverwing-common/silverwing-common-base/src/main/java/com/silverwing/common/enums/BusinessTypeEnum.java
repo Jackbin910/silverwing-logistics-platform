@@ -33,7 +33,12 @@ public enum BusinessTypeEnum {
     /**
      * 导出
      */
-    EXPORT(4, "导出");
+    EXPORT(4, "导出"),
+
+    /**
+     * 导入
+     */
+    IMPORT(5, "导入");
 
     /**
      * 类型编码

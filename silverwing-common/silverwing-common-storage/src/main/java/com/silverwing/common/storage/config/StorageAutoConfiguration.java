@@ -1,7 +1,6 @@
 package com.silverwing.common.storage.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,16 +14,14 @@ import java.net.URI;
 /**
  * 对象存储自动配置
  * <p>
- * 当 {@code silverwing.storage.enabled=true} 时生效，注册 {@link S3Client} 与
- * {@link com.silverwing.common.storage.core.FileStorageService} 两个 Bean。
- * 关闭时两个 Bean 均不创建，业务侧通过 {@code ObjectProvider} 优雅降级。
+ * 始终生效，注册 {@link S3Client} 与 {@link com.silverwing.common.storage.core.FileStorageService}
+ * 两个 Bean，业务侧可直接注入使用，无需 {@code ObjectProvider} 判空降级。
  * </p>
  *
  * @author silverwing
  */
 @Slf4j
 @Configuration
-@ConditionalOnProperty(name = "silverwing.storage.enabled", havingValue = "true")
 @EnableConfigurationProperties(StorageProperties.class)
 public class StorageAutoConfiguration {
 

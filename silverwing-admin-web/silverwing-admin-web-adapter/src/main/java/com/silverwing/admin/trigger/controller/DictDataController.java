@@ -59,14 +59,14 @@ public class DictDataController {
     @Operation(summary = "字典数据详情")
     @SaCheckPermission("system:dict:query")
     @GetMapping("/{id}")
-    public Result<DictDataResponse> getById(@PathVariable Long id) {
+    public Result<DictDataResponse> getById(@PathVariable("id") Long id) {
         return Result.success(dictDataQueryService.getById(id));
     }
 
     @Operation(summary = "按字典类型查询字典数据")
     @SaCheckPermission("system:dict:query")
     @GetMapping("/type/{dictType}")
-    public Result<List<DictDataResponse>> getByDictType(@PathVariable String dictType) {
+    public Result<List<DictDataResponse>> getByDictType(@PathVariable("dictType") String dictType) {
         return Result.success(dictDataQueryService.getByDictType(dictType));
     }
 
@@ -82,7 +82,7 @@ public class DictDataController {
     @Log(title = "字典数据", businessType = BusinessTypeEnum.UPDATE)
     @SaCheckPermission("system:dict:edit")
     @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody SaveDictDataCommand command) {
+    public Result<Void> update(@PathVariable("id") Long id, @Valid @RequestBody SaveDictDataCommand command) {
         dictDataCommandService.update(id, command);
         return Result.success();
     }
@@ -91,7 +91,7 @@ public class DictDataController {
     @Log(title = "字典数据", businessType = BusinessTypeEnum.DELETE)
     @SaCheckPermission("system:dict:remove")
     @DeleteMapping("/{ids}")
-    public Result<Void> delete(@PathVariable Long[] ids) {
+    public Result<Void> delete(@PathVariable("ids") Long[] ids) {
             dictDataCommandService.delete(ids);
         return Result.success();
     }

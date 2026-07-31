@@ -1,6 +1,9 @@
 package com.silverwing.admin.application.query.impl;
 
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.dto.RolePermissionTreeSelectResponse;
+import com.silverwing.admin.application.dto.RouterVo;
+import com.silverwing.admin.application.dto.TreeSelect;
 import com.silverwing.admin.application.query.PermissionPageQuery;
 import com.silverwing.admin.application.query.PermissionQueryService;
 import com.silverwing.admin.client.IamPermissionClient;
@@ -35,5 +38,20 @@ public class PermissionQueryServiceImpl implements PermissionQueryService {
     @Override
     public PermissionResponse getById(Long id) {
         return iamPermissionClient.getById(id);
+    }
+
+    @Override
+    public List<TreeSelect> treeSelect(PermissionPageQuery query) {
+        return iamPermissionClient.treeSelect(query);
+    }
+
+    @Override
+    public RolePermissionTreeSelectResponse rolePermissionTreeSelect(Long roleId) {
+        return iamPermissionClient.rolePermissionTreeSelect(roleId);
+    }
+
+    @Override
+    public List<RouterVo> getRouters(Long userId) {
+        return iamPermissionClient.getRouters(userId);
     }
 }

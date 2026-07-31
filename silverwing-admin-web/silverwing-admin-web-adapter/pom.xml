@@ -47,6 +47,11 @@
             <artifactId>silverwing-common-auth</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>com.silverwing</groupId>
+            <artifactId>silverwing-common-storage</artifactId>
+            <version>${revision}</version>
+        </dependency>
 
         <!-- Thymeleaf锛堢鐞嗗悗鍙伴〉闈㈡覆鏌擄級 -->
         <dependency>

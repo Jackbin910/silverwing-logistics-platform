@@ -25,16 +25,19 @@ public class SysUserPO extends BaseLogicEntity {
     private Long id;
 
     private String username;
+
     private Integer sex;
+
     private String password;
+
     private String avatar;
+
     private String phone;
+
     private String email;
 
-    /** 昵称 */
     private String nickname;
 
-    /** 状态: 0-禁用, 1-启用 */
     private Integer status;
 
     private Long deptId;

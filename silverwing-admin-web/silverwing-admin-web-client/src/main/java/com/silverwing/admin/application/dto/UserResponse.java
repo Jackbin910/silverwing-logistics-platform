@@ -26,6 +26,24 @@ public class UserResponse implements Serializable {
 
     private Integer status;
 
+    /** 昵称 */
+    private String nickname;
+
+    /** 部门ID */
+    private Long deptId;
+
+    /** 用户类型（00系统用户） */
+    private String userType;
+
+    /** 最后登录IP */
+    private String loginIp;
+
+    /** 最后登录时间 */
+    private LocalDateTime loginDate;
+
+    /** 密码最新更新时间 */
+    private LocalDateTime pwdUpdateDate;
+
     private String createBy;
 
     private String updateBy;

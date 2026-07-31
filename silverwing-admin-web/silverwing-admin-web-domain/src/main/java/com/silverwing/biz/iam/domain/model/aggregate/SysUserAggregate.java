@@ -6,6 +6,8 @@ import com.silverwing.common.entity.DomainEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 /**
  * 用户聚合根
  * <p>
@@ -33,6 +35,21 @@ public class SysUserAggregate extends DomainEntity {
 
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
+
+    /** 部门ID */
+    private Long deptId;
+
+    /** 用户类型（00系统用户） */
+    private String userType;
+
+    /** 最后登录IP */
+    private String loginIp;
+
+    /** 最后登录时间 */
+    private LocalDateTime loginDate;
+
+    /** 密码最新更新时间 */
+    private LocalDateTime pwdUpdateDate;
 
     // ===== 领域行为 =====
 

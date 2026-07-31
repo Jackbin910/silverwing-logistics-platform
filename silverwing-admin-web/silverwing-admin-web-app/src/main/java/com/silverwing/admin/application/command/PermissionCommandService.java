@@ -1,7 +1,8 @@
 package com.silverwing.admin.application.command;
 
-import com.silverwing.admin.application.dto.PermissionResponse;
 import com.silverwing.admin.application.command.SavePermissionCommand;
+import com.silverwing.admin.application.command.UpdatePermissionSortCommand;
+import com.silverwing.admin.application.dto.PermissionResponse;
 import com.silverwing.admin.client.IamPermissionCacheClient;
 import com.silverwing.admin.client.IamPermissionClient;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,13 @@ public class PermissionCommandService {
 
     public void delete(Long id) {
         iamPermissionClient.delete(id);
+    }
+
+    /**
+     * 保存权限（菜单）排序
+     */
+    public void updateSort(UpdatePermissionSortCommand command) {
+        iamPermissionClient.updateSort(command);
     }
 
     /**

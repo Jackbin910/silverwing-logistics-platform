@@ -16,5 +16,6 @@ public class SysRolePermissionPO {
     private Long id;
 
     private Long roleId;
+
     private Long permissionId;
 }

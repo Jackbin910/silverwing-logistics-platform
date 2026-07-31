@@ -29,4 +29,39 @@ public interface PermissionRepository {
 
     /** 查询用户拥有的权限标识列表（用于登录鉴权） */
     List<String> findPermissionCodesByUserId(Long userId);
+
+    /**
+     * 按条件查询权限列表（非分页，用于树形构建）
+     */
+    List<SysPermissionAggregate> findList(PermissionQuery query);
+
+    /**
+     * 根据父级ID与权限名称查询同级权限（校验名称唯一）
+     */
+    SysPermissionAggregate findByNameAndParent(Long parentId, String permissionName);
+
+    /**
+     * 根据路由名称查询权限（校验路由唯一）
+     */
+    SysPermissionAggregate findByRouteName(String routeName);
+
+    /**
+     * 是否存在子级权限
+     */
+    boolean hasChildByParentId(Long parentId);
+
+    /**
+     * 统计关联某权限的角色数量
+     */
+    long countByRoleId(Long permissionId);
+
+    /**
+     * 查询角色已分配的权限ID列表
+     */
+    List<Long> findIdsByRoleId(Long roleId);
+
+    /**
+     * 按传入顺序保存权限排序
+     */
+    void updateSort(List<Long> ids);
 }

@@ -8,7 +8,9 @@ import com.silverwing.biz.iam.domain.model.aggregate.SysPermissionAggregate;
 import com.silverwing.biz.iam.domain.model.query.PermissionQuery;
 import com.silverwing.biz.iam.infrastructure.adapter.repository.convertor.PermissionInfraConvertor;
 import com.silverwing.biz.iam.infrastructure.dao.SysPermissionDao;
+import com.silverwing.biz.iam.infrastructure.dao.SysRolePermissionDao;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysPermissionPO;
+import com.silverwing.biz.iam.infrastructure.dao.po.SysRolePermissionPO;
 import com.silverwing.common.domain.PageResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -24,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 public class PermissionRepositoryImpl implements PermissionRepository {
 
     private final SysPermissionDao sysPermissionDao;
+    private final SysRolePermissionDao sysRolePermissionDao;
 
     @Override
     @Cached(name = "perm:id:", key = "#id", expire = 10, timeUnit = TimeUnit.MINUTES)
@@ -81,5 +84,75 @@ public class PermissionRepositoryImpl implements PermissionRepository {
     @Cached(name = "perm:codes:byUser:", key = "#userId", expire = 5, timeUnit = TimeUnit.MINUTES)
     public List<String> findPermissionCodesByUserId(Long userId) {
         return sysPermissionDao.selectPermissionCodesByUserId(userId);
+    }
+
+    @Override
+    public List<SysPermissionAggregate> findList(PermissionQuery query) {
+        LambdaQueryWrapper<SysPermissionPO> wrapper = new LambdaQueryWrapper<>();
+        if (query.getKeyword() != null && !query.getKeyword().isBlank()) {
+            String keyword = query.getKeyword();
+            wrapper.and(w -> w.like(SysPermissionPO::getPermissionName, keyword)
+                    .or().like(SysPermissionPO::getPermissionCode, keyword));
+        }
+        if (query.getStatus() != null) {
+            wrapper.eq(SysPermissionPO::getStatus, query.getStatus());
+        }
+        wrapper.orderByAsc(SysPermissionPO::getSort);
+        return sysPermissionDao.selectList(wrapper).stream()
+                .map(PermissionInfraConvertor.INSTANCE::toDomain)
+                .toList();
+    }
+
+    @Override
+    public SysPermissionAggregate findByNameAndParent(Long parentId, String permissionName) {
+        LambdaQueryWrapper<SysPermissionPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysPermissionPO::getParentId, parentId == null ? 0L : parentId);
+        wrapper.eq(SysPermissionPO::getPermissionName, permissionName);
+        wrapper.eq(SysPermissionPO::getDeleted, 0);
+        return PermissionInfraConvertor.INSTANCE.toDomain(sysPermissionDao.selectOne(wrapper));
+    }
+
+    @Override
+    public SysPermissionAggregate findByRouteName(String routeName) {
+        LambdaQueryWrapper<SysPermissionPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysPermissionPO::getRouteName, routeName);
+        wrapper.eq(SysPermissionPO::getDeleted, 0);
+        return PermissionInfraConvertor.INSTANCE.toDomain(sysPermissionDao.selectOne(wrapper));
+    }
+
+    @Override
+    public boolean hasChildByParentId(Long parentId) {
+        LambdaQueryWrapper<SysPermissionPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysPermissionPO::getParentId, parentId);
+        wrapper.eq(SysPermissionPO::getDeleted, 0);
+        return sysPermissionDao.selectCount(wrapper) > 0;
+    }
+
+    @Override
+    public long countByRoleId(Long permissionId) {
+        LambdaQueryWrapper<SysRolePermissionPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysRolePermissionPO::getPermissionId, permissionId);
+        return sysRolePermissionDao.selectCount(wrapper);
+    }
+
+    @Override
+    public List<Long> findIdsByRoleId(Long roleId) {
+        LambdaQueryWrapper<SysRolePermissionPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysRolePermissionPO::getRoleId, roleId);
+        return sysRolePermissionDao.selectList(wrapper).stream()
+                .map(SysRolePermissionPO::getPermissionId)
+                .toList();
+    }
+
+    @Override
+    public void updateSort(List<Long> ids) {
+        for (int i = 0; i < ids.size(); i++) {
+            SysPermissionPO po = sysPermissionDao.selectById(ids.get(i));
+            if (po == null) {
+                continue;
+            }
+            po.setSort(i + 1);
+            sysPermissionDao.updateById(po);
+        }
     }
 }

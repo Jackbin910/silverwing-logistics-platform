@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * 对象存储配置属性
  * <p>
  * 通过 {@code silverwing.storage.*} 前缀绑定，兼容 RustFS / MinIO 等 S3 协议存储。
- * 默认关闭（enabled=false），避免无对象存储依赖时服务启动失败。
+ * 默认开启（enabled=true），对象存储 Bean 始终注册，业务侧无需判空降级。
  * </p>
  *
  * @author silverwing
@@ -16,8 +16,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "silverwing.storage")
 public class StorageProperties {
 
-    /** 是否启用对象存储（默认关闭） */
-    private boolean enabled = false;
+    /** 是否启用对象存储（默认开启） */
+    private boolean enabled = true;
 
     /** 存储服务端点（如 http://rustfs:9000） */
     private String endpoint = "http://rustfs:9000";

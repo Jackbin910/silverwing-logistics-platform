@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silverwing.biz.post.infrastructure.dao.SysPostDao">
+
+    <resultMap id="SysPostResultMap" type="com.silverwing.biz.post.infrastructure.dao.po.SysPostPO">
+        <id property="id" column="id"/>
+        <result property="postCode" column="post_code"/>
+        <result property="postName" column="post_name"/>
+        <result property="postSort" column="post_sort"/>
+        <result property="status" column="status"/>
+        <result property="remark" column="remark"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="userCount" column="user_count"/>
+    </resultMap>
+
+    <sql id="Post_List_Column">
+        id, post_code, post_name, post_sort, status, remark,
+        create_by, create_time, update_by, update_time, deleted
+    </sql>
+
+    <!-- 分页查询岗位（含关联用户数） -->
+    <select id="selectPostList" resultMap="SysPostResultMap">
+        SELECT
+        <include refid="Post_List_Column"/>,
+        (SELECT COUNT(1) FROM sys_user_post sup WHERE sup.post_id = sp.id) AS user_count
+        FROM sys_post sp ${ew.customSqlSegment}
+    </select>
+
+    <!-- 导出查询全部岗位（含关联用户数） -->
+    <select id="selectPostAll" resultMap="SysPostResultMap">
+        SELECT
+        <include refid="Post_List_Column"/>,
+        (SELECT COUNT(1) FROM sys_user_post sup WHERE sup.post_id = sp.id) AS user_count
+        FROM sys_post sp ${ew.customSqlSegment}
+    </select>
+
+</mapper>

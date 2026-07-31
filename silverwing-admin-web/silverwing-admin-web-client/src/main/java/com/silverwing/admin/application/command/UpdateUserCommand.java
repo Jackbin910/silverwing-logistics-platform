@@ -13,4 +13,13 @@ public class UpdateUserCommand {
     private String email;
     private Integer sex;
     private Integer status;
+
+    /** 昵称 */
+    private String nickname;
+
+    /** 部门ID */
+    private Long deptId;
+
+    /** 用户类型（00系统用户） */
+    private String userType;
 }

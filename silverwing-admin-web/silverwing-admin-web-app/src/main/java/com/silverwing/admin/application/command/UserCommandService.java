@@ -1,6 +1,8 @@
 package com.silverwing.admin.application.command;
 
+import com.silverwing.admin.application.command.UserImportCommand;
 import com.silverwing.admin.application.dto.UserResponse;
+import com.silverwing.admin.client.IamPostClient;
 import com.silverwing.admin.client.IamUserClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,8 @@ import java.util.List;
 public class UserCommandService {
 
     private final IamUserClient iamUserClient;
+
+    private final IamPostClient iamPostClient;
 
     public UserResponse create(CreateUserCommand command) {
         return iamUserClient.create(command);
@@ -42,5 +46,20 @@ public class UserCommandService {
 
     public void assignRoles(Long userId, List<Long> roleIds) {
         iamUserClient.assignRoles(userId, roleIds);
+    }
+
+    public void assignPosts(Long userId, List<Long> postIds) {
+        iamPostClient.assignPosts(userId, postIds);
+    }
+
+    /**
+     * 导入用户（Excel 解析结果）
+     *
+     * @param rows          解析后的用户行
+     * @param updateSupport 已存在用户是否覆盖更新
+     * @return 成功导入/更新条数
+     */
+    public int importUsers(List<UserImportCommand> rows, boolean updateSupport) {
+        return iamUserClient.importUsers(rows, updateSupport);
     }
 }

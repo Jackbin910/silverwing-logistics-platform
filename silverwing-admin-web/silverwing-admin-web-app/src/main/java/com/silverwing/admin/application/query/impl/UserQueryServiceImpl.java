@@ -3,6 +3,7 @@ package com.silverwing.admin.application.query.impl;
 import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.application.query.UserPageQuery;
 import com.silverwing.admin.application.query.UserQueryService;
+import com.silverwing.admin.client.IamPostClient;
 import com.silverwing.admin.client.IamUserClient;
 import com.silverwing.common.domain.PageResult;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,8 @@ public class UserQueryServiceImpl implements UserQueryService {
 
     private final IamUserClient iamUserClient;
 
+    private final IamPostClient iamPostClient;
+
     @Override
     public PageResult<UserResponse> list(UserPageQuery query) {
         return iamUserClient.list(query);
@@ -35,5 +38,15 @@ public class UserQueryServiceImpl implements UserQueryService {
     @Override
     public List<Long> getUserRoleIds(Long userId) {
         return iamUserClient.getUserRoleIds(userId);
+    }
+
+    @Override
+    public List<Long> getUserPostIds(Long userId) {
+        return iamPostClient.getUserPostIds(userId);
+    }
+
+    @Override
+    public List<UserResponse> exportList(UserPageQuery query) {
+        return iamUserClient.exportList(query);
     }
 }

@@ -15,10 +15,15 @@
         <result property="phone" column="phone"/>
         <result property="avatar" column="avatar"/>
         <result property="nickname" column="nickname"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="userType" column="user_type"/>
+        <result property="loginIp" column="login_ip"/>
+        <result property="loginDate" column="login_date"/>
+        <result property="pwdUpdateDate" column="pwd_update_date"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, username, email, status, create_time, update_time, deleted, password, sex, phone, avatar, nickname
+        id, username, email, status, create_time, update_time, deleted, password, sex, phone, avatar, nickname, dept_id, user_type, login_ip, login_date, pwd_update_date
     </sql>
 
 </mapper>

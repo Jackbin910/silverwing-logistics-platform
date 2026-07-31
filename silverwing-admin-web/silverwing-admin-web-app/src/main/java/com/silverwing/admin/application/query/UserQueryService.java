@@ -18,4 +18,11 @@ public interface UserQueryService {
     UserResponse getById(Long id);
 
     List<Long> getUserRoleIds(Long userId);
+
+    List<Long> getUserPostIds(Long userId);
+
+    /**
+     * 导出查询：按条件返回用户列表（非分页）
+     */
+    List<UserResponse> exportList(UserPageQuery query);
 }

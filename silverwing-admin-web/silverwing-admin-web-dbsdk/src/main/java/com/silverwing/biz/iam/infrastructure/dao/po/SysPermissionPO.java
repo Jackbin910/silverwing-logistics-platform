@@ -53,4 +53,6 @@ public class SysPermissionPO extends BaseLogicEntity {
 
     private String perms;
 
+    private String path;
+
 }

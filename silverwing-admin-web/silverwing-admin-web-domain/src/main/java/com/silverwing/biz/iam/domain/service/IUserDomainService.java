@@ -52,4 +52,28 @@ public interface IUserDomainService {
      * 删除用户（含级联清理）
      */
     void deleteById(Long id);
+
+    /**
+     * 修改个人资料（昵称、邮箱、手机号、性别），并对手机号/邮箱做唯一性校验
+     *
+     * @param user 待更新的用户聚合根（含最新资料字段）
+     */
+    void updateProfile(SysUserAggregate user);
+
+    /**
+     * 修改本人密码（校验旧密码且新密码不得与旧密码相同）
+     *
+     * @param user        当前用户聚合根
+     * @param oldPassword 旧密码（明文）
+     * @param newPassword 新密码（明文）
+     */
+    void updateSelfPassword(SysUserAggregate user, String oldPassword, String newPassword);
+
+    /**
+     * 更新头像地址
+     *
+     * @param user      当前用户聚合根
+     * @param avatarUrl 头像访问地址
+     */
+    void updateAvatar(SysUserAggregate user, String avatarUrl);
 }

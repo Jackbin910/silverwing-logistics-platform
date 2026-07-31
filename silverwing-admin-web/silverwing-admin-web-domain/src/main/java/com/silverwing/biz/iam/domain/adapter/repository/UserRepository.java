@@ -26,6 +26,9 @@ public interface UserRepository {
 
     PageResult<SysUserAggregate> findPage(UserQuery query);
 
+    /** 按条件查询用户列表（非分页，用于导出） */
+    List<SysUserAggregate> findList(UserQuery query);
+
     List<Long> findRoleIdsByUserId(Long userId);
 
     void assignRoles(Long userId, List<Long> roleIds);
@@ -43,4 +46,22 @@ public interface UserRepository {
 
     /** 移除用户的某个角色 */
     void removeRoleFromUser(Long userId, Long roleId);
+
+    /**
+     * 判断手机号是否被其他用户占用
+     *
+     * @param userId 当前用户 ID（排除自身）
+     * @param phone  手机号
+     * @return true 表示被占用
+     */
+    boolean existsByPhoneExcept(Long userId, String phone);
+
+    /**
+     * 判断邮箱是否被其他用户占用
+     *
+     * @param userId 当前用户 ID（排除自身）
+     * @param email  邮箱
+     * @return true 表示被占用
+     */
+    boolean existsByEmailExcept(Long userId, String email);
 }

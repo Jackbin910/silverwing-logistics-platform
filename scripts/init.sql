@@ -47,6 +47,46 @@ CREATE TABLE `sys_role` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='角色表';
 
 -- ========================================
+-- 岗位表
+-- ========================================
+DROP TABLE IF EXISTS `sys_post`;
+CREATE TABLE `sys_post` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '岗位ID',
+    `post_code` VARCHAR(64) NOT NULL COMMENT '岗位编码',
+    `post_name` VARCHAR(50) NOT NULL COMMENT '岗位名称',
+    `post_sort` INT NOT NULL COMMENT '显示顺序',
+    `status` CHAR(1) NOT NULL DEFAULT '0' COMMENT '状态（0正常 1停用）',
+    `create_by` VARCHAR(64) DEFAULT '' COMMENT '创建者',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` VARCHAR(64) DEFAULT '' COMMENT '更新者',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `remark` VARCHAR(500) COMMENT '备注',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_post_code` (`post_code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='岗位信息表';
+
+-- ========================================
+-- 用户与岗位关联表
+-- ========================================
+DROP TABLE IF EXISTS `sys_user_post`;
+CREATE TABLE `sys_user_post` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT 'ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `post_id` BIGINT NOT NULL COMMENT '岗位ID',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_post_id` (`post_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户与岗位关联表';
+
+-- 插入默认岗位
+INSERT INTO `sys_post` (`post_code`, `post_name`, `post_sort`, `status`, `remark`) VALUES
+('CEO', '董事长', 1, '0', '公司最高负责人'),
+('SE', '安全员', 2, '0', '安全管理岗位'),
+('CFO', '财务总监', 3, '0', '财务管理岗位'),
+('CMO', '市场总监', 4, '0', '市场管理岗位'),
+('COO', '运营总监', 5, '0', '运营管理岗位');
+
+-- ========================================
 -- 用户角色关联表
 -- ========================================
 DROP TABLE IF EXISTS `sys_user_role`;

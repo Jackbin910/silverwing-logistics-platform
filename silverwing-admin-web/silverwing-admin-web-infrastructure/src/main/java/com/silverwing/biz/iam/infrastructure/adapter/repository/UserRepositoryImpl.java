@@ -53,6 +53,26 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public boolean existsByPhoneExcept(Long userId, String phone) {
+        if (phone == null || phone.isBlank()) {
+            return false;
+        }
+        LambdaQueryWrapper<SysUserPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUserPO::getPhone, phone).ne(SysUserPO::getId, userId);
+        return sysUserDao.selectCount(wrapper) > 0;
+    }
+
+    @Override
+    public boolean existsByEmailExcept(Long userId, String email) {
+        if (email == null || email.isBlank()) {
+            return false;
+        }
+        LambdaQueryWrapper<SysUserPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUserPO::getEmail, email).ne(SysUserPO::getId, userId);
+        return sysUserDao.selectCount(wrapper) > 0;
+    }
+
+    @Override
     public void save(SysUserAggregate user) {
         SysUserPO po = UserInfraConvertor.INSTANCE.toPo(user);
         if (user.getId() != null) {
@@ -89,6 +109,22 @@ public class UserRepositoryImpl implements UserRepository {
         records.forEach(SysUserAggregate::clearPassword);
         return new PageResult<>(result.getCurrent(), result.getSize(),
                 result.getTotal(), records);
+    }
+
+    @Override
+    public List<SysUserAggregate> findList(UserQuery query) {
+        LambdaQueryWrapper<SysUserPO> wrapper = new LambdaQueryWrapper<>();
+        if (query.getUsername() != null && !query.getUsername().isBlank()) {
+            wrapper.like(SysUserPO::getUsername, query.getUsername());
+        }
+        if (query.getStatus() != null) {
+            wrapper.eq(SysUserPO::getStatus, query.getStatus());
+        }
+        wrapper.orderByDesc(SysUserPO::getCreateTime);
+        return sysUserDao.selectList(wrapper).stream()
+                .map(UserInfraConvertor.INSTANCE::toDomain)
+                .peek(SysUserAggregate::clearPassword)
+                .toList();
     }
 
     @Override

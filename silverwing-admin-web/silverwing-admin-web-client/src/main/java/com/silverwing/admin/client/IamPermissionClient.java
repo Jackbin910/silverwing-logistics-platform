@@ -1,7 +1,11 @@
 package com.silverwing.admin.client;
 
 import com.silverwing.admin.application.command.SavePermissionCommand;
+import com.silverwing.admin.application.command.UpdatePermissionSortCommand;
 import com.silverwing.admin.application.dto.PermissionResponse;
+import com.silverwing.admin.application.dto.RolePermissionTreeSelectResponse;
+import com.silverwing.admin.application.dto.RouterVo;
+import com.silverwing.admin.application.dto.TreeSelect;
 import com.silverwing.admin.application.query.PermissionPageQuery;
 import com.silverwing.common.domain.PageResult;
 
@@ -42,4 +46,24 @@ public interface IamPermissionClient {
      * 根据ID查询权限
      */
     PermissionResponse getById(Long id);
+
+    /**
+     * 权限树形下拉列表（菜单管理树选择）
+     */
+    List<TreeSelect> treeSelect(PermissionPageQuery query);
+
+    /**
+     * 角色关联权限树（已勾选权限ID + 完整权限树）
+     */
+    RolePermissionTreeSelectResponse rolePermissionTreeSelect(Long roleId);
+
+    /**
+     * 保存权限（菜单）排序
+     */
+    void updateSort(UpdatePermissionSortCommand command);
+
+    /**
+     * 获取登录用户的前端路由菜单
+     */
+    List<RouterVo> getRouters(Long userId);
 }

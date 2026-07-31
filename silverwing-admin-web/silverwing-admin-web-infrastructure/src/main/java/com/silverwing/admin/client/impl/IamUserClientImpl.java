@@ -1,7 +1,10 @@
 package com.silverwing.admin.client.impl;
 
 import com.silverwing.admin.application.command.CreateUserCommand;
+import com.silverwing.admin.application.command.UpdateProfileCommand;
+import com.silverwing.admin.application.command.UpdateProfilePasswordCommand;
 import com.silverwing.admin.application.command.UpdateUserCommand;
+import com.silverwing.admin.application.command.UserImportCommand;
 import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.application.query.UserPageQuery;
 import com.silverwing.admin.client.IamUserClient;
@@ -189,5 +192,104 @@ public class IamUserClientImpl implements IamUserClient {
                 .map(userConvertor::toResponse)
                 .collect(Collectors.toList());
         return new PageResult<>(page.getCurrent(), page.getSize(), page.getTotal(), records);
+    }
+
+    @Override
+    public List<UserResponse> exportList(UserPageQuery query) {
+        UserQuery userQuery = toUserQuery(query);
+        return userRepository.findList(userQuery).stream()
+                .map(userConvertor::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public int importUsers(List<UserImportCommand> rows, boolean updateSupport) {
+        int success = 0;
+        for (UserImportCommand row : rows) {
+            if (row.getUsername() == null || row.getUsername().isBlank()) {
+                continue;
+            }
+            SysUserAggregate exist = userRepository.findByUsername(row.getUsername());
+            if (exist != null) {
+                if (!updateSupport) {
+                    continue;
+                }
+                UpdateUserCommand update = new UpdateUserCommand();
+                update.setNickname(row.getNickname());
+                update.setPhone(row.getPhone());
+                update.setEmail(row.getEmail());
+                update.setSex(row.getSex());
+                update.setStatus(row.getStatus());
+                update.setDeptId(row.getDeptId());
+                update.setUserType(row.getUserType());
+                this.update(exist.getId(), update);
+            } else {
+                CreateUserCommand create = new CreateUserCommand();
+                create.setUsername(row.getUsername());
+                create.setNickname(row.getNickname());
+                create.setPhone(row.getPhone());
+                create.setEmail(row.getEmail());
+                create.setSex(row.getSex());
+                create.setDeptId(row.getDeptId());
+                create.setUserType(row.getUserType());
+                create.setPassword(DEFAULT_INIT_PASSWORD);
+                this.create(create);
+            }
+            success++;
+        }
+        log.info("导入用户完成，成功条数={}, 覆盖更新={}", success, updateSupport);
+        return success;
+    }
+
+    /** 导入用户默认初始密码 */
+    private static final String DEFAULT_INIT_PASSWORD = "123456";
+
+    @Override
+    @Transactional
+    public void updateProfile(Long userId, UpdateProfileCommand command) {
+        SysUserAggregate user = userRepository.findById(userId);
+        if (user == null) {
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.user.notfound");
+        }
+        if (command.getNickname() != null) {
+            user.setNickname(command.getNickname());
+        }
+        if (command.getEmail() != null) {
+            user.setEmail(command.getEmail());
+        }
+        if (command.getPhone() != null) {
+            user.setPhone(command.getPhone());
+        }
+        if (command.getSex() != null) {
+            user.setSex(command.getSex());
+        }
+        // 领域服务负责手机号/邮箱唯一性校验与持久化
+        userDomainService.updateProfile(user);
+        log.info("更新个人资料 userId={}", userId);
+    }
+
+    @Override
+    @Transactional
+    public void updateSelfPassword(Long userId, String oldPassword, String newPassword) {
+        SysUserAggregate user = userRepository.findById(userId);
+        if (user == null) {
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.user.notfound");
+        }
+        // 领域服务负责旧密码校验、新密码差异化校验与加密持久化
+        userDomainService.updateSelfPassword(user, oldPassword, newPassword);
+        log.info("修改密码 userId={}", userId);
+    }
+
+    @Override
+    @Transactional
+    public void updateAvatar(Long userId, String avatarUrl) {
+        SysUserAggregate user = userRepository.findById(userId);
+        if (user == null) {
+            throw BusinessException.i18n(ResultCode.NOT_FOUND, "admin.user.notfound");
+        }
+        // 领域服务负责持久化头像地址
+        userDomainService.updateAvatar(user, avatarUrl);
+        log.info("更新头像 userId={}", userId);
     }
 }

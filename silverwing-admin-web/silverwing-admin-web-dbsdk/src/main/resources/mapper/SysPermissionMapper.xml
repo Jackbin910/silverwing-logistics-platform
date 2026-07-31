@@ -9,14 +9,17 @@
         <result property="visible" column="visible"/>
         <result property="sort" column="sort"/>
         <result property="status" column="status"/>
-        <result property="target" column="target"/>
-        <result property="isRefresh" column="is_refresh"/>
         <result property="icon" column="icon"/>
-        <result property="url" column="url"/>
         <result property="parentId" column="parent_id"/>
         <result property="resourceType" column="resource_type"/>
         <result property="createTime" column="create_time"/>
         <result property="updateTime" column="update_time"/>
+        <result property="isCache" column="is_cache"/>
+        <result property="isFrame" column="is_frame"/>
+        <result property="query" column="query"/>
+        <result property="routeName" column="route_name"/>
+        <result property="component" column="component"/>
+        <result property="path" column="path"/>
     </resultMap>
 
     <sql id="Base_Column_List">

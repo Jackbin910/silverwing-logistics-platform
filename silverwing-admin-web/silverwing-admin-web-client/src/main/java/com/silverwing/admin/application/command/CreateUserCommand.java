@@ -22,4 +22,13 @@ public class CreateUserCommand {
     private String avatar;
     private String phone;
     private String email;
+
+    /** 昵称 */
+    private String nickname;
+
+    /** 部门ID */
+    private Long deptId;
+
+    /** 用户类型（00系统用户） */
+    private String userType;
 }
