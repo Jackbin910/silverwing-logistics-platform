@@ -34,6 +34,16 @@ public interface IUserDomainService {
     void assignRoles(Long userId, List<Long> roleIds);
 
     /**
+     * 为用户授予单个角色（幂等）
+     */
+    void assignRoleToUser(Long userId, Long roleId);
+
+    /**
+     * 移除用户的单个角色
+     */
+    void removeRoleFromUser(Long userId, Long roleId);
+
+    /**
      * 更新用户信息（持久化）
      */
     SysUserAggregate update(SysUserAggregate user);

@@ -2,6 +2,7 @@ package com.silverwing.admin.application.command;
 
 import com.silverwing.admin.application.dto.RoleResponse;
 import com.silverwing.admin.client.IamRoleClient;
+import com.silverwing.admin.client.IamUserClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.List;
 public class RoleCommandService {
 
     private final IamRoleClient iamRoleClient;
+    private final IamUserClient iamUserClient;
 
     public RoleResponse create(SaveRoleCommand command) {
         return iamRoleClient.create(command);
@@ -33,5 +35,38 @@ public class RoleCommandService {
 
     public void assignPermissions(Long roleId, List<Long> permissionIds) {
         iamRoleClient.assignPermissions(roleId, permissionIds);
+    }
+
+    public void changeStatus(Long roleId, Integer status) {
+        iamRoleClient.changeStatus(roleId, status);
+    }
+
+    public void updateDataScope(Long roleId, Integer dataScope, List<Long> deptIds) {
+        iamRoleClient.updateDataScope(roleId, dataScope, deptIds);
+    }
+
+    public void deleteByIds(List<Long> ids) {
+        iamRoleClient.deleteByIds(ids);
+    }
+
+    /**
+     * 取消角色与单个用户的授权
+     */
+    public void cancelAuthUser(Long roleId, Long userId) {
+        iamUserClient.removeRoleFromUser(roleId, userId);
+    }
+
+    /**
+     * 批量取消角色与用户的授权
+     */
+    public void cancelAuthUsers(Long roleId, List<Long> userIds) {
+        iamUserClient.removeRolesFromUser(roleId, userIds);
+    }
+
+    /**
+     * 批量为角色授予用户
+     */
+    public void selectAuthUsers(Long roleId, List<Long> userIds) {
+        iamUserClient.addRoleToUsers(roleId, userIds);
     }
 }

@@ -14,10 +14,11 @@
         <result property="sex" column="sex"/>
         <result property="phone" column="phone"/>
         <result property="avatar" column="avatar"/>
+        <result property="nickname" column="nickname"/>
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, username, email, status, create_time, update_time, deleted, password, sex, phone, avatar
+        id, username, email, status, create_time, update_time, deleted, password, sex, phone, avatar, nickname
     </sql>
 
 </mapper>

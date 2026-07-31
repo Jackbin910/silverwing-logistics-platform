@@ -32,7 +32,7 @@ import java.util.List;
  * 参数配置管理。
  */
 @RestController
-@RequestMapping("/system/config")
+@RequestMapping("/config")
 @Tag(name = "参数配置管理")
 @RequiredArgsConstructor
 public class ConfigController {

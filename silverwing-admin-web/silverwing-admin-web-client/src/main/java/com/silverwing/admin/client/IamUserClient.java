@@ -62,4 +62,29 @@ public interface IamUserClient {
      * 查询用户已分配的角色ID列表
      */
     List<Long> getUserRoleIds(Long userId);
+
+    /**
+     * 查询角色已分配的用户列表（分页）
+     */
+    PageResult<UserResponse> listAllocatedToRole(Long roleId, UserPageQuery query);
+
+    /**
+     * 查询角色未分配的用户列表（分页）
+     */
+    PageResult<UserResponse> listUnallocatedToRole(Long roleId, UserPageQuery query);
+
+    /**
+     * 取消角色与单个用户的授权
+     */
+    void removeRoleFromUser(Long roleId, Long userId);
+
+    /**
+     * 批量取消角色与用户的授权
+     */
+    void removeRolesFromUser(Long roleId, List<Long> userIds);
+
+    /**
+     * 批量为角色授予用户
+     */
+    void addRoleToUsers(Long roleId, List<Long> userIds);
 }

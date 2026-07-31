@@ -31,4 +31,16 @@ public interface UserRepository {
     void assignRoles(Long userId, List<Long> roleIds);
 
     void deleteUserRoles(Long userId);
+
+    /** 查询指定角色下的用户（分页） */
+    PageResult<SysUserAggregate> findPageByRoleId(UserQuery query, Long roleId);
+
+    /** 查询未分配指定角色的用户（分页） */
+    PageResult<SysUserAggregate> findPageWithoutRole(UserQuery query, Long roleId);
+
+    /** 为用户授予角色（幂等） */
+    void assignRoleToUser(Long userId, Long roleId);
+
+    /** 移除用户的某个角色 */
+    void removeRoleFromUser(Long userId, Long roleId);
 }

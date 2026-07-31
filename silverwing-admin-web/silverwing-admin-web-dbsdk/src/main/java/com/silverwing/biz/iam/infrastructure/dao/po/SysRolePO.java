@@ -3,7 +3,7 @@ package com.silverwing.biz.iam.infrastructure.dao.po;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.silverwing.common.entity.BaseEntity;
+import com.silverwing.common.entity.BaseLogicEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "sys_role")
-public class SysRolePO extends BaseEntity {
+public class SysRolePO extends BaseLogicEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;

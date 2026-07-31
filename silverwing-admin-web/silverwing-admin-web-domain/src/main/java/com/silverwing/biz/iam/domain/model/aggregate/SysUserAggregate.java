@@ -28,6 +28,9 @@ public class SysUserAggregate extends DomainEntity {
     private String phone;
     private String email;
 
+    /** 昵称 */
+    private String nickname;
+
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
 

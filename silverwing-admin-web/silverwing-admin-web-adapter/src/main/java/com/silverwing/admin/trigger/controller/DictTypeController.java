@@ -32,7 +32,7 @@ import java.util.List;
  * 字典类型管理。
  */
 @RestController
-@RequestMapping("/system/dict/type")
+@RequestMapping("/dict/type")
 @Tag(name = "字典类型管理")
 @RequiredArgsConstructor
 public class DictTypeController {

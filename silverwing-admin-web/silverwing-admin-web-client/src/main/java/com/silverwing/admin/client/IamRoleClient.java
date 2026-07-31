@@ -52,4 +52,24 @@ public interface IamRoleClient {
      * 查询角色已分配的权限ID列表
      */
     List<Long> getRolePermissionIds(Long roleId);
+
+    /**
+     * 切换角色状态
+     */
+    void changeStatus(Long roleId, Integer status);
+
+    /**
+     * 更新角色数据范围（含角色-部门关联）
+     */
+    void updateDataScope(Long roleId, Integer dataScope, List<Long> deptIds);
+
+    /**
+     * 批量删除角色
+     */
+    void deleteByIds(List<Long> ids);
+
+    /**
+     * 查询全部角色（用于导出）
+     */
+    List<RoleResponse> listAll();
 }

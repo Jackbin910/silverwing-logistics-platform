@@ -36,4 +36,16 @@ public interface RoleRepository {
 
     /** 查询角色已分配的权限ID列表 */
     List<Long> findPermissionIdsByRoleId(Long roleId);
+
+    /** 切换角色状态 */
+    void updateStatus(Long roleId, Integer status);
+
+    /** 更新角色数据范围（含角色-部门关联） */
+    void updateDataScope(Long roleId, Integer dataScope, List<Long> deptIds);
+
+    /** 查询全部角色（导出用，不缓存） */
+    List<SysRoleAggregate> findAll();
+
+    /** 批量删除角色（含级联清理） */
+    void deleteByIds(List<Long> ids);
 }

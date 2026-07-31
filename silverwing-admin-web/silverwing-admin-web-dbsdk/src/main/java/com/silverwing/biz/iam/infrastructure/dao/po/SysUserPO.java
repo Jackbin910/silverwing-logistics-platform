@@ -3,7 +3,7 @@ package com.silverwing.biz.iam.infrastructure.dao.po;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.silverwing.common.entity.BaseEntity;
+import com.silverwing.common.entity.BaseLogicEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -19,7 +19,7 @@ import java.time.LocalDateTime;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "sys_user")
-public class SysUserPO extends BaseEntity {
+public class SysUserPO extends BaseLogicEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -30,6 +30,9 @@ public class SysUserPO extends BaseEntity {
     private String avatar;
     private String phone;
     private String email;
+
+    /** 昵称 */
+    private String nickname;
 
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;

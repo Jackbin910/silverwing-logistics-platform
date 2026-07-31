@@ -28,7 +28,12 @@ public enum BusinessTypeEnum {
     /**
      * 删除
      */
-    DELETE(3, "删除");
+    DELETE(3, "删除"),
+
+    /**
+     * 导出
+     */
+    EXPORT(4, "导出");
 
     /**
      * 类型编码

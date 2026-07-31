@@ -1,9 +1,14 @@
 package com.silverwing.admin.application.query.impl;
 
+import com.silverwing.admin.application.dto.DeptRoleTreeResponse;
 import com.silverwing.admin.application.dto.RoleResponse;
+import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.application.query.RolePageQuery;
 import com.silverwing.admin.application.query.RoleQueryService;
+import com.silverwing.admin.application.query.UserPageQuery;
+import com.silverwing.admin.client.DeptClient;
 import com.silverwing.admin.client.IamRoleClient;
+import com.silverwing.admin.client.IamUserClient;
 import com.silverwing.common.domain.PageResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +26,8 @@ import java.util.List;
 public class RoleQueryServiceImpl implements RoleQueryService {
 
     private final IamRoleClient iamRoleClient;
+    private final IamUserClient iamUserClient;
+    private final DeptClient deptClient;
 
     @Override
     public PageResult<RoleResponse> list(RolePageQuery query) {
@@ -40,5 +47,25 @@ public class RoleQueryServiceImpl implements RoleQueryService {
     @Override
     public List<Long> getRolePermissionIds(Long roleId) {
         return iamRoleClient.getRolePermissionIds(roleId);
+    }
+
+    @Override
+    public List<RoleResponse> listAll() {
+        return iamRoleClient.listAll();
+    }
+
+    @Override
+    public DeptRoleTreeResponse roleDeptTree(Long roleId) {
+        return deptClient.roleDeptTreeSelect(roleId);
+    }
+
+    @Override
+    public PageResult<UserResponse> allocatedList(Long roleId, UserPageQuery query) {
+        return iamUserClient.listAllocatedToRole(roleId, query);
+    }
+
+    @Override
+    public PageResult<UserResponse> unallocatedList(Long roleId, UserPageQuery query) {
+        return iamUserClient.listUnallocatedToRole(roleId, query);
     }
 }

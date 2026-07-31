@@ -48,6 +48,16 @@ public class UserDomainServiceImpl implements IUserDomainService {
     }
 
     @Override
+    public void assignRoleToUser(Long userId, Long roleId) {
+        userRepository.assignRoleToUser(userId, roleId);
+    }
+
+    @Override
+    public void removeRoleFromUser(Long userId, Long roleId) {
+        userRepository.removeRoleFromUser(userId, roleId);
+    }
+
+    @Override
     public SysUserAggregate update(SysUserAggregate user) {
         userRepository.save(user);
         return user;

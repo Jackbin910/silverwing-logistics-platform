@@ -43,4 +43,19 @@ public class RoleDomainServiceImpl implements IRoleDomainService {
     public void deleteById(Long id) {
         roleRepository.deleteById(id);
     }
+
+    @Override
+    public void changeStatus(Long roleId, Integer status) {
+        roleRepository.updateStatus(roleId, status);
+    }
+
+    @Override
+    public void updateDataScope(Long roleId, Integer dataScope, List<Long> deptIds) {
+        roleRepository.updateDataScope(roleId, dataScope, deptIds);
+    }
+
+    @Override
+    public void deleteByIds(List<Long> ids) {
+        roleRepository.deleteByIds(ids);
+    }
 }

@@ -2,11 +2,13 @@ package com.silverwing.biz.iam.infrastructure.adapter.repository;
 
 import com.alicp.jetcache.anno.Cached;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.silverwing.biz.dept.infrastructure.dao.SysRoleDeptDao;
+import com.silverwing.biz.dept.infrastructure.dao.po.SysRoleDeptPO;
 import com.silverwing.biz.iam.domain.adapter.repository.RoleRepository;
 import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
 import com.silverwing.biz.iam.domain.model.entity.SysRolePermission;
-import com.silverwing.biz.iam.domain.model.entity.SysUserRole;
 import com.silverwing.biz.iam.domain.model.query.RoleQuery;
 import com.silverwing.biz.iam.infrastructure.adapter.repository.convertor.RelationInfraConvertor;
 import com.silverwing.biz.iam.infrastructure.adapter.repository.convertor.RoleInfraConvertor;
@@ -17,6 +19,7 @@ import com.silverwing.biz.iam.infrastructure.dao.po.SysRolePO;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysRolePermissionPO;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysUserRolePO;
 import com.silverwing.common.domain.PageResult;
+import com.silverwing.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -32,6 +35,7 @@ public class RoleRepositoryImpl implements RoleRepository {
 
     private final SysRoleDao sysRoleDao;
     private final SysRolePermissionDao sysRolePermissionDao;
+    private final SysRoleDeptDao sysRoleDeptDao;
     private final SysUserRoleDao sysUserRoleDao;
 
     @Override
@@ -70,9 +74,60 @@ public class RoleRepositoryImpl implements RoleRepository {
         LambdaQueryWrapper<SysRolePermissionPO> rpWrapper = new LambdaQueryWrapper<>();
         rpWrapper.eq(SysRolePermissionPO::getRoleId, id);
         sysRolePermissionDao.delete(rpWrapper);
+        LambdaQueryWrapper<SysRoleDeptPO> rdWrapper = new LambdaQueryWrapper<>();
+        rdWrapper.eq(SysRoleDeptPO::getRoleId, id);
+        sysRoleDeptDao.delete(rdWrapper);
         LambdaQueryWrapper<SysUserRolePO> urWrapper = new LambdaQueryWrapper<>();
         urWrapper.eq(SysUserRolePO::getRoleId, id);
         sysUserRoleDao.delete(urWrapper);
+    }
+
+    @Override
+    public void updateStatus(Long roleId, Integer status) {
+        SysRolePO po = sysRoleDao.selectById(roleId);
+        if (po == null) {
+            throw new BusinessException("角色不存在");
+        }
+        po.setStatus(status);
+        sysRoleDao.updateById(po);
+    }
+
+    @Override
+    public void updateDataScope(Long roleId, Integer dataScope, List<Long> deptIds) {
+        SysRolePO po = sysRoleDao.selectById(roleId);
+        if (po == null) {
+            throw new BusinessException("角色不存在");
+        }
+        po.setDataScope(dataScope);
+        sysRoleDao.updateById(po);
+        // 重建角色-部门关联
+        LambdaQueryWrapper<SysRoleDeptPO> wrapper = Wrappers.lambdaQuery();
+        wrapper.eq(SysRoleDeptPO::getRoleId, roleId);
+        sysRoleDeptDao.delete(wrapper);
+        if (deptIds != null) {
+            for (Long deptId : deptIds) {
+                SysRoleDeptPO relation = new SysRoleDeptPO();
+                relation.setRoleId(roleId);
+                relation.setDeptId(deptId);
+                sysRoleDeptDao.insert(relation);
+            }
+        }
+    }
+
+    @Override
+    public List<SysRoleAggregate> findAll() {
+        LambdaQueryWrapper<SysRolePO> wrapper = Wrappers.lambdaQuery();
+        wrapper.orderByAsc(SysRolePO::getRoleSort);
+        return sysRoleDao.selectList(wrapper).stream()
+                .map(RoleInfraConvertor.INSTANCE::toDomain)
+                .toList();
+    }
+
+    @Override
+    public void deleteByIds(List<Long> ids) {
+        for (Long id : ids) {
+            this.deleteById(id);
+        }
     }
 
     @Override

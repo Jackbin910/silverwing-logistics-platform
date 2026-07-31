@@ -117,6 +117,36 @@ public class IamRoleClientImpl implements IamRoleClient {
         return roleRepository.findPermissionIdsByRoleId(roleId);
     }
 
+    @Override
+    @Transactional
+    public void changeStatus(Long roleId, Integer status) {
+        roleDomainService.changeStatus(roleId, status);
+        log.info("切换角色状态 roleId={}, status={}", roleId, status);
+    }
+
+    @Override
+    @Transactional
+    public void updateDataScope(Long roleId, Integer dataScope, List<Long> deptIds) {
+        roleDomainService.updateDataScope(roleId, dataScope, deptIds);
+        log.info("更新角色数据范围 roleId={}, dataScope={}, 部门数={}", roleId, dataScope,
+                deptIds == null ? 0 : deptIds.size());
+    }
+
+    @Override
+    @Transactional
+    public void deleteByIds(List<Long> ids) {
+        roleDomainService.deleteByIds(ids);
+        log.info("批量删除角色 数量={}", ids == null ? 0 : ids.size());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RoleResponse> listAll() {
+        return roleRepository.findAll().stream()
+                .map(roleConvertor::toResponse)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 将本模块分页查询条件翻译为 biz-iam 领域查询对象
      */

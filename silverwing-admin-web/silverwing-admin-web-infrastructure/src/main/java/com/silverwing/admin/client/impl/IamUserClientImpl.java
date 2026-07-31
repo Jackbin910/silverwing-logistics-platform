@@ -124,6 +124,51 @@ public class IamUserClientImpl implements IamUserClient {
         return userRepository.findRoleIdsByUserId(userId);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<UserResponse> listAllocatedToRole(Long roleId, UserPageQuery query) {
+        UserQuery userQuery = toUserQuery(query);
+        PageResult<SysUserAggregate> page = userRepository.findPageByRoleId(userQuery, roleId);
+        return toUserPage(page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResult<UserResponse> listUnallocatedToRole(Long roleId, UserPageQuery query) {
+        UserQuery userQuery = toUserQuery(query);
+        PageResult<SysUserAggregate> page = userRepository.findPageWithoutRole(userQuery, roleId);
+        return toUserPage(page);
+    }
+
+    @Override
+    @Transactional
+    public void removeRoleFromUser(Long roleId, Long userId) {
+        userDomainService.removeRoleFromUser(userId, roleId);
+        log.info("取消用户角色 roleId={}, userId={}", roleId, userId);
+    }
+
+    @Override
+    @Transactional
+    public void removeRolesFromUser(Long roleId, List<Long> userIds) {
+        if (userIds != null) {
+            for (Long userId : userIds) {
+                userDomainService.removeRoleFromUser(userId, roleId);
+            }
+        }
+        log.info("批量取消用户角色 roleId={}, 数量={}", roleId, userIds == null ? 0 : userIds.size());
+    }
+
+    @Override
+    @Transactional
+    public void addRoleToUsers(Long roleId, List<Long> userIds) {
+        if (userIds != null) {
+            for (Long userId : userIds) {
+                userDomainService.assignRoleToUser(userId, roleId);
+            }
+        }
+        log.info("批量授予用户角色 roleId={}, 数量={}", roleId, userIds == null ? 0 : userIds.size());
+    }
+
     /**
      * 将本模块分页查询条件翻译为 biz-iam 领域查询对象
      */
@@ -134,5 +179,15 @@ public class IamUserClientImpl implements IamUserClient {
         userQuery.setUsername(query.getUsername());
         userQuery.setStatus(query.getStatus());
         return userQuery;
+    }
+
+    /**
+     * 将用户领域聚合根分页结果转换为本模块响应 DTO 分页结果
+     */
+    private PageResult<UserResponse> toUserPage(PageResult<SysUserAggregate> page) {
+        List<UserResponse> records = page.getRecords().stream()
+                .map(userConvertor::toResponse)
+                .collect(Collectors.toList());
+        return new PageResult<>(page.getCurrent(), page.getSize(), page.getTotal(), records);
     }
 }

@@ -15,8 +15,8 @@ import org.mybatis.spring.annotation.MapperScan;
 @EnableDiscoveryClient
 @EnableFeignClients
 @EnableDynamicTp
-@MapperScan({"com.silverwing.biz.iam.infrastructure.dao", "com.silverwing.biz.dict.infrastructure.dao", "com.silverwing.biz.config.infrastructure.dao"})
-@ComponentScan(basePackages = {"com.silverwing.admin", "com.silverwing.common", "com.silverwing.biz.iam", "com.silverwing.biz.dict", "com.silverwing.biz.config"})
+@MapperScan("com.silverwing.biz.**.infrastructure.dao")
+@ComponentScan(basePackages = {"com.silverwing.admin", "com.silverwing.common", "com.silverwing.biz"})
 public class SilverwingAdminWebApplication {
     
     public static void main(String[] args) {

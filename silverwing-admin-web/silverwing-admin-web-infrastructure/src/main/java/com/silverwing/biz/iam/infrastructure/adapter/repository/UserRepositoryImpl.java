@@ -119,4 +119,74 @@ public class UserRepositoryImpl implements UserRepository {
         wrapper.eq(SysUserRolePO::getUserId, userId);
         sysUserRoleDao.delete(wrapper);
     }
+
+    @Override
+    public PageResult<SysUserAggregate> findPageByRoleId(UserQuery query, Long roleId) {
+        query.normalize();
+        List<Long> userIds = sysUserRoleDao.selectUserIdsByRoleId(roleId);
+        if (userIds.isEmpty()) {
+            return new PageResult<>(Long.valueOf(query.getCurrent()), Long.valueOf(query.getSize()), 0L,
+                    List.of());
+        }
+        Page<SysUserPO> pageObj = new Page<>(query.getCurrent(), query.getSize());
+        LambdaQueryWrapper<SysUserPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.in(SysUserPO::getId, userIds);
+        if (query.getUsername() != null && !query.getUsername().isBlank()) {
+            wrapper.like(SysUserPO::getUsername, query.getUsername());
+        }
+        if (query.getStatus() != null) {
+            wrapper.eq(SysUserPO::getStatus, query.getStatus());
+        }
+        wrapper.orderByDesc(SysUserPO::getCreateTime);
+        Page<SysUserPO> result = sysUserDao.selectPage(pageObj, wrapper);
+        return toPageResult(result);
+    }
+
+    @Override
+    public PageResult<SysUserAggregate> findPageWithoutRole(UserQuery query, Long roleId) {
+        query.normalize();
+        List<Long> userIds = sysUserRoleDao.selectUserIdsByRoleId(roleId);
+        Page<SysUserPO> pageObj = new Page<>(query.getCurrent(), query.getSize());
+        LambdaQueryWrapper<SysUserPO> wrapper = new LambdaQueryWrapper<>();
+        if (!userIds.isEmpty()) {
+            wrapper.notIn(SysUserPO::getId, userIds);
+        }
+        if (query.getUsername() != null && !query.getUsername().isBlank()) {
+            wrapper.like(SysUserPO::getUsername, query.getUsername());
+        }
+        if (query.getStatus() != null) {
+            wrapper.eq(SysUserPO::getStatus, query.getStatus());
+        }
+        wrapper.orderByDesc(SysUserPO::getCreateTime);
+        Page<SysUserPO> result = sysUserDao.selectPage(pageObj, wrapper);
+        return toPageResult(result);
+    }
+
+    @Override
+    public void assignRoleToUser(Long userId, Long roleId) {
+        LambdaQueryWrapper<SysUserRolePO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUserRolePO::getUserId, userId).eq(SysUserRolePO::getRoleId, roleId);
+        if (sysUserRoleDao.selectCount(wrapper) == 0) {
+            SysUserRolePO po = new SysUserRolePO();
+            po.setUserId(userId);
+            po.setRoleId(roleId);
+            sysUserRoleDao.insert(po);
+        }
+    }
+
+    @Override
+    public void removeRoleFromUser(Long userId, Long roleId) {
+        LambdaQueryWrapper<SysUserRolePO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUserRolePO::getUserId, userId).eq(SysUserRolePO::getRoleId, roleId);
+        sysUserRoleDao.delete(wrapper);
+    }
+
+    private PageResult<SysUserAggregate> toPageResult(Page<SysUserPO> result) {
+        List<SysUserAggregate> records = result.getRecords().stream()
+                .map(UserInfraConvertor.INSTANCE::toDomain)
+                .toList();
+        records.forEach(SysUserAggregate::clearPassword);
+        return new PageResult<>(result.getCurrent(), result.getSize(),
+                result.getTotal(), records);
+    }
 }

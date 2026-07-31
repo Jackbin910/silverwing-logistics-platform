@@ -32,7 +32,7 @@ import java.util.List;
  * 字典数据管理。
  */
 @RestController
-@RequestMapping("/system/dict/data")
+@RequestMapping("/dict/data")
 @Tag(name = "字典数据管理")
 @RequiredArgsConstructor
 public class DictDataController {
