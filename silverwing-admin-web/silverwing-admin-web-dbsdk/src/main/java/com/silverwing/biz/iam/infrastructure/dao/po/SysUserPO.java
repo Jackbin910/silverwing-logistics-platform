@@ -7,6 +7,8 @@ import com.silverwing.common.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.time.LocalDateTime;
+
 /**
  * 用户持久化对象（PO）
  * <p>
@@ -31,5 +33,15 @@ public class SysUserPO extends BaseEntity {
 
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
+
+    private Long deptId;
+
+    private String userType;
+
+    private String loginIp;
+
+    private LocalDateTime loginDate;
+
+    private LocalDateTime pwdUpdateDate;
 
 }

@@ -39,8 +39,18 @@ public class SysPermissionPO extends BaseEntity {
     /** 是否可见: 0-可见, 1-隐藏 */
     private Integer visible;
 
-    private String url;
-    private String target;
-    private Integer isRefresh;
+    private Integer isFrame;
+
     private String icon;
+
+    private String component;
+
+    private String query;
+
+    private String routeName;
+
+    private Integer isCache;
+
+    private String perms;
+
 }

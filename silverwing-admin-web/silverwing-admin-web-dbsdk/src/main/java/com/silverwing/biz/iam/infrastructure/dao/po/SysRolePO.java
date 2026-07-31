@@ -26,4 +26,13 @@ public class SysRolePO extends BaseEntity {
 
     /** 状态: 0-禁用, 1-启用 */
     private Integer status;
+
+
+    private Integer roleSort;
+
+    private Integer dataScope;
+
+    private Integer menuCheckStrictly;
+
+    private Integer deptCheckStrictly;
 }
