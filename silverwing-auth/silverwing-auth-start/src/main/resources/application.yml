@@ -7,4 +7,12 @@ spring:
   application:
     name: silverwing-auth
 
+# 验证码配置（生产建议放到 Nacos 配置中心统一管理）
+security:
+  captcha:
+    # 是否开启验证码校验
+    enabled: true
+    # 验证码类型：math（算术） / char（字符）
+    type: math
+
 

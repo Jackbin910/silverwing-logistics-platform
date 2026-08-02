@@ -1,6 +1,7 @@
 package com.silverwing.biz.logininfor.infrastructure.adapter.repository;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.silverwing.biz.logininfor.domain.adapter.repository.LogininforRepository;
@@ -73,7 +74,7 @@ public class LogininforRepositoryImpl implements LogininforRepository {
 
     @Override
     public void clean() {
-        logininforDao.cleanLogininfor();
+        logininforDao.delete(Wrappers.lambdaQuery());
     }
 
     /** 构建查询条件 */

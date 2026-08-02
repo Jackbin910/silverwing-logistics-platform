@@ -3,13 +3,18 @@ package com.silverwing.auth.trigger.controller;
 import com.silverwing.auth.application.command.AuthCommandService;
 import com.silverwing.auth.application.command.LoginCommand;
 import com.silverwing.auth.application.dto.AuthUserInfo;
+import com.silverwing.auth.application.dto.CaptchaVO;
 import com.silverwing.auth.application.dto.LoginResponse;
 import com.silverwing.auth.application.query.AuthQueryService;
+import com.silverwing.auth.application.service.CaptchaService;
 import com.silverwing.auth.config.RsaKeyConfig;
 import com.silverwing.common.annotation.SkipAuth;
 import com.silverwing.common.domain.Result;
+import cn.hutool.http.useragent.UserAgent;
+import cn.hutool.http.useragent.UserAgentUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +39,7 @@ public class AuthController {
     private final AuthCommandService authCommandService;
     private final AuthQueryService authQueryService;
     private final RsaKeyConfig rsaKeyConfig;
+    private final CaptchaService captchaService;
 
     /**
      * 获取 RSA 公钥
@@ -49,8 +55,47 @@ public class AuthController {
     @SkipAuth
     @Operation(summary = "用户登录")
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginCommand command) {
+    public Result<LoginResponse> login(@Valid @RequestBody LoginCommand command,
+                                       HttpServletRequest request) {
+        fillLoginEnv(command, request);
         return Result.success(authCommandService.login(command));
+    }
+
+    /**
+     * 获取验证码
+     * <p>返回 uuid 与 base64 图片，前端需将 uuid 与用户输入一并提交登录接口做校验。</p>
+     */
+    @SkipAuth
+    @Operation(summary = "获取验证码")
+    @GetMapping("/captcha")
+    public Result<CaptchaVO> captcha() {
+        return Result.success(captchaService.create());
+    }
+
+    /**
+     * 从请求中解析登录环境信息（IP / 浏览器 / 操作系统）填充到登录命令，
+     * 供在线用户监控展示。IP 优先取反向代理透传头。
+     */
+    private void fillLoginEnv(LoginCommand command, HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        // 取第一个代理 IP（X-Forwarded-For 可能为逗号分隔的多级代理）
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        command.setIpaddr(ip);
+
+        String userAgentStr = request.getHeader("User-Agent");
+        UserAgent ua = UserAgentUtil.parse(userAgentStr);
+        if (ua != null) {
+            command.setBrowser(ua.getBrowser().getName());
+            command.setOs(ua.getOs().getName());
+        }
     }
 
     @Operation(summary = "用户登出")

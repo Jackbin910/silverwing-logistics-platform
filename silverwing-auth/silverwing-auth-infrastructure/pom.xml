@@ -65,6 +65,13 @@
             <groupId>com.alicp.jetcache</groupId>
             <artifactId>jetcache-starter-redis</artifactId>
         </dependency>
+
+        <!-- 验证码（kaptcha 生成图片，存储走 RedisUtil） -->
+        <dependency>
+            <groupId>com.github.penggle</groupId>
+            <artifactId>kaptcha</artifactId>
+            <version>2.3.2</version>
+        </dependency>
     </dependencies>
 
     <build>

@@ -4,6 +4,7 @@ import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
 import com.silverwing.auth.application.dto.LoginResponse;
+import com.silverwing.auth.application.service.CaptchaService;
 import com.silverwing.auth.config.RsaKeyConfig;
 import com.silverwing.auth.iam.domain.adapter.repository.PermissionRepository;
 import com.silverwing.auth.iam.domain.adapter.repository.RoleRepository;
@@ -36,6 +37,7 @@ public class AuthCommandService {
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final RsaKeyConfig rsaKeyConfig;
+    private final CaptchaService captchaService;
 
     /**
      * 用户登录
@@ -44,6 +46,12 @@ public class AuthCommandService {
     public LoginResponse login(LoginCommand command) {
         // 0. RSA 解密前端传入的加密密码，得到明文
         String rawPassword = decryptPassword(command.getPassword());
+
+        // 0.5 验证码校验（开启时）：校验失败直接拦截，避免无谓的用户查询与密码解密
+        if (!captchaService.validate(command.getUuid(), command.getCode())) {
+            log.warn("登录失败：验证码错误 username={}", command.getUsername());
+            throw BusinessException.i18n(ResultCode.UNAUTHORIZED, "auth.captcha.error");
+        }
 
         // 1. 查询用户
         AuthUserAggregate user = userRepository.findByUsername(command.getUsername());
@@ -79,6 +87,9 @@ public class AuthCommandService {
         session.set(SaSessionConstants.ROLE_LIST, roleCodes);
         session.set(SaSessionConstants.PERMISSION_LIST, permissions);
         session.set(SaSessionConstants.USERNAME, user.getUsername());
+        session.set(SaSessionConstants.LOGIN_IP, command.getIpaddr());
+        session.set(SaSessionConstants.LOGIN_BROWSER, command.getBrowser());
+        session.set(SaSessionConstants.LOGIN_OS, command.getOs());
 
         log.info("登录成功：username={}, userId={}, roles={}, 权限数={}",
                 user.getUsername(), user.getId(), roleCodes, permissions.size());

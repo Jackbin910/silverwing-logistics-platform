@@ -84,9 +84,9 @@ public class DictDataController {
     @PutMapping("/{id}")
     public Result<Void> update(@PathVariable("id") Long id, @Valid @RequestBody SaveDictDataCommand command) {
         dictDataCommandService.update(id, command);
-        return Result.success();
+        return Result.success()
+;
     }
-
     @Operation(summary = "删除字典数据")
     @Log(title = "字典数据", businessType = BusinessTypeEnum.DELETE)
     @SaCheckPermission("system:dict:remove")

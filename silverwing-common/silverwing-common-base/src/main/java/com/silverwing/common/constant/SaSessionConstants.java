@@ -24,6 +24,31 @@ public class SaSessionConstants {
      */
     public static final String USERNAME = "username";
 
+    /**
+     * Session 中存放登录 IP 的键（在线用户监控使用）
+     */
+    public static final String LOGIN_IP = "loginIp";
+
+    /**
+     * Session 中存放登录浏览器的键（在线用户监控使用）
+     */
+    public static final String LOGIN_BROWSER = "loginBrowser";
+
+    /**
+     * Session 中存放登录操作系统的键（在线用户监控使用）
+     */
+    public static final String LOGIN_OS = "loginOs";
+
+    /**
+     * 验证码在 Redis 中的键前缀（后接 uuid），默认过期 2 分钟
+     */
+    public static final String CAPTCHA_PREFIX = "silverwing:captcha:";
+
+    /**
+     * 验证码默认过期时间（秒）
+     */
+    public static final long CAPTCHA_EXPIRE_SECONDS = 120L;
+
     private SaSessionConstants() {
     }
 

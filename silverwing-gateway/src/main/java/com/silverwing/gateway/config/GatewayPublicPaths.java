@@ -28,6 +28,7 @@ public final class GatewayPublicPaths {
             "/auth/login",
             "/auth/logout",
             "/auth/public-key",
+            "/auth/captcha",
             // API 文档（精确列举，覆盖各服务）
             "/doc.html",
             "/webjars/**",

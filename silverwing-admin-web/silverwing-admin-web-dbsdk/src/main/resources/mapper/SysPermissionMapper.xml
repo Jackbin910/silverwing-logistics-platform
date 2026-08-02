@@ -23,7 +23,7 @@
     </resultMap>
 
     <sql id="Base_Column_List">
-        id, permission_code, permission_name, visible, sort, status, target, is_refresh, icon, url, parent_id, resource_type, create_time, update_time
+        id, permission_code, permission_name, visible, sort, status, is_refresh, icon, parent_id, resource_type, create_time, update_time, is_cache, is_frame, query, route_name, component, path
     </sql>
 
     <!-- 根据用户ID查询权限标识列表（用户 -> 角色 -> 权限） -->
