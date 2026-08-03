@@ -3,7 +3,7 @@ package com.silverwing.auth.iam.infrastructure.dao.po;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
-import com.silverwing.common.entity.BaseEntity;
+import com.silverwing.common.entity.BaseLogicEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -13,7 +13,7 @@ import lombok.EqualsAndHashCode;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @TableName(value = "sys_role")
-public class AuthRolePO extends BaseEntity {
+public class AuthRolePO extends BaseLogicEntity {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -24,6 +24,15 @@ public class AuthRolePO extends BaseEntity {
     /** 角色名称 */
     private String roleName;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
+
+    private Integer roleSort;
+
+    private Integer dataScope;
+
+    private Integer menuCheckStrictly;
+
+    private Integer deptCheckStrictly;
+
 }

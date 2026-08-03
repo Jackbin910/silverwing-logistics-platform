@@ -4,6 +4,7 @@ import com.google.code.kaptcha.Producer;
 import com.silverwing.auth.application.config.CaptchaProperties;
 import com.silverwing.auth.application.dto.CaptchaVO;
 import com.silverwing.auth.iam.domain.adapter.repository.CaptchaRepository;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import javax.imageio.ImageIO;
@@ -35,8 +36,8 @@ public class CaptchaService {
     public CaptchaService(
             CaptchaProperties captchaProperties,
             CaptchaRepository captchaRepository,
-            Producer captchaProducer,
-            Producer captchaProducerMath) {
+            @Qualifier("captchaProducer") Producer captchaProducer,
+            @Qualifier("captchaProducerMath") Producer captchaProducerMath) {
         this.captchaProperties = captchaProperties;
         this.captchaRepository = captchaRepository;
         this.captchaProducer = captchaProducer;

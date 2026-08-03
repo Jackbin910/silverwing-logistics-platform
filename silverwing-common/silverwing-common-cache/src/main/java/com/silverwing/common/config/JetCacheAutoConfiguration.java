@@ -20,7 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
  *   remote:
  *     default:
  *       type: redis
- *       keyConvertor: fastjson
+ *       keyConvertor: fastjson2
  *       valueEncoder: java
  *       valueDecoder: java
  *       expireAfterWriteInMillis: 300000   # 5 分钟

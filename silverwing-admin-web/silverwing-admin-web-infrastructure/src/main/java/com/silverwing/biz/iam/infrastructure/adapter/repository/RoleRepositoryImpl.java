@@ -154,7 +154,7 @@ public class RoleRepositoryImpl implements RoleRepository {
     @Cached(name = "role:allEnabled", expire = 10, timeUnit = TimeUnit.MINUTES)
     public List<SysRoleAggregate> findAllEnabled() {
         LambdaQueryWrapper<SysRolePO> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysRolePO::getStatus, 1);
+        wrapper.eq(SysRolePO::getStatus, 0);
         wrapper.orderByAsc(SysRolePO::getId);
         return sysRoleDao.selectList(wrapper).stream()
                 .map(RoleInfraConvertor.INSTANCE::toDomain)

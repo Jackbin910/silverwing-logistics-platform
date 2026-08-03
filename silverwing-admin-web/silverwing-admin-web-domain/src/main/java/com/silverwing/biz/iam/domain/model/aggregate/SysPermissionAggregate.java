@@ -33,7 +33,7 @@ public class SysPermissionAggregate extends DomainEntity {
     /** 排序 */
     private Integer sort;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
 
     /** 是否可见: 0-可见, 1-隐藏 */
@@ -68,15 +68,15 @@ public class SysPermissionAggregate extends DomainEntity {
     // ===== 领域行为 =====
 
     public boolean isActive() {
-        return status != null && status == 1;
+        return status != null && status == 0;
     }
 
     public void enable() {
-        this.status = 1;
+        this.status = 0;
     }
 
     public void disable() {
-        this.status = 0;
+        this.status = 1;
     }
 
     public boolean isMenu() {

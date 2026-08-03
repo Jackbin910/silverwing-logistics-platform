@@ -26,12 +26,12 @@ public class AuthUserAggregate extends DomainEntity {
     private String phone;
     private String email;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
 
     /** 用户是否处于启用状态 */
     public boolean isActive() {
-        return status != null && status == 1;
+        return status != null && status == 0;
     }
 
     /**

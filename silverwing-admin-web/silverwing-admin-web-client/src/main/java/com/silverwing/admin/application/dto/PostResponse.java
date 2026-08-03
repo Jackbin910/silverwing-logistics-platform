@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 @Data
 public class PostResponse implements Serializable {
 
-    /** 岗位ID */
-    private Long id;
+    /** 岗位ID（与前端 RuoYi 约定字段名 postId 保持一致） */
+    private Long postId;
 
     /** 岗位编码 */
     private String postCode;

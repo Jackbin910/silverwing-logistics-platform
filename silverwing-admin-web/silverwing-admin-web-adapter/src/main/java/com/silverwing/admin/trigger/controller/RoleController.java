@@ -74,9 +74,9 @@ public class RoleController {
 
     @SaCheckPermission("system:role:edit")
     @Operation(summary = "更新角色")
-    @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable Long id, @Valid @RequestBody SaveRoleCommand command) {
-        roleCommandService.update(id, command);
+    @PutMapping
+    public Result<Void> update(@Valid @RequestBody SaveRoleCommand command) {
+        roleCommandService.update(command);
         return Result.success("更新成功");
     }
 
@@ -136,21 +136,21 @@ public class RoleController {
 
     @SaCheckPermission("system:role:query")
     @Operation(summary = "查询角色已分配的用户列表")
-    @GetMapping("/authUser/allocatedList")
+    @GetMapping("/allocatedList")
     public Result<PageResult<UserResponse>> allocatedList(Long roleId, UserPageQuery query) {
         return Result.success(roleQueryService.allocatedList(roleId, query));
     }
 
     @SaCheckPermission("system:role:query")
     @Operation(summary = "查询角色未分配的用户列表")
-    @GetMapping("/authUser/unallocatedList")
+    @GetMapping("/unallocatedList")
     public Result<PageResult<UserResponse>> unallocatedList(Long roleId, UserPageQuery query) {
         return Result.success(roleQueryService.unallocatedList(roleId, query));
     }
 
     @SaCheckPermission("system:role:edit")
     @Operation(summary = "取消角色与用户的授权")
-    @PutMapping("/authUser/cancel")
+    @PutMapping("/cancel")
     public Result<Void> cancelAuthUser(@RequestBody RoleUserCommand command) {
         roleCommandService.cancelAuthUser(command.getRoleId(), command.getUserId());
         return Result.success("取消授权成功");
@@ -158,7 +158,7 @@ public class RoleController {
 
     @SaCheckPermission("system:role:edit")
     @Operation(summary = "批量取消角色与用户的授权")
-    @PutMapping("/authUser/cancelAll")
+    @PutMapping("/cancelAll")
     public Result<Void> cancelAuthAll(@RequestBody RoleUserCommand command) {
         roleCommandService.cancelAuthUsers(command.getRoleId(), command.getUserIds());
         return Result.success("取消授权成功");
@@ -166,7 +166,7 @@ public class RoleController {
 
     @SaCheckPermission("system:role:edit")
     @Operation(summary = "批量授予角色用户")
-    @PutMapping("/authUser/selectAll")
+    @PutMapping("/selectAll")
     public Result<Void> selectAuthAll(@RequestBody RoleUserCommand command) {
         roleCommandService.selectAuthUsers(command.getRoleId(), command.getUserIds());
         return Result.success("授权成功");

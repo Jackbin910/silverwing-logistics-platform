@@ -51,7 +51,7 @@ public interface UserConvertor {
     @AfterMapping
     default void afterUpdate(UpdateUserCommand command, @MappingTarget SysUserAggregate user) {
         if (command.getStatus() != null) {
-            if (command.getStatus() == 1) {
+            if (command.getStatus() == 0) {
                 user.enable();
             } else {
                 user.disable();

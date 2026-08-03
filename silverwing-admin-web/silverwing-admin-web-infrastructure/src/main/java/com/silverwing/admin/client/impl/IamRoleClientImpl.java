@@ -57,11 +57,8 @@ public class IamRoleClientImpl implements IamRoleClient {
             role.setRoleName(command.getRoleName());
         }
         if (command.getStatus() != null) {
-            if (command.getStatus() == 1) {
-                role.enable();
-            } else {
-                role.disable();
-            }
+            // 状态: 0-启用, 1-禁用，直接赋值，避免启用/禁用语义反转
+            role.setStatus(command.getStatus());
         }
         // 领域服务负责持久化
         roleDomainService.update(role);

@@ -9,6 +9,7 @@ import com.silverwing.auth.config.RsaKeyConfig;
 import com.silverwing.auth.iam.domain.adapter.repository.PermissionRepository;
 import com.silverwing.auth.iam.domain.adapter.repository.RoleRepository;
 import com.silverwing.auth.iam.domain.adapter.repository.UserRepository;
+import com.silverwing.auth.iam.domain.constant.IamConstants;
 import com.silverwing.auth.iam.domain.model.aggregate.AuthRoleAggregate;
 import com.silverwing.auth.iam.domain.model.aggregate.AuthUserAggregate;
 import com.silverwing.common.constant.SaSessionConstants;
@@ -79,7 +80,12 @@ public class AuthCommandService {
         List<String> roleCodes = roleRepository.findRolesByUserId(user.getId()).stream()
                 .map(AuthRoleAggregate::getRoleCode)
                 .collect(Collectors.toList());
-        List<String> permissions = permissionRepository.findPermissionCodesByUserId(user.getId());
+        // 超级管理员直接授予全部权限通配符，与 RuoYi 方案一致（无需逐条绑定权限）
+        boolean isAdmin = roleCodes.stream()
+                .anyMatch(code -> IamConstants.SUPER_ADMIN.equalsIgnoreCase(code));
+        List<String> permissions = isAdmin
+                ? List.of(IamConstants.ALL_PERMISSION)
+                : permissionRepository.findPermissionCodesByUserId(user.getId());
 
         // 5. Sa-Token 登录，写入 Session
         StpUtil.login(user.getId());
@@ -114,10 +120,15 @@ public class AuthCommandService {
      */
     public void refreshPermissionCache(Long userId) {
         try {
-            List<String> permissionCodes = permissionRepository.findPermissionCodesByUserId(userId);
             List<String> roleCodes = roleRepository.findRolesByUserId(userId).stream()
                     .map(AuthRoleAggregate::getRoleCode)
                     .collect(Collectors.toList());
+            // 超级管理员授予全部权限通配符，与普通登录逻辑保持一致
+            boolean isAdmin = roleCodes.stream()
+                    .anyMatch(code -> IamConstants.SUPER_ADMIN.equalsIgnoreCase(code));
+            List<String> permissionCodes = isAdmin
+                    ? List.of(IamConstants.ALL_PERMISSION)
+                    : permissionRepository.findPermissionCodesByUserId(userId);
 
             SaSession session = StpUtil.getSessionByLoginId(userId);
             session.set(SaSessionConstants.PERMISSION_LIST, permissionCodes);

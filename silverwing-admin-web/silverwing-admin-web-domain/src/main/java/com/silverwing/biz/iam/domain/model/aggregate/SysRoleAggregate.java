@@ -23,7 +23,7 @@ public class SysRoleAggregate extends DomainEntity {
     /** 角色名称 */
     private String roleName;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
 
     /** 数据范围（1：全部 2：自定数据权限 3：本部门 4：本部门及以下） */
@@ -41,14 +41,14 @@ public class SysRoleAggregate extends DomainEntity {
     // ===== 领域行为 =====
 
     public boolean isActive() {
-        return status != null && status == 1;
+        return status != null && status == 0;
     }
 
     public void enable() {
-        this.status = 1;
+        this.status = 0;
     }
 
     public void disable() {
-        this.status = 0;
+        this.status = 1;
     }
 }

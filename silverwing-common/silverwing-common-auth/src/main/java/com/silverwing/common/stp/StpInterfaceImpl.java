@@ -36,9 +36,16 @@ public class StpInterfaceImpl implements StpInterface {
         try {
             SaSession session = StpUtil.getSessionByLoginId(loginId);
             List<String> list = session.get(SaSessionConstants.PERMISSION_LIST, new ArrayList<>());
+            // 超级管理员（角色含 admin）直接授予全量权限通配符，与 RuoYi 方案一致：
+            // 即使 Session 中权限列表为空或未写入通配符，也能保证接口级校验放行
+            List<String> roles = session.get(SaSessionConstants.ROLE_LIST, new ArrayList<>());
+            if (roles.stream().anyMatch(SaSessionConstants.SUPER_ADMIN::equalsIgnoreCase)) {
+                List<String> all = new ArrayList<>();
+                all.add(SaSessionConstants.ALL_PERMISSION);
+                return all;
+            }
             return list;
         } catch (Exception e) {
-            // 读取失败时返回空列表，拒绝所有权限，保证安全
             log.warn("获取用户权限列表失败 loginId={}：{}", loginId, e.getMessage());
             return new ArrayList<>();
         }

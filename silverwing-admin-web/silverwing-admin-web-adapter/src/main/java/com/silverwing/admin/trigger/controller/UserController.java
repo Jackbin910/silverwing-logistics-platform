@@ -73,9 +73,9 @@ public class UserController {
     @Log(title = "用户管理-更新用户", businessType = BusinessTypeEnum.UPDATE)
     @SaCheckPermission("system:user:edit")
     @Operation(summary = "更新用户信息")
-    @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable("id") Long id, @RequestBody UpdateUserCommand command) {
-        userCommandService.update(id, command);
+    @PutMapping
+    public Result<Void> update(@RequestBody UpdateUserCommand command) {
+        userCommandService.update(command);
         return Result.success("更新成功");
     }
 

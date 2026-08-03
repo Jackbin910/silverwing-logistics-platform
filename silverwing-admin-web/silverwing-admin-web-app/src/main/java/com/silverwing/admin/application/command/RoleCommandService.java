@@ -3,6 +3,8 @@ package com.silverwing.admin.application.command;
 import com.silverwing.admin.application.dto.RoleResponse;
 import com.silverwing.admin.client.IamRoleClient;
 import com.silverwing.admin.client.IamUserClient;
+import com.silverwing.common.domain.ResultCode;
+import com.silverwing.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,8 +27,11 @@ public class RoleCommandService {
         return iamRoleClient.create(command);
     }
 
-    public void update(Long id, SaveRoleCommand command) {
-        iamRoleClient.update(id, command);
+    public void update(SaveRoleCommand command) {
+        if (command.getId() == null) {
+            throw BusinessException.i18n(ResultCode.BUSINESS_ERROR, "admin.role.id.required");
+        }
+        iamRoleClient.update(command.getId(), command);
     }
 
     public void delete(Long id) {

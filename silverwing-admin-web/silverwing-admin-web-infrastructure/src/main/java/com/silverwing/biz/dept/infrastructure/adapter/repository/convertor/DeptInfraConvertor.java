@@ -3,6 +3,7 @@ package com.silverwing.biz.dept.infrastructure.adapter.repository.convertor;
 import com.silverwing.biz.dept.domain.model.aggregate.SysDeptAggregate;
 import com.silverwing.biz.dept.infrastructure.dao.po.SysDeptPO;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.factory.Mappers;
 
@@ -14,10 +15,12 @@ public interface DeptInfraConvertor {
 
     DeptInfraConvertor INSTANCE = Mappers.getMapper(DeptInfraConvertor.class);
 
-    /** PO 转换为聚合根 */
+    /** PO 转换为聚合根：数据库主键列 id 映射到领域模型的 deptId */
+    @Mapping(source = "id", target = "deptId")
     SysDeptAggregate toDomain(SysDeptPO po);
 
-    /** 聚合根转换为 PO */
+    /** 聚合根转换为 PO：领域模型的 deptId 映射到数据库主键列 id */
+    @Mapping(source = "deptId", target = "id")
     SysDeptPO toPo(SysDeptAggregate aggregate);
 
     /** 将聚合根字段合并到已有 PO（忽略主键） */

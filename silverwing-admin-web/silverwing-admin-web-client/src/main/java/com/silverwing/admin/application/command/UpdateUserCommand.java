@@ -8,6 +8,9 @@ import lombok.Data;
 @Data
 public class UpdateUserCommand {
 
+    /** 用户ID（前端更新时随请求体传入，对应 RuoYi PUT /admin/user 约定） */
+    private Long id;
+
     private String avatar;
     private String phone;
     private String email;

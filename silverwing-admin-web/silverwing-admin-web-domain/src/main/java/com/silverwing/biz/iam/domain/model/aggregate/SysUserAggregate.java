@@ -33,7 +33,7 @@ public class SysUserAggregate extends DomainEntity {
     /** 昵称 */
     private String nickname;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
 
     /** 部门ID */
@@ -55,22 +55,22 @@ public class SysUserAggregate extends DomainEntity {
 
     /** 用户是否处于启用状态 */
     public boolean isActive() {
-        return status != null && status == 1;
+        return status != null && status == 0;
     }
 
     /** 启用用户 */
     public void enable() {
-        this.status = 1;
+        this.status = 0;
     }
 
     /** 禁用用户 */
     public void disable() {
-        this.status = 0;
+        this.status = 1;
     }
 
     /** 切换启用/禁用状态 */
     public void toggleStatus() {
-        this.status = isActive() ? 0 : 1;
+        this.status = isActive() ? 1 : 0;
     }
 
     /**

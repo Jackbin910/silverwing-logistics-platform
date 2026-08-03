@@ -4,6 +4,8 @@ import com.silverwing.admin.application.command.UserImportCommand;
 import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.client.IamPostClient;
 import com.silverwing.admin.client.IamUserClient;
+import com.silverwing.common.domain.ResultCode;
+import com.silverwing.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,8 +30,11 @@ public class UserCommandService {
         return iamUserClient.create(command);
     }
 
-    public void update(Long id, UpdateUserCommand command) {
-        iamUserClient.update(id, command);
+    public void update(UpdateUserCommand command) {
+        if (command.getId() == null) {
+            throw BusinessException.i18n(ResultCode.BAD_REQUEST, "admin.user.id.required");
+        }
+        iamUserClient.update(command.getId(), command);
     }
 
     public void delete(Long id) {

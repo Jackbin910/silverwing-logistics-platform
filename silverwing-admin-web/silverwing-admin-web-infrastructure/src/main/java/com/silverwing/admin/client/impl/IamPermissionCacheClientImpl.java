@@ -5,6 +5,7 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.silverwing.admin.client.IamPermissionCacheClient;
 import com.silverwing.biz.iam.domain.adapter.repository.PermissionRepository;
 import com.silverwing.biz.iam.domain.adapter.repository.RoleRepository;
+import com.silverwing.biz.iam.domain.constant.IamConstants;
 import com.silverwing.biz.iam.domain.model.aggregate.SysRoleAggregate;
 import com.silverwing.common.constant.SaSessionConstants;
 import lombok.RequiredArgsConstructor;
@@ -29,11 +30,16 @@ public class IamPermissionCacheClientImpl implements IamPermissionCacheClient {
     @Override
     public void refreshUserPermissionCache(Long userId) {
         try {
-            List<String> permissionCodes = permissionRepository.findPermissionCodesByUserId(userId);
             List<SysRoleAggregate> roles = roleRepository.findRolesByUserId(userId);
             List<String> roleCodes = roles.stream()
                     .map(SysRoleAggregate::getRoleCode)
                     .collect(Collectors.toList());
+            // 超级管理员直接授予全部权限通配符，与 RuoYi 方案一致
+            boolean isAdmin = roleCodes.stream()
+                    .anyMatch(code -> IamConstants.SUPER_ADMIN.equalsIgnoreCase(code));
+            List<String> permissionCodes = isAdmin
+                    ? List.of(IamConstants.ALL_PERMISSION)
+                    : permissionRepository.findPermissionCodesByUserId(userId);
 
             SaSession session = StpUtil.getSessionByLoginId(userId);
             session.set(SaSessionConstants.PERMISSION_LIST, permissionCodes);

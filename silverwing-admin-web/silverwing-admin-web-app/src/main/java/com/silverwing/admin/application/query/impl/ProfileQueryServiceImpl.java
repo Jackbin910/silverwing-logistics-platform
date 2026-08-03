@@ -49,7 +49,7 @@ public class ProfileQueryServiceImpl implements ProfileQueryService {
         List<Long> postIds = iamPostClient.getUserPostIds(userId);
         List<PostResponse> allPosts = iamPostClient.optionSelect();
         Map<Long, String> postNameMap = allPosts.stream()
-                .collect(Collectors.toMap(PostResponse::getId, PostResponse::getPostName, (a, b) -> a));
+                .collect(Collectors.toMap(PostResponse::getPostId, PostResponse::getPostName, (a, b) -> a));
         String postGroup = postIds.stream()
                 .map(postNameMap::get)
                 .filter(Objects::nonNull)

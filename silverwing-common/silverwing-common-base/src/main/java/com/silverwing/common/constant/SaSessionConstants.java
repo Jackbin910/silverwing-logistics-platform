@@ -20,6 +20,17 @@ public class SaSessionConstants {
     public static final String PERMISSION_LIST = "permissionList";
 
     /**
+     * 超级管理员全量权限标识（通配符，RuoYi 方案）
+     * 用户权限列表包含该标识时，视为拥有全部权限
+     */
+    public static final String ALL_PERMISSION = "*:*:*";
+
+    /**
+     * 超级管理员角色标识（RuoYi 方案，忽略大小写匹配）
+     */
+    public static final String SUPER_ADMIN = "admin";
+
+    /**
      * Session 中存放登录用户名的键（供审计字段 createBy/updateBy、操作人等使用）
      */
     public static final String USERNAME = "username";

@@ -65,14 +65,10 @@ public class CaptchaConfig {
         properties.setProperty("kaptcha.image.height", "45");
         properties.setProperty("kaptcha.textproducer.font.size", "35");
         properties.setProperty("kaptcha.textproducer.char.space", "10");
-        // 算术验证码固定长度 5（形如 "1+2="）
-        properties.setProperty("kaptcha.textproducer.char.length", "5");
         properties.setProperty("kaptcha.textproducer.font.names", "Arial,Courier");
-        // 算术验证码文本生成器
+        // 算术验证码文本生成器：生成 "a+b=?@c" 格式
         properties.setProperty("kaptcha.textproducer.impl",
-                "com.google.code.kaptcha.text.impl.DefaultTextCreator");
-        // 算术验证码算式字符集
-        properties.setProperty("kaptcha.textproducer.char.string", "0123456789");
+                "com.silverwing.auth.infrastructure.config.MathCaptchaTextCreator");
         properties.setProperty("kaptcha.noise.color", "blue");
         defaultKaptcha.setConfig(new Config(properties));
         return defaultKaptcha;

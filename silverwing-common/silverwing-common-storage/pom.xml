@@ -42,6 +42,11 @@
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>apache-client</artifactId>
         </dependency>
+        <!-- 认证凭证（AwsBasicCredentials / StaticCredentialsProvider 所在模块） -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>auth</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.belerweb</groupId>

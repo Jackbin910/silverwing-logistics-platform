@@ -40,5 +40,5 @@ public class SysDeptPO extends BaseLogicEntity {
     private String email;
 
     /** 部门状态（0-正常 1-停用） */
-    private String status;
+    private Integer status;
 }

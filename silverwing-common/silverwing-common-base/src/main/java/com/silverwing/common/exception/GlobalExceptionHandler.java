@@ -7,6 +7,7 @@ import com.silverwing.common.domain.Result;
 import com.silverwing.common.domain.ResultCode;
 import com.silverwing.common.i18n.MessageUtils;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -192,7 +193,7 @@ public class GlobalExceptionHandler {
      * </p>
      */
     @ExceptionHandler(Exception.class)
-    public Result<?> handleException(Exception e, HttpServletResponse response) {
+    public Result<?> handleException(Exception e, HttpServletRequest request, HttpServletResponse response) {
         if (response.getContentType() != null && response.getContentType().contains("text/event-stream")) {
             // 客户端主动断开连接导致的 IO 异常，无需作为错误记录
             if (e instanceof IOException || e.getCause() instanceof IOException) {
@@ -209,7 +210,9 @@ public class GlobalExceptionHandler {
             return Result.fail(ResultCode.INTERNAL_SERVER_ERROR);
         }
 
-        log.error("系统异常：{}", rootCause.getMessage(), rootCause);
+        // 打印触发异常的真实请求路径，便于定位静态资源/路由不匹配问题
+        String requestUri = request != null ? request.getRequestURI() : "unknown";
+        log.error("系统异常：请求路径[{}] 原因：{}", requestUri, rootCause.getMessage(), rootCause);
         return Result.fail(ResultCode.INTERNAL_SERVER_ERROR);
     }
 

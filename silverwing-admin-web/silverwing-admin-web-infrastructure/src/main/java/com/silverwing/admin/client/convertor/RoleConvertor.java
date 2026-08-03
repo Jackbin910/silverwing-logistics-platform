@@ -29,7 +29,7 @@ public interface RoleConvertor {
     @AfterMapping
     default void after(SaveRoleCommand command, @MappingTarget SysRoleAggregate role) {
         if (command.getStatus() != null) {
-            if (command.getStatus() == 1) {
+            if (command.getStatus() == 0) {
                 role.enable();
             } else {
                 role.disable();

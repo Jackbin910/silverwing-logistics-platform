@@ -9,6 +9,9 @@ import lombok.Data;
 @Data
 public class SaveRoleCommand {
 
+    /** 角色ID（更新时由请求体传入，对应 RuoYi PUT /admin/role 约定） */
+    private Long id;
+
     @NotBlank(message = "{validation.role.rolecode.notblank}")
     private String roleCode;
 

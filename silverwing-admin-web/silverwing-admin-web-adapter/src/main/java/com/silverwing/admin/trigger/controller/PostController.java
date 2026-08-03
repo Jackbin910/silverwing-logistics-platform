@@ -105,10 +105,10 @@ public class PostController {
     @PutMapping
     @SaCheckPermission("system:post:edit")
     public Result<Void> edit(@Valid @RequestBody SavePostCommand command) {
-        if (command.getId() == null) {
+        if (command.getPostId() == null) {
             return Result.fail(com.silverwing.common.domain.ResultCode.BUSINESS_ERROR, "admin.post.id.required");
         }
-        postCommandService.update(command.getId(), command);
+        postCommandService.update(command.getPostId(), command);
         return Result.success();
     }
 
@@ -126,7 +126,7 @@ public class PostController {
 
     private PostExportVO toExportVo(PostResponse post) {
         PostExportVO vo = new PostExportVO();
-        vo.setId(post.getId());
+        vo.setId(post.getPostId());
         vo.setPostCode(post.getPostCode());
         vo.setPostName(post.getPostName());
         vo.setPostSort(post.getPostSort());

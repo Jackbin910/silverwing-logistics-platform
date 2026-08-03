@@ -26,6 +26,6 @@ public class AuthUserPO extends BaseEntity {
     private String phone;
     private String email;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
 }

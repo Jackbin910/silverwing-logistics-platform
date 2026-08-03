@@ -22,7 +22,7 @@ public final class PostConvertor {
             return null;
         }
         PostResponse response = new PostResponse();
-        response.setId(post.getId());
+        response.setPostId(post.getId());
         response.setPostCode(post.getPostCode());
         response.setPostName(post.getPostName());
         response.setPostSort(post.getPostSort());

@@ -30,9 +30,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostRepositoryImpl implements PostRepository {
 
-    private SysPostDao sysPostDao;
+    private final SysPostDao sysPostDao;
 
-    private SysUserPostDao sysUserPostDao;
+    private final SysUserPostDao sysUserPostDao;
 
     private LambdaQueryWrapper<SysPostPO> buildWrapper(PostQuery query) {
         LambdaQueryWrapper<SysPostPO> wrapper = Wrappers.lambdaQuery();

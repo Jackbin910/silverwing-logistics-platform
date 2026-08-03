@@ -352,6 +352,10 @@
                                 <artifactId>lombok</artifactId>
                             </path>
                         </annotationProcessorPaths>
+                        <!-- 开启 -parameters，保留方法参数名，供 Spring MVC / Swagger 解析参数名（对齐 RuoYi 方案） -->
+                        <compilerArgs>
+                            <arg>-parameters</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
             </plugins>
