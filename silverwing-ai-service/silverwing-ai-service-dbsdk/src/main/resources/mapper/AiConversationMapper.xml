@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silverwing.biz.ai.infrastructure.mapper.AiConversationMapper">
+
+    <resultMap id="AiConversationResultMap" type="com.silverwing.biz.ai.infrastructure.dao.po.AiConversationPO">
+        <id property="id" column="id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="sessionType" column="session_type"/>
+        <result property="title" column="title"/>
+        <result property="lastMessage" column="last_message"/>
+        <result property="messageCount" column="message_count"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, conversation_id, user_id, session_type, title, last_message, message_count,
+        update_time, deleted, create_time
+    </sql>
+
+    <!-- 会话列表：按最后更新时间倒序 -->
+    <select id="selectByUserId" resultMap="AiConversationResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ai_conversation
+        WHERE user_id = #{userId}
+          AND deleted = 0
+        ORDER BY update_time DESC, create_time DESC
+    </select>
+
+    <!-- 逻辑删除会话：父表标记 deleted=1 -->
+    <update id="logicDeleteByConversationId">
+        UPDATE ai_conversation
+        SET deleted = 1, update_time = NOW()
+        WHERE conversation_id = #{conversationId}
+          AND deleted = 0
+    </update>
+
+</mapper>

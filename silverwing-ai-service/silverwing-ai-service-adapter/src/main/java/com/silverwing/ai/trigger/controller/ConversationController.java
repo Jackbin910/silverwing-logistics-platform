@@ -6,12 +6,18 @@ import com.silverwing.common.domain.Result;
 import com.silverwing.common.enums.BusinessTypeEnum;
 import com.silverwing.ai.application.dto.ConversationResponse;
 import com.silverwing.ai.application.dto.ChatRequest;
+import com.silverwing.ai.application.dto.ConversationMetaResponse;
+import com.silverwing.ai.application.dto.ConversationMessageResponse;
+import com.silverwing.ai.application.dto.RenameConversationCommand;
+import com.silverwing.ai.application.history.ConversationHistoryQueryService;
+import com.silverwing.ai.application.history.ConversationHistoryCommandService;
 import com.silverwing.ai.application.impl.ConversationOrchestrator;
 import com.silverwing.ai.application.tool.IntentScopedAssistant;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
@@ -31,6 +37,8 @@ public class ConversationController {
 
     private final ConversationOrchestrator orchestrator;
     private final IntentScopedAssistant intentScopedAssistant;
+    private final ConversationHistoryQueryService historyQueryService;
+    private final ConversationHistoryCommandService historyCommandService;
 
     /**
      * 智能对话（支持多轮对话上下文）
@@ -142,6 +150,48 @@ public class ConversationController {
     @DeleteMapping("/memory/{sessionId}")
     public Result<Void> clearMemory(@PathVariable String sessionId) {
         orchestrator.clearMemory(sessionId);
+        return Result.success();
+    }
+
+    /**
+     * 查询当前登录用户的会话列表（按最后更新时间倒序）
+     */
+    @Operation(summary = "会话列表", description = "查询当前用户的历史会话列表")
+    @GetMapping("/conversations")
+    public Result<List<ConversationMetaResponse>> listConversations() {
+        return Result.success(historyQueryService.listConversations());
+    }
+
+    /**
+     * 查询指定会话的消息明细
+     */
+    @Operation(summary = "会话消息明细", description = "查询指定会话下的全部问答记录")
+    @GetMapping("/conversations/{conversationId}")
+    public Result<List<ConversationMessageResponse>> getMessages(
+            @PathVariable String conversationId) {
+        return Result.success(historyQueryService.getMessages(conversationId));
+    }
+
+    /**
+     * 重命名会话
+     */
+    @Log(title = "智能对话-重命名会话", businessType = BusinessTypeEnum.UPDATE)
+    @Operation(summary = "重命名会话", description = "修改会话标题")
+    @PostMapping("/conversations/{conversationId}/rename")
+    public Result<Void> rename(@PathVariable String conversationId,
+                               @Valid @RequestBody RenameConversationCommand command) {
+        historyCommandService.rename(conversationId, command.getTitle());
+        return Result.success();
+    }
+
+    /**
+     * 删除会话（逻辑删除并清理对话记忆）
+     */
+    @Log(title = "智能对话-删除会话", businessType = BusinessTypeEnum.DELETE)
+    @Operation(summary = "删除会话", description = "删除指定会话及其对话记忆")
+    @DeleteMapping("/conversations/{conversationId}")
+    public Result<Void> deleteConversation(@PathVariable String conversationId) {
+        historyCommandService.delete(conversationId);
         return Result.success();
     }
 }

@@ -548,29 +548,45 @@ CREATE TABLE ai_knowledge_document (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='知识库文档表';
 
 -- ============================================================
--- AI对话记录表
+-- AI对话记录表（父子表：父表=会话维度，子表=消息维度）
 -- ============================================================
 DROP TABLE IF EXISTS ai_conversation;
+DROP TABLE IF EXISTS ai_conversation_message;
 
+-- 父表：会话维度，一行 = 一个会话
 CREATE TABLE ai_conversation (
-                                 id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
-                                 conversation_id VARCHAR(64) NOT NULL COMMENT '对话会话ID',
-                                 user_id BIGINT COMMENT '用户ID',
-                                 session_type VARCHAR(50) COMMENT '会话类型（order_query、device_query、knowledge_qa）',
-                                 user_message TEXT NOT NULL COMMENT '用户消息',
-                                 ai_message TEXT COMMENT 'AI回复消息',
-                                 intent VARCHAR(100) COMMENT '识别的意图',
-                                 entities JSON COMMENT '提取的实体（JSON格式）',
-                                 context JSON COMMENT '对话上下文',
-                                 token_count INT DEFAULT 0 COMMENT '使用的token数量',
-                                 response_time INT DEFAULT 0 COMMENT '响应时间（毫秒）',
-                                 create_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                                 INDEX idx_conversation_id (conversation_id),
-                                 INDEX idx_user_id (user_id),
-                                 INDEX idx_session_type (session_type),
-                                 INDEX idx_intent (intent),
-                                 INDEX idx_create_time (create_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI对话记录表';
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    conversation_id VARCHAR(64) NOT NULL COMMENT '对话会话ID',
+    user_id         BIGINT COMMENT '用户ID',
+    session_type    VARCHAR(50) COMMENT '会话类型（order_query、device_query、knowledge_qa）',
+    title           VARCHAR(255) DEFAULT '' COMMENT '会话标题（取首条用户消息截断）',
+    last_message    VARCHAR(500) COMMENT '最后一条消息预览',
+    message_count   INT DEFAULT 0 COMMENT '消息条数',
+    update_time     DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
+    deleted         TINYINT DEFAULT 0 COMMENT '逻辑删除：0未删 1已删',
+    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    UNIQUE KEY uk_conversation_id (conversation_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_deleted (deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI会话主表';
+
+-- 子表：消息维度，一行 = 一条消息（user 或 assistant）
+CREATE TABLE ai_conversation_message (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键ID',
+    conversation_id VARCHAR(64) NOT NULL COMMENT '对话会话ID（关联父表）',
+    user_id         BIGINT COMMENT '用户ID（冗余，便于越权校验）',
+    role            VARCHAR(20) NOT NULL COMMENT '消息角色：user / assistant',
+    content         TEXT NOT NULL COMMENT '消息内容',
+    intent          VARCHAR(100) COMMENT '识别的意图',
+    entities        JSON COMMENT '提取的实体（JSON格式）',
+    token_count     INT DEFAULT 0 COMMENT '使用的token数量',
+    response_time   INT DEFAULT 0 COMMENT '响应时间（毫秒）',
+    deleted         TINYINT DEFAULT 0 COMMENT '逻辑删除：0未删 1已删',
+    create_time     DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    INDEX idx_conversation_id (conversation_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_deleted (deleted)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI会话消息表';
 
 -- ============================================================
 -- 意图配置表

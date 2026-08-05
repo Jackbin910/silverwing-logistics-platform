@@ -24,7 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 import com.silverwing.ai.domain.model.NlpParseResult;
 import com.silverwing.ai.domain.model.BizQueryResult;
+import com.silverwing.ai.domain.model.ConversationRecord;
 import com.silverwing.ai.domain.repository.ConversationRepository;
+import com.silverwing.ai.domain.repository.ConversationHistoryRepository;
+import cn.dev33.satoken.stp.StpUtil;
 
 /**
  * 对话编排服务
@@ -50,6 +53,7 @@ public class ConversationOrchestrator {
     private final IntentRouter intentRouter;
     private final LlmPort llmPort;
     private final ConversationRepository conversationRepository;
+    private final ConversationHistoryRepository historyRepository;
 
     private final StreamingChatModel streamingChatModel;
 
@@ -80,13 +84,15 @@ public class ConversationOrchestrator {
                                     ConversationRepository conversationRepository,
                                     LlmPort llmPort,
                                     StreamingChatModel streamingChatModel,
-                                    KnowledgeQaService knowledgeQaService) {
+                                    KnowledgeQaService knowledgeQaService,
+                                    ConversationHistoryRepository historyRepository) {
         this.intentService = intentService;
         this.intentRouter = intentRouter;
         this.conversationRepository = conversationRepository;
         this.llmPort = llmPort;
         this.streamingChatModel = streamingChatModel;
         this.knowledgeQaService = knowledgeQaService;
+        this.historyRepository = historyRepository;
     }
 
     /**
@@ -108,6 +114,8 @@ public class ConversationOrchestrator {
      */
     public ConversationResponse chat(String userMessage, String sessionId) {
         try {
+            // 入口（请求线程）获取登录用户ID，向下透传，避免异步落库时 Sa-Token 上下文不可用
+            Long userId = getLoginUserId();
             // 1. 获取历史上下文
             List<ChatMessage> history = conversationRepository.getHistory(sessionId);
             log.debug("对话历史: sessionId={}, 轮数={}", sessionId, history.size() / 2);
@@ -119,7 +127,7 @@ public class ConversationOrchestrator {
             // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
             if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
                 String answer = handleKnowledgeQa(userMessage);
-                saveMemory(sessionId, userMessage, answer);
+                saveMemory(sessionId, userMessage, answer, parseResult, userId);
                 return ConversationResponse.builder()
                         .sessionId(sessionId)
                         .intent(IntentEnum.KNOWLEDGE_QA.name())
@@ -133,7 +141,7 @@ public class ConversationOrchestrator {
             if (parseResult.getIntent() == IntentEnum.OTHER) {
                 String ragAnswer = knowledgeQaService.answer(userMessage);
                 log.info("未知意图兜底知识库回答: {}", ragAnswer);
-                saveMemory(sessionId, userMessage, ragAnswer);
+                saveMemory(sessionId, userMessage, ragAnswer, parseResult, userId);
                 return ConversationResponse.builder()
                         .sessionId(sessionId)
                         .intent(IntentEnum.OTHER.name())
@@ -148,7 +156,7 @@ public class ConversationOrchestrator {
                     && databaseRagService != null) {
                 String nl2sqlAnswer = databaseRagService.query(userMessage);
                 log.info("NL2SQL回答: {}", nl2sqlAnswer);
-                saveMemory(sessionId, userMessage, nl2sqlAnswer);
+                saveMemory(sessionId, userMessage, nl2sqlAnswer, parseResult, userId);
                 return ConversationResponse.builder()
                         .sessionId(sessionId)
                         .intent(parseResult.getIntent().name())
@@ -172,7 +180,7 @@ public class ConversationOrchestrator {
                     ANSWER_FORMATTER_SYSTEM_PROMPT, contextHint + userMessage + "\n" + queryResultJson);
             log.info("自然语言回答: {}", naturalAnswer);
 
-            saveMemory(sessionId, userMessage, naturalAnswer);
+            saveMemory(sessionId, userMessage, naturalAnswer, parseResult, userId);
 
             return ConversationResponse.builder()
                     .sessionId(sessionId)
@@ -206,6 +214,8 @@ public class ConversationOrchestrator {
      */
     public Flux<String> chatStream(String userMessage, String sessionId) {
         Sinks.Many<String> sink = Sinks.many().unicast().onBackpressureBuffer();
+        // 入口（请求线程）获取登录用户ID，向下透传，避免流式异步线程 Sa-Token 上下文不可用
+        Long userId = getLoginUserId();
 
         try {
             // 1. 获取历史上下文
@@ -220,13 +230,13 @@ public class ConversationOrchestrator {
             //    命中知识库则流式返回答案；未命中由 RAG 服务返回"抱歉"兜底文案
             if (parseResult.getIntent() == IntentEnum.OTHER) {
                 // 流式输出，并在流结束时落记忆（主路径为流式）
-                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
+                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage, parseResult, userId);
             }
 
             // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
             if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
                 // 流式输出RAG回答，并在流结束时落记忆
-                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage);
+                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage, parseResult, userId);
             }
 
             // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
@@ -235,7 +245,7 @@ public class ConversationOrchestrator {
                     && databaseRagService != null) {
                 String nl2sqlAnswer = databaseRagService.query(userMessage);
                 log.info("NL2SQL回答: {}", nl2sqlAnswer);
-                saveMemory(sessionId, userMessage, nl2sqlAnswer);
+                saveMemory(sessionId, userMessage, nl2sqlAnswer, parseResult, userId);
                 emitFullResponse(sink, nl2sqlAnswer);
                 return sink.asFlux();
             }
@@ -267,7 +277,7 @@ public class ConversationOrchestrator {
 
                 @Override
                 public void onCompleteResponse(ChatResponse completeResponse) {
-                    saveMemory(sessionId, userMessage, fullAnswer.toString());
+                    saveMemory(sessionId, userMessage, fullAnswer.toString(), parseResult, userId);
                     sink.tryEmitComplete();
                 }
 
@@ -306,13 +316,15 @@ public class ConversationOrchestrator {
      * @param source      原始流式 token 源
      * @param sessionId   会话ID，null 不保存
      * @param userMessage 用户消息
+     * @param parseResult NLP解析结果
      * @return 透传的流式 token 源（仅叠加记忆副作用）
      */
-    private Flux<String> withMemory(Flux<String> source, String sessionId, String userMessage) {
+    private Flux<String> withMemory(Flux<String> source, String sessionId, String userMessage,
+                                    NlpParseResult parseResult, Long userId) {
         StringBuilder fullAnswer = new StringBuilder();
         return source
                 .doOnNext(fullAnswer::append)
-                .doOnComplete(() -> saveMemory(sessionId, userMessage, fullAnswer.toString()))
+                .doOnComplete(() -> saveMemory(sessionId, userMessage, fullAnswer.toString(), parseResult, userId))
                 .doOnError(e -> log.error("流式回答生成异常", e));
     }
 
@@ -335,18 +347,58 @@ public class ConversationOrchestrator {
     }
 
     /**
-     * 保存对话记忆（用户消息 + AI回答）
+     * 保存对话记忆（用户消息 + AI回答）并落库历史记录
      *
      * @param sessionId   会话ID，null 则不保存
      * @param userMessage 用户消息
      * @param aiAnswer    AI回答
+     * @param parseResult NLP解析结果（提供意图与实体）
      */
-    private void saveMemory(String sessionId, String userMessage, String aiAnswer) {
-        if (sessionId != null && !sessionId.isBlank()) {
-            List<ChatMessage> messages = new ArrayList<>();
-            messages.add(UserMessage.from(userMessage));
-            messages.add(AiMessage.from(aiAnswer));
-            conversationRepository.appendMessages(sessionId, messages);
+    private void saveMemory(String sessionId, String userMessage, String aiAnswer,
+                            NlpParseResult parseResult, Long userId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            return;
+        }
+        // 1. 写入 Redis 多轮对话记忆，供模型上下文使用
+        List<ChatMessage> messages = new ArrayList<>();
+        messages.add(UserMessage.from(userMessage));
+        messages.add(AiMessage.from(aiAnswer));
+        conversationRepository.appendMessages(sessionId, messages);
+        // 2. 落库 MySQL 持久化历史记录，供用户侧查看历史会话
+        persistRecord(sessionId, userMessage, aiAnswer, parseResult, userId);
+    }
+
+    /**
+     * 将一轮对话持久化到 MySQL（父子表）
+     * <p>父表维护会话汇总信息，子表写入 user + assistant 两条消息，userId 取自 Sa-Token 登录态。</p>
+     *
+     * @param sessionId   会话ID（即 conversation_id）
+     * @param userMessage 用户消息
+     * @param aiAnswer    AI回答
+     * @param parseResult NLP解析结果
+     */
+    private void persistRecord(String sessionId, String userMessage, String aiAnswer,
+                               NlpParseResult parseResult, Long userId) {
+        try {
+            // userId 由请求线程入口透传，避免流式异步线程中 Sa-Token 上下文不可用
+            historyRepository.saveRound(sessionId, userId, userMessage, aiAnswer, parseResult, 0, 0);
+        } catch (Exception e) {
+            // 历史落库失败不应影响主对话链路
+            log.error("对话历史落库失败，conversationId={}：{}", sessionId, e.getMessage());
+        }
+    }
+
+    /**
+     * 在请求线程入口安全获取当前登录用户ID
+     * <p>Sa-Token 上下文基于 ThreadLocal，仅请求线程可用；未登录返回 null（不落库 userId）。</p>
+     *
+     * @return 用户ID，未登录为 null
+     */
+    private Long getLoginUserId() {
+        try {
+            return StpUtil.getLoginIdAsLong();
+        } catch (Exception e) {
+            return null;
         }
     }
 
