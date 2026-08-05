@@ -1,37 +1,29 @@
 package com.silverwing.admin.application.command;
 
-import com.silverwing.admin.client.LogininforClient;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-
 /**
- * 登录日志命令应用服务。
+ * 系统访问记录命令服务端口。
+ * <p>定义访问记录的删除与清空能力，由基础设施层实现。</p>
+ *
+ * @author silverwing
  */
-@Service
-@RequiredArgsConstructor
-public class LogininforCommandService {
+public interface LogininforCommandService {
 
-    private final LogininforClient logininforClient;
+    /**
+     * 批量删除访问记录。
+     *
+     * @param infoIds 访问ID数组
+     */
+    void removeByIds(Long[] infoIds);
 
-    /** 新增登录日志（内部调用，记录登录行为） */
-    public void add(SaveLogininforCommand command) {
-        logininforClient.add(command);
-    }
+    /**
+     * 清空全部访问记录。
+     */
+    void clean();
 
-    /** 批量删除登录日志 */
-    public void removeByIds(List<Long> infoIds) {
-        logininforClient.removeByIds(infoIds);
-    }
-
-    /** 清空登录日志 */
-    public void clean() {
-        logininforClient.clean();
-    }
-
-    /** 解锁用户账户（清除密码错误次数缓存） */
-    public void unlock(String userName) {
-        logininforClient.unlock(userName);
-    }
+    /**
+     * 解锁账号：清除指定用户的密码错误计数缓存，使其可立即重新登录。
+     *
+     * @param userName 用户账号
+     */
+    void unlock(String userName);
 }

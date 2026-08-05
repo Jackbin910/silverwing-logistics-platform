@@ -34,7 +34,11 @@ public class UserCommandService {
         if (command.getId() == null) {
             throw BusinessException.i18n(ResultCode.BAD_REQUEST, "admin.user.id.required");
         }
+        // 更新用户基本信息（含归属部门）
         iamUserClient.update(command.getId(), command);
+        // 与 RuoYi 修改用户行为一致：全量覆盖用户-角色、用户-岗位关系
+        iamUserClient.assignRoles(command.getId(), command.getRoleIds());
+        iamPostClient.assignPosts(command.getId(), command.getPostIds());
     }
 
     public void delete(Long id) {

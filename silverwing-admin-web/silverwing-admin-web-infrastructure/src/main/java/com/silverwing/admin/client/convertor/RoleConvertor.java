@@ -42,5 +42,6 @@ public interface RoleConvertor {
     /**
      * 将角色聚合根转换为对外响应DTO（屏蔽领域聚合根，仅暴露展示字段）
      */
+    @Mapping(source = "id", target = "roleId")
     RoleResponse toResponse(SysRoleAggregate role);
 }

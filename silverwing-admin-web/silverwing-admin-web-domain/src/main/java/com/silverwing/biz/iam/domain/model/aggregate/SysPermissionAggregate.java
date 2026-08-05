@@ -24,7 +24,7 @@ public class SysPermissionAggregate extends DomainEntity {
     /** 权限名称 */
     private String permissionName;
 
-    /** 资源类型: menu-菜单, button-按钮, api-接口 */
+    /** 资源类型: M-目录, C-菜单, F-按钮（与前端 RuoYi 风格枚举对齐） */
     private String resourceType;
 
     /** 父级ID，0为顶级 */
@@ -80,15 +80,12 @@ public class SysPermissionAggregate extends DomainEntity {
     }
 
     public boolean isMenu() {
-        return "menu".equals(resourceType);
+        // 目录(M)与菜单(C)均参与前端路由树，按钮(F)不进入路由
+        return "M".equals(resourceType) || "C".equals(resourceType);
     }
 
     public boolean isButton() {
-        return "button".equals(resourceType);
-    }
-
-    public boolean isApi() {
-        return "api".equals(resourceType);
+        return "F".equals(resourceType);
     }
 
     public boolean isTopLevel() {

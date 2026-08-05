@@ -98,6 +98,9 @@ public class UserRepositoryImpl implements UserRepository {
         if (query.getUsername() != null && !query.getUsername().isBlank()) {
             wrapper.like(SysUserPO::getUsername, query.getUsername());
         }
+        if (query.getPhonenumber() != null && !query.getPhonenumber().isBlank()) {
+            wrapper.like(SysUserPO::getPhone, query.getPhonenumber());
+        }
         if (query.getStatus() != null) {
             wrapper.eq(SysUserPO::getStatus, query.getStatus());
         }
@@ -116,6 +119,9 @@ public class UserRepositoryImpl implements UserRepository {
         LambdaQueryWrapper<SysUserPO> wrapper = new LambdaQueryWrapper<>();
         if (query.getUsername() != null && !query.getUsername().isBlank()) {
             wrapper.like(SysUserPO::getUsername, query.getUsername());
+        }
+        if (query.getPhonenumber() != null && !query.getPhonenumber().isBlank()) {
+            wrapper.like(SysUserPO::getPhone, query.getPhonenumber());
         }
         if (query.getStatus() != null) {
             wrapper.eq(SysUserPO::getStatus, query.getStatus());
@@ -170,6 +176,9 @@ public class UserRepositoryImpl implements UserRepository {
         if (query.getUsername() != null && !query.getUsername().isBlank()) {
             wrapper.like(SysUserPO::getUsername, query.getUsername());
         }
+        if (query.getPhonenumber() != null && !query.getPhonenumber().isBlank()) {
+            wrapper.like(SysUserPO::getPhone, query.getPhonenumber());
+        }
         if (query.getStatus() != null) {
             wrapper.eq(SysUserPO::getStatus, query.getStatus());
         }
@@ -189,6 +198,9 @@ public class UserRepositoryImpl implements UserRepository {
         }
         if (query.getUsername() != null && !query.getUsername().isBlank()) {
             wrapper.like(SysUserPO::getUsername, query.getUsername());
+        }
+        if (query.getPhonenumber() != null && !query.getPhonenumber().isBlank()) {
+            wrapper.like(SysUserPO::getPhone, query.getPhonenumber());
         }
         if (query.getStatus() != null) {
             wrapper.eq(SysUserPO::getStatus, query.getStatus());

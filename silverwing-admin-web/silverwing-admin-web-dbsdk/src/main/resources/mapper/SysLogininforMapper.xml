@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silverwing.biz.logininfor.infrastructure.dao.SysLogininforMapper">
+
+    <sql id="Base_Column_List">
+        info_id, user_name, ipaddr, status, msg, access_time
+    </sql>
+
+    <select id="selectLogininforList" resultType="com.silverwing.biz.logininfor.infrastructure.dao.po.SysLogininforPO">
+        select
+        <include refid="Base_Column_List"/>
+        from sys_logininfor
+        <where>
+            <if test="userName != null and userName != ''">
+                and user_name like concat('%', #{userName}, '%')
+            </if>
+            <if test="ipaddr != null and ipaddr != ''">
+                and ipaddr like concat('%', #{ipaddr}, '%')
+            </if>
+            <if test="status != null">
+                and status = #{status}
+            </if>
+            <if test="beginTime != null and beginTime != '' and endTime != null and endTime != ''">
+                and access_time between #{beginTime} and #{endTime}
+            </if>
+        </where>
+        order by access_time desc
+    </select>
+
+</mapper>

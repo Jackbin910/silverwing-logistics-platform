@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silverwing.biz.notice.infrastructure.dao.SysNoticeReadDao">
+
+    <resultMap id="NoticeReadUserResultMap"
+               type="com.silverwing.biz.notice.infrastructure.dao.po.NoticeReadUserPO">
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="nickname" column="nickname"/>
+        <result property="deptName" column="dept_name"/>
+        <result property="phone" column="phone"/>
+        <result property="readTime" column="read_time"/>
+    </resultMap>
+
+    <resultMap id="NoticeWithReadResultMap"
+               type="com.silverwing.biz.notice.infrastructure.dao.po.SysNoticePO">
+        <id property="id" column="id"/>
+        <result property="noticeTitle" column="notice_title"/>
+        <result property="noticeType" column="notice_type"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="isRead" column="is_read"/>
+    </resultMap>
+
+    <!-- 标记单条公告已读，依赖唯一键 uk_user_notice 实现幂等 -->
+    <insert id="insertNoticeRead">
+        INSERT IGNORE INTO sys_notice_read (notice_id, user_id, read_time)
+        VALUES (#{noticeId}, #{userId}, NOW())
+    </insert>
+
+    <!-- 批量标记公告已读，依赖唯一键 uk_user_notice 实现幂等 -->
+    <insert id="insertNoticeReadBatch">
+        INSERT IGNORE INTO sys_notice_read (notice_id, user_id, read_time)
+        VALUES
+        <foreach collection="noticeIds" item="noticeId" separator=",">
+            (#{noticeId}, #{userId}, NOW())
+        </foreach>
+    </insert>
+
+    <!-- 分页查询已阅读指定公告的用户列表，支持按账号/昵称模糊筛选 -->
+    <select id="selectReadUsersByNoticeId" resultMap="NoticeReadUserResultMap">
+        SELECT
+            u.id         AS user_id,
+            u.username   AS username,
+            u.nickname   AS nickname,
+            d.dept_name  AS dept_name,
+            u.phone      AS phone,
+            r.read_time  AS read_time
+        FROM sys_notice_read r
+        INNER JOIN sys_user u ON u.id = r.user_id AND u.deleted = 0
+        LEFT JOIN sys_dept d ON d.id = u.dept_id
+        WHERE r.notice_id = #{noticeId}
+        <if test="searchValue != null and searchValue != ''">
+            AND (
+                u.username LIKE CONCAT('%', #{searchValue}, '%')
+                OR u.nickname LIKE CONCAT('%', #{searchValue}, '%')
+            )
+        </if>
+        ORDER BY r.read_time DESC
+    </select>
+
+    <!-- 删除公告时清理其已读记录 -->
+    <delete id="deleteByNoticeIds">
+        DELETE FROM sys_notice_read WHERE notice_id IN
+        <foreach collection="noticeIds" item="noticeId" open="(" separator="," close=")">
+            #{noticeId}
+        </foreach>
+    </delete>
+
+    <!-- 查询指定用户的未读公告数量：正常状态公告中排除已读 -->
+    <select id="selectUnreadCount" resultType="int">
+        SELECT COUNT(1)
+        FROM sys_notice n
+        WHERE n.status = 0
+          AND NOT EXISTS (
+              SELECT 1 FROM sys_notice_read r
+              WHERE r.notice_id = n.id AND r.user_id = #{userId}
+          )
+    </select>
+
+    <!-- 查询带当前用户已读状态的公告列表 -->
+    <select id="selectNoticeListWithReadStatus" resultMap="NoticeWithReadResultMap">
+        SELECT
+            n.id,
+            n.notice_title,
+            n.notice_type,
+            n.status,
+            n.create_by,
+            n.create_time,
+            CASE WHEN r.notice_id IS NOT NULL THEN 1 ELSE 0 END AS is_read
+        FROM sys_notice n
+        LEFT JOIN sys_notice_read r
+            ON r.notice_id = n.id AND r.user_id = #{userId}
+        WHERE n.status = 0
+        ORDER BY n.id DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

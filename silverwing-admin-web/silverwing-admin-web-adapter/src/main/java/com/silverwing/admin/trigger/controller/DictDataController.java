@@ -81,18 +81,18 @@ public class DictDataController {
     @Operation(summary = "修改字典数据")
     @Log(title = "字典数据", businessType = BusinessTypeEnum.UPDATE)
     @SaCheckPermission("system:dict:edit")
-    @PutMapping("/{id}")
-    public Result<Void> update(@PathVariable("id") Long id, @Valid @RequestBody SaveDictDataCommand command) {
-        dictDataCommandService.update(id, command);
-        return Result.success()
-;
+    @PutMapping
+    public Result<Void> update(@Valid @RequestBody SaveDictDataCommand command) {
+        dictDataCommandService.update(command.getId(), command);
+        return Result.success();
     }
+
     @Operation(summary = "删除字典数据")
     @Log(title = "字典数据", businessType = BusinessTypeEnum.DELETE)
     @SaCheckPermission("system:dict:remove")
-    @DeleteMapping("/{ids}")
-    public Result<Void> delete(@PathVariable("ids") Long[] ids) {
-            dictDataCommandService.delete(ids);
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(@PathVariable("id") Long id) {
+        dictDataCommandService.delete(id);
         return Result.success();
     }
 }

@@ -7,8 +7,12 @@ import com.silverwing.common.constant.SaSessionConstants;
 import cn.hutool.extra.servlet.JakartaServletUtil;
 import cn.hutool.extra.servlet.ServletUtil;
 import com.alibaba.fastjson2.JSON;
+import com.silverwing.biz.dept.infrastructure.dao.SysDeptDao;
+import com.silverwing.biz.dept.infrastructure.dao.po.SysDeptPO;
 import com.silverwing.biz.iam.infrastructure.dao.SysOperLogMapper;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysOperLogPO;
+import com.silverwing.biz.iam.infrastructure.dao.SysUserDao;
+import com.silverwing.biz.iam.infrastructure.dao.po.SysUserPO;
 import com.silverwing.common.annotation.Log;
 import com.silverwing.common.i18n.LocaleContextUtils;
 import jakarta.servlet.http.HttpServletRequest;
@@ -54,6 +58,8 @@ public class OperLogAspect {
     private static final String DTP_EXECUTOR_NAME = "operLogExecutor";
 
     private final SysOperLogMapper sysOperLogMapper;
+    private final SysUserDao sysUserDao;
+    private final SysDeptDao sysDeptDao;
 
     /**
      * 环绕 @Log 注解方法，采集并异步落库操作日志
@@ -148,15 +154,27 @@ public class OperLogAspect {
             String username = session.getString(SaSessionConstants.USERNAME);
             if (username != null && !username.isBlank()) {
                 po.setOperName(username);
-                return;
+            } else {
+                // 兜底取 Sa-Token 登录标识（通常为 userId）
+                Object loginId = StpUtil.getLoginIdDefaultNull();
+                if (loginId != null) {
+                    po.setOperName(String.valueOf(loginId));
+                }
             }
-            // 兜底取 Sa-Token 登录标识（通常为 userId）
+            // 按登录用户id反查所属部门名称，便于操作日志按部门检索
             Object loginId = StpUtil.getLoginIdDefaultNull();
             if (loginId != null) {
-                po.setOperName(String.valueOf(loginId));
+                SysUserPO user = sysUserDao.selectById(Long.valueOf(String.valueOf(loginId)));
+                if (user != null && user.getDeptId() != null) {
+                    SysDeptPO dept = sysDeptDao.selectById(user.getDeptId());
+                    if (dept != null) {
+                        po.setDeptName(dept.getDeptName());
+                    }
+                }
             }
         } catch (Exception e) {
-            // 未登录或令牌不可用，操作人员留空
+            // 未登录或令牌不可用，操作人员/部门留空
+            log.warn("采集操作日志操作人员/部门失败", e);
         }
     }
 

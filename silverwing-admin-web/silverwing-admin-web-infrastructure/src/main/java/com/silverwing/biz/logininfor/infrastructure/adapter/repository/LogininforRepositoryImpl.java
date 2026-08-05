@@ -8,32 +8,35 @@ import com.silverwing.biz.logininfor.domain.adapter.repository.LogininforReposit
 import com.silverwing.biz.logininfor.domain.model.aggregate.SysLogininforAggregate;
 import com.silverwing.biz.logininfor.domain.model.query.LogininforQuery;
 import com.silverwing.biz.logininfor.infrastructure.adapter.repository.convertor.LogininforInfraConvertor;
-import com.silverwing.biz.logininfor.infrastructure.dao.SysLogininforDao;
+import com.silverwing.biz.logininfor.infrastructure.dao.SysLogininforMapper;
 import com.silverwing.biz.logininfor.infrastructure.dao.po.SysLogininforPO;
 import com.silverwing.common.domain.PageResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 
-import java.util.Date;
 import java.util.List;
 
 /**
  * 系统访问记录仓储实现。
+ * <p>基于 MyBatis-Plus 完成访问记录的查询、删除与清空，简单条件使用 wrapper，
+ * 复杂查询通过 {@code SysLogininforMapper.xml} 承载。</p>
+ *
+ * @author silverwing
  */
 @Slf4j
 @Repository
 @RequiredArgsConstructor
 public class LogininforRepositoryImpl implements LogininforRepository {
 
-    private final SysLogininforDao logininforDao;
+    private final SysLogininforMapper logininforMapper;
 
     @Override
     public PageResult<SysLogininforAggregate> findPage(LogininforQuery query) {
         LambdaQueryWrapper<SysLogininforPO> wrapper = buildWrapper(query);
-        wrapper.orderByDesc(SysLogininforPO::getInfoId);
+        wrapper.orderByDesc(SysLogininforPO::getAccessTime);
         Page<SysLogininforPO> page = new Page<>(query.getCurrent(), query.getSize());
-        Page<SysLogininforPO> result = logininforDao.selectPage(page, wrapper);
+        Page<SysLogininforPO> result = logininforMapper.selectPage(page, wrapper);
         List<SysLogininforAggregate> records = result.getRecords().stream()
                 .map(LogininforInfraConvertor.INSTANCE::toDomain)
                 .toList();
@@ -43,25 +46,10 @@ public class LogininforRepositoryImpl implements LogininforRepository {
     @Override
     public List<SysLogininforAggregate> findList(LogininforQuery query) {
         LambdaQueryWrapper<SysLogininforPO> wrapper = buildWrapper(query);
-        wrapper.orderByDesc(SysLogininforPO::getInfoId);
-        return logininforDao.selectList(wrapper).stream()
+        wrapper.orderByDesc(SysLogininforPO::getAccessTime);
+        return logininforMapper.selectList(wrapper).stream()
                 .map(LogininforInfraConvertor.INSTANCE::toDomain)
                 .toList();
-    }
-
-    @Override
-    public SysLogininforAggregate findById(Long infoId) {
-        SysLogininforPO po = logininforDao.selectById(infoId);
-        return po == null ? null : LogininforInfraConvertor.INSTANCE.toDomain(po);
-    }
-
-    @Override
-    public void insert(SysLogininforAggregate aggregate) {
-        // 访问时间由服务落库时填充，与 RuoYi 中 access_time 使用 sysdate() 的行为一致
-        if (aggregate.getAccessTime() == null) {
-            aggregate.setAccessTime(new Date());
-        }
-        logininforDao.insert(LogininforInfraConvertor.INSTANCE.toPo(aggregate));
     }
 
     @Override
@@ -69,20 +57,25 @@ public class LogininforRepositoryImpl implements LogininforRepository {
         if (infoIds == null || infoIds.isEmpty()) {
             return;
         }
-        logininforDao.deleteBatchIds(infoIds);
+        logininforMapper.deleteBatchIds(infoIds);
     }
 
     @Override
     public void clean() {
-        logininforDao.delete(Wrappers.lambdaQuery());
+        logininforMapper.delete(Wrappers.lambdaQuery());
     }
 
-    /** 构建查询条件 */
+    /**
+     * 构建查询条件（简单条件使用 wrapper，符合分层约定）。
+     *
+     * @param query 查询条件
+     * @return MyBatis-Plus 条件构造器
+     */
     private LambdaQueryWrapper<SysLogininforPO> buildWrapper(LogininforQuery query) {
         LambdaQueryWrapper<SysLogininforPO> wrapper = new LambdaQueryWrapper<>();
         wrapper.like(StringUtils.isNotBlank(query.getUserName()), SysLogininforPO::getUserName, query.getUserName());
         wrapper.like(StringUtils.isNotBlank(query.getIpaddr()), SysLogininforPO::getIpaddr, query.getIpaddr());
-        wrapper.eq(StringUtils.isNotBlank(query.getStatus()), SysLogininforPO::getStatus, query.getStatus());
+        wrapper.eq(query.getStatus() != null, SysLogininforPO::getStatus, query.getStatus());
         if (StringUtils.isNotBlank(query.getBeginTime()) && StringUtils.isNotBlank(query.getEndTime())) {
             wrapper.between(SysLogininforPO::getAccessTime, query.getBeginTime(), query.getEndTime());
         }

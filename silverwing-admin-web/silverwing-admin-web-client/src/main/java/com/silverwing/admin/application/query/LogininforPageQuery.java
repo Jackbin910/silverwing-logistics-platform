@@ -1,28 +1,32 @@
 package com.silverwing.admin.application.query;
 
 import com.silverwing.common.domain.PageRequest;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * 登录日志分页查询条件（应用层）。
+ * 系统访问记录分页查询条件。
+ * <p>承载前端列表查询入参，含账号、IP、状态与时间区间过滤。</p>
+ *
+ * @author silverwing
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class LogininforPageQuery extends PageRequest {
 
-    /** 用户账号（模糊） */
+    @Schema(description = "用户账号（模糊）")
     private String userName;
 
-    /** 登录IP地址（模糊） */
+    @Schema(description = "登录IP（模糊）")
     private String ipaddr;
 
-    /** 登录状态（0-成功 1-失败） */
-    private String status;
+    @Schema(description = "登录状态（0成功 1失败）")
+    private Integer status;
 
-    /** 开始时间（按访问时间查询） */
+    @Schema(description = "访问时间-开始")
     private String beginTime;
 
-    /** 结束时间（按访问时间查询） */
+    @Schema(description = "访问时间-结束")
     private String endTime;
 }

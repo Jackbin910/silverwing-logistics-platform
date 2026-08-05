@@ -12,5 +12,6 @@ import lombok.EqualsAndHashCode;
 public class UserQuery extends PageRequest {
 
     private String username;
+    private String phonenumber;
     private Integer status;
 }

@@ -5,10 +5,13 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
 import com.silverwing.auth.application.dto.LoginResponse;
 import com.silverwing.auth.application.service.CaptchaService;
+import com.silverwing.auth.application.service.PasswordRetryService;
 import com.silverwing.auth.config.RsaKeyConfig;
+import com.silverwing.auth.iam.domain.adapter.repository.LogininforRepository;
 import com.silverwing.auth.iam.domain.adapter.repository.PermissionRepository;
 import com.silverwing.auth.iam.domain.adapter.repository.RoleRepository;
 import com.silverwing.auth.iam.domain.adapter.repository.UserRepository;
+import com.silverwing.auth.iam.domain.model.aggregate.LogininforAggregate;
 import com.silverwing.auth.iam.domain.constant.IamConstants;
 import com.silverwing.auth.iam.domain.model.aggregate.AuthRoleAggregate;
 import com.silverwing.auth.iam.domain.model.aggregate.AuthUserAggregate;
@@ -39,42 +42,46 @@ public class AuthCommandService {
     private final PermissionRepository permissionRepository;
     private final RsaKeyConfig rsaKeyConfig;
     private final CaptchaService captchaService;
+    private final LogininforRepository logininforRepository;
+    private final PasswordRetryService passwordRetryService;
 
     /**
      * 用户登录
      * 流程：RSA 解密密码 → 查询用户 → 状态校验 → 密码比对 → Sa-Token 签发 → 写入角色/权限到 Session
      */
     public LoginResponse login(LoginCommand command) {
+        String username = command.getUsername();
+        String ipaddr = command.getIpaddr();
+
         // 0. RSA 解密前端传入的加密密码，得到明文
         String rawPassword = decryptPassword(command.getPassword());
 
         // 0.5 验证码校验（开启时）：校验失败直接拦截，避免无谓的用户查询与密码解密
         if (!captchaService.validate(command.getUuid(), command.getCode())) {
-            log.warn("登录失败：验证码错误 username={}", command.getUsername());
+            log.warn("登录失败：验证码错误 username={}", username);
+            recordLogininfor(username, ipaddr, false, "验证码错误");
             throw BusinessException.i18n(ResultCode.UNAUTHORIZED, "auth.captcha.error");
         }
 
         // 1. 查询用户
-        AuthUserAggregate user = userRepository.findByUsername(command.getUsername());
+        AuthUserAggregate user = userRepository.findByUsername(username);
         if (user == null) {
-            log.warn("登录失败：用户不存在 username={}", command.getUsername());
+            log.warn("登录失败：用户不存在 username={}", username);
+            recordLogininfor(username, ipaddr, false, "用户不存在/密码错误");
             throw BusinessException.i18n(ResultCode.UNAUTHORIZED,
                     "auth.login.username.or.password.error");
         }
 
         // 2. 状态校验（领域行为）
         if (!user.isActive()) {
-            log.warn("登录失败：用户已禁用 username={}", command.getUsername());
+            log.warn("登录失败：用户已禁用 username={}", username);
+            recordLogininfor(username, ipaddr, false, "账号已禁用");
             throw BusinessException.i18n(ResultCode.FORBIDDEN,
                     "auth.login.account.disabled");
         }
 
-        // 3. 校验密码是否匹配（BCrypt）
-        if (!matchesPassword(rawPassword, user)) {
-            log.warn("登录失败：密码错误 username={}", command.getUsername());
-            throw BusinessException.i18n(ResultCode.UNAUTHORIZED,
-                    "auth.login.username.or.password.error");
-        }
+        // 3. 密码校验与重试锁定控制（失败计数、锁定、写登录日志由 PasswordRetryService 统一处理）
+        passwordRetryService.validate(username, ipaddr, matchesPassword(rawPassword, user));
 
         // 4. 查询角色和权限
         List<String> roleCodes = roleRepository.findRolesByUserId(user.getId()).stream()
@@ -99,6 +106,8 @@ public class AuthCommandService {
 
         log.info("登录成功：username={}, userId={}, roles={}, 权限数={}",
                 user.getUsername(), user.getId(), roleCodes, permissions.size());
+
+        recordLogininfor(username, ipaddr, true, "登录成功");
 
         return LoginResponse.builder()
                 .token(StpUtil.getTokenValue())
@@ -138,6 +147,29 @@ public class AuthCommandService {
                     userId, permissionCodes.size(), roleCodes.size());
         } catch (Exception e) {
             log.warn("刷新用户权限缓存失败 userId={}：{}", userId, e.getMessage());
+        }
+    }
+
+    /**
+     * 记录登录日志到 {@code sys_logininfor} 表。
+     * <p>无论登录成功或失败均写入一条记录，便于审计与安全分析；写入异常仅记录日志，不影响主流程。</p>
+     *
+     * @param username 用户账号
+     * @param ipaddr   登录IP
+     * @param success  是否成功（true=成功，false=失败）
+     * @param msg      提示信息
+     */
+    private void recordLogininfor(String username, String ipaddr, boolean success, String msg) {
+        try {
+            LogininforAggregate aggregate = new LogininforAggregate();
+            aggregate.setUserName(username);
+            aggregate.setIpaddr(ipaddr);
+            aggregate.setStatus(success ? 0 : 1);
+            aggregate.setMsg(msg);
+            aggregate.setAccessTime(java.time.LocalDateTime.now());
+            logininforRepository.insert(aggregate);
+        } catch (Exception e) {
+            log.warn("写入登录日志失败 username={}, ip={}, 原因={}", username, ipaddr, e.getMessage());
         }
     }
 

@@ -38,4 +38,9 @@ public class ProfileResponse {
      * 岗位组（逗号拼接的岗位名称）
      */
     private String postGroup;
+
+    /**
+     * 所属部门名称
+     */
+    private String deptName;
 }

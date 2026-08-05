@@ -15,5 +15,7 @@ public class UserPageQuery extends PageRequest {
 
     private String username;
 
+    private String phonenumber;
+
     private Integer status;
 }

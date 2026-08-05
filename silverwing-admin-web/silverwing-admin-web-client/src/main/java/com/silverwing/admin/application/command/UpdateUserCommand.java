@@ -2,6 +2,8 @@ package com.silverwing.admin.application.command;
 
 import lombok.Data;
 
+import java.util.List;
+
 /**
  * 更新用户命令
  */
@@ -25,4 +27,10 @@ public class UpdateUserCommand {
 
     /** 用户类型（00系统用户） */
     private String userType;
+
+    /** 角色ID列表（修改用户时随请求体传入，全量覆盖用户-角色关系） */
+    private List<Long> roleIds;
+
+    /** 岗位ID列表（修改用户时随请求体传入，全量覆盖用户-岗位关系） */
+    private List<Long> postIds;
 }

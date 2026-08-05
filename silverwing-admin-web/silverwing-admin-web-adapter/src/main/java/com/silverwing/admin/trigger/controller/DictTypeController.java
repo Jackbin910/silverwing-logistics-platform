@@ -58,9 +58,9 @@ public class DictTypeController {
 
     @Operation(summary = "字典类型详情")
     @SaCheckPermission("system:dict:query")
-    @GetMapping("/{id}")
-    public Result<DictTypeResponse> getById(@PathVariable Long id) {
-        return Result.success(dictTypeQueryService.getById(id));
+    @GetMapping("/{dictId}")
+    public Result<DictTypeResponse> getById(@PathVariable("dictId") Long dictId) {
+        return Result.success(dictTypeQueryService.getById(dictId));
     }
 
     @Operation(summary = "新增字典类型")
@@ -92,8 +92,8 @@ public class DictTypeController {
     @Operation(summary = "刷新字典缓存")
     @Log(title = "字典类型", businessType = BusinessTypeEnum.OTHER)
     @SaCheckPermission("system:dict:remove")
-    @DeleteMapping("/refreshCache")
-    public Result<Void> refreshCache() {
+    @DeleteMapping("/refresh")
+    public Result<Void> refresh() {
         dictTypeQueryService.refreshCache();
         return Result.success();
     }

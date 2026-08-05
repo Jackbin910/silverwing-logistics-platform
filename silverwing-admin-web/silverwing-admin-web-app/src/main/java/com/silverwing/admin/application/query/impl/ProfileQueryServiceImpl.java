@@ -1,10 +1,12 @@
 package com.silverwing.admin.application.query.impl;
 
+import com.silverwing.admin.application.dto.DeptResponse;
 import com.silverwing.admin.application.dto.PostResponse;
 import com.silverwing.admin.application.dto.ProfileResponse;
 import com.silverwing.admin.application.dto.RoleResponse;
 import com.silverwing.admin.application.dto.UserResponse;
 import com.silverwing.admin.application.query.ProfileQueryService;
+import com.silverwing.admin.client.DeptClient;
 import com.silverwing.admin.client.IamPostClient;
 import com.silverwing.admin.client.IamRoleClient;
 import com.silverwing.admin.client.IamUserClient;
@@ -34,6 +36,8 @@ public class ProfileQueryServiceImpl implements ProfileQueryService {
 
     private final IamPostClient iamPostClient;
 
+    private final DeptClient deptClient;
+
     @Override
     public ProfileResponse getProfile(Long userId) {
         UserResponse user = iamUserClient.getById(userId);
@@ -55,11 +59,18 @@ public class ProfileQueryServiceImpl implements ProfileQueryService {
                 .filter(Objects::nonNull)
                 .collect(Collectors.joining(","));
 
+        DeptResponse dept = null;
+        if (user.getDeptId() != null) {
+            dept = deptClient.getById(user.getDeptId());
+        }
+        String deptName = dept != null ? dept.getDeptName() : null;
+
         return ProfileResponse.builder()
                 .user(user)
                 .roleGroup(roleGroup)
                 .postIds(postIds)
                 .postGroup(postGroup)
+                .deptName(deptName)
                 .build();
     }
 }

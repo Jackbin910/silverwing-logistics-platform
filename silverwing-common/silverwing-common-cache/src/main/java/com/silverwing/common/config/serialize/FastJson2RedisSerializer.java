@@ -73,7 +73,8 @@ public class FastJson2RedisSerializer<T> implements RedisSerializer<T> {
 
     @Override
     public T deserialize(byte[] bytes) throws SerializationException {
-        if (bytes.length == 0) {
+        // key 不存在时 RedisTemplate 会以 null 调用反序列化，必须做空值保护
+        if (bytes == null || bytes.length == 0) {
             return null;
         }
         return JSON.parseObject(bytes, clazz, readerFeatures);

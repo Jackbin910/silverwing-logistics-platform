@@ -1,6 +1,5 @@
 package com.silverwing.admin.client;
 
-import com.silverwing.admin.application.command.SaveLogininforCommand;
 import com.silverwing.admin.application.dto.LogininforResponse;
 import com.silverwing.admin.application.query.LogininforPageQuery;
 import com.silverwing.common.domain.PageResult;
@@ -8,28 +7,38 @@ import com.silverwing.common.domain.PageResult;
 import java.util.List;
 
 /**
- * 登录日志上下文防腐层接口。
+ * 系统访问记录防腐层端口。
+ * <p>应用层通过该端口调用领域服务编排的访问记录能力，隔离外部上下文差异。</p>
+ *
+ * @author silverwing
  */
 public interface LogininforClient {
 
-    /** 分页查询登录日志 */
+    /**
+     * 分页查询访问记录。
+     *
+     * @param query 分页查询条件
+     * @return 分页结果
+     */
     PageResult<LogininforResponse> list(LogininforPageQuery query);
 
-    /** 导出查询（不分页） */
+    /**
+     * 查询导出数据。
+     *
+     * @param query 查询条件
+     * @return 访问记录列表
+     */
     List<LogininforResponse> listExport(LogininforPageQuery query);
 
-    /** 根据ID查询 */
-    LogininforResponse getById(Long infoId);
+    /**
+     * 批量删除访问记录。
+     *
+     * @param infoIds 访问ID数组
+     */
+    void removeByIds(Long[] infoIds);
 
-    /** 新增登录日志（内部调用，记录登录行为） */
-    void add(SaveLogininforCommand command);
-
-    /** 批量删除登录日志 */
-    void removeByIds(List<Long> infoIds);
-
-    /** 清空登录日志 */
+    /**
+     * 清空全部访问记录。
+     */
     void clean();
-
-    /** 解锁用户账户（清除密码错误次数缓存） */
-    void unlock(String userName);
 }

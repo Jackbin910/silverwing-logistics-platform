@@ -6,23 +6,36 @@ import lombok.EqualsAndHashCode;
 
 /**
  * 系统访问记录查询条件（领域层）。
+ * <p>继承分页请求基类，封装账号、IP、状态与访问时间区间过滤条件。</p>
+ *
+ * @author silverwing
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 public class LogininforQuery extends PageRequest {
 
-    /** 用户账号（模糊） */
+    /**
+     * 用户账号（模糊匹配）
+     */
     private String userName;
 
-    /** 登录IP地址（模糊） */
+    /**
+     * 登录IP地址（模糊匹配）
+     */
     private String ipaddr;
 
-    /** 登录状态（0-成功 1-失败） */
-    private String status;
+    /**
+     * 登录状态（0成功 1失败）
+     */
+    private Integer status;
 
-    /** 开始时间（按访问时间 accessTime 查询） */
+    /**
+     * 访问开始时间（格式 yyyy-MM-dd HH:mm:ss）
+     */
     private String beginTime;
 
-    /** 结束时间（按访问时间 accessTime 查询） */
+    /**
+     * 访问结束时间（格式 yyyy-MM-dd HH:mm:ss）
+     */
     private String endTime;
 }

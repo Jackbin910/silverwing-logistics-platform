@@ -49,5 +49,20 @@ public class RedisConstants {
      * MQ消息前缀
      */
     public static final String MQ_MESSAGE_PREFIX = "silverwing:mq:";
-    
+
+    /**
+     * 登录密码错误次数缓存前缀（后接 username）
+     */
+    public static final String PWD_ERR_CNT_PREFIX = "silverwing:pwd:err:";
+
+    /**
+     * 密码最大错误次数（达到后锁定账号）
+     */
+    public static final int PASSWORD_MAX_RETRY_COUNT = 5;
+
+    /**
+     * 密码错误锁定时长（秒）
+     */
+    public static final long PASSWORD_LOCK_SECONDS = 600L;
+
 }

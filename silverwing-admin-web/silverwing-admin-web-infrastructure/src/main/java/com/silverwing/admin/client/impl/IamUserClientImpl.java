@@ -180,6 +180,7 @@ public class IamUserClientImpl implements IamUserClient {
         userQuery.setCurrent(query.getCurrent());
         userQuery.setSize(query.getSize());
         userQuery.setUsername(query.getUsername());
+        userQuery.setPhonenumber(query.getPhonenumber());
         userQuery.setStatus(query.getStatus());
         return userQuery;
     }

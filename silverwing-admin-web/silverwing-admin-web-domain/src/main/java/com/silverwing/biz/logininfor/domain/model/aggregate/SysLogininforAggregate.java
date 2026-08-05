@@ -4,11 +4,13 @@ import lombok.Data;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
- * 系统访问记录聚合根，对应数据库表 sys_logininfor。
- * <p>该表无审计字段与逻辑删除列，故为纯领域对象，仅承载业务属性。</p>
+ * 系统访问记录聚合根。
+ * <p>承载登录/访问日志的领域模型，作为应用层与仓储层之间流转的核心对象。</p>
+ *
+ * @author silverwing
  */
 @Data
 public class SysLogininforAggregate implements Serializable {
@@ -16,21 +18,33 @@ public class SysLogininforAggregate implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    /** 访问ID */
+    /**
+     * 访问ID
+     */
     private Long infoId;
 
-    /** 用户账号 */
+    /**
+     * 用户账号
+     */
     private String userName;
 
-    /** 登录IP地址 */
+    /**
+     * 登录IP地址
+     */
     private String ipaddr;
 
-    /** 登录状态（0成功 1失败） */
-    private String status;
+    /**
+     * 登录状态（0成功 1失败）
+     */
+    private Integer status;
 
-    /** 提示信息 */
+    /**
+     * 提示信息
+     */
     private String msg;
 
-    /** 访问时间 */
-    private Date accessTime;
+    /**
+     * 访问时间
+     */
+    private LocalDateTime accessTime;
 }

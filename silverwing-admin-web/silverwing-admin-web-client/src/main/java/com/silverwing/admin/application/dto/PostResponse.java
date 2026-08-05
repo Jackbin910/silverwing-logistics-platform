@@ -40,13 +40,4 @@ public class PostResponse implements Serializable {
     /** 更新时间 */
     private LocalDateTime updateTime;
 
-    /**
-     * 字典映射：状态（0 正常 1 停用）
-     */
-    public String getStatusLabel() {
-        if (status == null) {
-            return null;
-        }
-        return "0".equals(status) ? "正常" : "停用";
-    }
 }

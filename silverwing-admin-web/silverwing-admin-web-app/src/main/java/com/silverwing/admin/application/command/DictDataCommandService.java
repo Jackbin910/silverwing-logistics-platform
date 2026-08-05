@@ -28,4 +28,9 @@ public class DictDataCommandService {
     public void delete(Long[] ids) {
         dictDataClient.deleteByIds(ids);
     }
+
+    /** 删除单条字典数据 */
+    public void delete(Long id) {
+        dictDataClient.deleteByIds(new Long[]{id});
+    }
 }

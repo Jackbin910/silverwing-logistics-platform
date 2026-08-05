@@ -14,6 +14,9 @@ public class RoleResponse implements Serializable {
 
     private Long id;
 
+    /** 角色ID（前后端契约字段，与 id 同值，供前端下拉框 roleId 绑定使用） */
+    private Long roleId;
+
     private String roleCode;
 
     private String roleName;
