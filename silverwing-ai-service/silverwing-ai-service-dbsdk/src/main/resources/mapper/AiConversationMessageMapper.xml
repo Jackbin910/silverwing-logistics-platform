@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.silverwing.biz.ai.infrastructure.mapper.AiConversationMessageMapper">
+
+    <resultMap id="AiConversationMessageResultMap" type="com.silverwing.biz.ai.infrastructure.dao.po.AiConversationMessagePO">
+        <id property="id" column="id"/>
+        <result property="conversationId" column="conversation_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="role" column="role"/>
+        <result property="content" column="content"/>
+        <result property="intent" column="intent"/>
+        <result property="entities" column="entities"/>
+        <result property="tokenCount" column="token_count"/>
+        <result property="responseTime" column="response_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, conversation_id, user_id, role, content, intent, entities,
+        token_count, response_time, deleted, create_time
+    </sql>
+
+    <!-- 会话消息明细：按创建时间正序 -->
+    <select id="selectByConversationId" resultMap="AiConversationMessageResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ai_conversation_message
+        WHERE conversation_id = #{conversationId}
+          AND deleted = 0
+        ORDER BY create_time ASC, id ASC
+    </select>
+
+    <!-- 会话首条消息：用于标题与归属校验 -->
+    <select id="selectFirstByConversationId" resultMap="AiConversationMessageResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM ai_conversation_message
+        WHERE conversation_id = #{conversationId}
+          AND deleted = 0
+        ORDER BY create_time ASC, id ASC
+        LIMIT 1
+    </select>
+
+    <!-- 逻辑删除会话消息：子表标记 deleted=1 -->
+    <update id="logicDeleteByConversationId">
+        UPDATE ai_conversation_message
+        SET deleted = 1
+        WHERE conversation_id = #{conversationId}
+          AND deleted = 0
+    </update>
+
+</mapper>
