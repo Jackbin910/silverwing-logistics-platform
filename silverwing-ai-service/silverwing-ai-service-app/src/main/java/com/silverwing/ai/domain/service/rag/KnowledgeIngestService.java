@@ -183,76 +183,173 @@ public class KnowledgeIngestService {
     }
 
     /**
-     * 将文本按段落切分成小段（TextSegment）
-     * 策略：先按空行分段，再按最大长度合并/拆分，段间保留重叠
+     * 将文本递归切分成小段（TextSegment）
+     * <p>策略（参考 WeKnora 的递归切片思想）：
+     * 1. 先按 Markdown 标题层级（# → ## → ###）切分，记录标题面包屑（headingPath）作为每个分片的上下文；
+     * 2. 标题块内超长时，依次按空行、换行、句号分级继续拆分；
+     * 3. 段间保留尾部重叠（overlap），避免截断句子导致语义割裂。</p>
      *
      * @param text     原始文本
-     * @param metadata 元信息（会复制到每个分片）
+     * @param metadata 文档级元信息（会复制到每个分片）
      * @return 切分后的 TextSegment 列表
      */
     private List<TextSegment> splitIntoChunks(String text, Metadata metadata) {
         List<TextSegment> chunks = new ArrayList<>();
+        int[] chunkIndex = {0};
 
-        // 按空行（连续两个以上换行符）分割段落
-        String[] paragraphs = text.split("\\n{2,}");
-
-        StringBuilder currentChunk = new StringBuilder();
-        int chunkIndex = 0;
-
-        for (String paragraph : paragraphs) {
-            String trimmed = paragraph.trim();
+        // 先按一级/二级标题切分为章节，逐章节递归处理
+        String[] sections = text.split("(?m)^#{1,3}\\s+");
+        for (String section : sections) {
+            String trimmed = section.trim();
             if (trimmed.isEmpty()) {
                 continue;
             }
+            // 取章节首行作为标题面包屑（如「仓储管理」），去除标题后的正文继续递归
+            String[] firstLineSplit = trimmed.split("\\n", 2);
+            String heading = firstLineSplit[0].trim();
+            String body = firstLineSplit.length > 1 ? firstLineSplit[1].trim() : "";
+            String headingPath = heading.isEmpty() ? "正文" : heading;
 
-            // 当前块加上新段落后超过最大长度，先保存当前块
-            if (currentChunk.length() > 0
-                    && currentChunk.length() + trimmed.length() + 1 > MAX_CHUNK_SIZE) {
-                chunks.add(createChunk(currentChunk.toString(), metadata, chunkIndex++));
+            Metadata sectionMeta = metadata.copy();
+            sectionMeta.put("headingPath", headingPath);
 
-                // 保留尾部作为重叠
-                String overlap = extractOverlap(currentChunk.toString());
-                currentChunk = new StringBuilder(overlap);
+            if (body.isEmpty()) {
+                // 整段就是标题，直接作为最小分片
+                chunks.add(createChunk(heading, sectionMeta, chunkIndex[0]++));
+                continue;
             }
+            recursiveSplit(body, sectionMeta, chunks, chunkIndex);
+        }
 
-            // 单个段落超过最大长度，需要按句子/换行进一步拆分
-            if (trimmed.length() > MAX_CHUNK_SIZE) {
-                // 先保存当前积累的内容
-                if (currentChunk.length() > 0) {
-                    chunks.add(createChunk(currentChunk.toString(), metadata, chunkIndex++));
-                    currentChunk = new StringBuilder();
+        // 处理完全没有标题的纯文本文档
+        if (chunks.isEmpty()) {
+            recursiveSplit(text, metadata, chunks, chunkIndex);
+        }
+        return chunks;
+    }
+
+    /**
+     * 递归切分单个文本块：超长时按 空行 → 换行 → 句号 逐级细分，保留 overlap
+     *
+     * @param text        待切分文本
+     * @param metadata    当前层级元信息（含 headingPath）
+     * @param chunks      结果收集列表
+     * @param chunkIndex  分片序号计数器（数组以便在递归中共享）
+     */
+    private void recursiveSplit(String text, Metadata metadata,
+                                List<TextSegment> chunks, int[] chunkIndex) {
+        if (text.length() <= MAX_CHUNK_SIZE) {
+            chunks.add(createChunk(text, metadata, chunkIndex[0]++));
+            return;
+        }
+        // 按空行拆分
+        String[] blocks = text.split("\\n{2,}");
+        StringBuilder current = new StringBuilder();
+        for (String block : blocks) {
+            String trimmed = block.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (current.length() + trimmed.length() + 2 > MAX_CHUNK_SIZE) {
+                if (current.length() > 0) {
+                    flushChunk(current, metadata, chunks, chunkIndex);
                 }
-                // 按换行拆分长段落
-                String[] lines = trimmed.split("\\n");
-                for (String line : lines) {
-                    String lineTrimmed = line.trim();
-                    if (lineTrimmed.isEmpty()) {
-                        continue;
-                    }
-                    if (currentChunk.length() + lineTrimmed.length() + 1 > MAX_CHUNK_SIZE
-                            && !currentChunk.isEmpty()) {
-                        chunks.add(createChunk(currentChunk.toString(), metadata, chunkIndex++));
-                        currentChunk = new StringBuilder();
-                    }
-                    if (!currentChunk.isEmpty()) {
-                        currentChunk.append("\n");
-                    }
-                    currentChunk.append(lineTrimmed);
+                // 单个 block 仍超长，继续按换行拆
+                if (trimmed.length() > MAX_CHUNK_SIZE) {
+                    splitByLines(trimmed, metadata, chunks, chunkIndex);
+                } else {
+                    current = new StringBuilder(trimmed);
                 }
             } else {
-                if (!currentChunk.isEmpty()) {
-                    currentChunk.append("\n\n");
+                if (current.length() > 0) {
+                    current.append("\n\n");
                 }
-                currentChunk.append(trimmed);
+                current.append(trimmed);
             }
         }
-
-        // 保存最后一个块
-        if (!currentChunk.isEmpty()) {
-            chunks.add(createChunk(currentChunk.toString(), metadata, chunkIndex));
+        if (current.length() > 0) {
+            flushChunk(current, metadata, chunks, chunkIndex);
         }
+    }
 
-        return chunks;
+    /**
+     * 按换行继续拆分超长 block，仍超长则按句号拆分
+     */
+    private void splitByLines(String text, Metadata metadata,
+                              List<TextSegment> chunks, int[] chunkIndex) {
+        String[] lines = text.split("\\n");
+        StringBuilder current = new StringBuilder();
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (current.length() + trimmed.length() + 1 > MAX_CHUNK_SIZE) {
+                if (current.length() > 0) {
+                    flushChunk(current, metadata, chunks, chunkIndex);
+                }
+                if (trimmed.length() > MAX_CHUNK_SIZE) {
+                    // 按句号/分号/逗号兜底拆分长句
+                    splitBySentence(trimmed, metadata, chunks, chunkIndex);
+                } else {
+                    current = new StringBuilder(trimmed);
+                }
+            } else {
+                if (current.length() > 0) {
+                    current.append("\n");
+                }
+                current.append(trimmed);
+            }
+        }
+        if (current.length() > 0) {
+            flushChunk(current, metadata, chunks, chunkIndex);
+        }
+    }
+
+    /**
+     * 按标点（句号/分号/逗号）兜底拆分超长句子
+     */
+    private void splitBySentence(String text, Metadata metadata,
+                                 List<TextSegment> chunks, int[] chunkIndex) {
+        String[] parts = text.split("(?<=[。；;，,])");
+        StringBuilder current = new StringBuilder();
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (trimmed.isEmpty()) {
+                continue;
+            }
+            if (current.length() + trimmed.length() > MAX_CHUNK_SIZE) {
+                if (current.length() > 0) {
+                    flushChunk(current, metadata, chunks, chunkIndex);
+                }
+                if (trimmed.length() > MAX_CHUNK_SIZE) {
+                    // 极端长串（无标点）直接硬切
+                    for (int i = 0; i < trimmed.length(); i += MAX_CHUNK_SIZE) {
+                        int end = Math.min(trimmed.length(), i + MAX_CHUNK_SIZE);
+                        flushChunk(new StringBuilder(trimmed.substring(i, end)), metadata, chunks, chunkIndex);
+                    }
+                } else {
+                    current = new StringBuilder(trimmed);
+                }
+            } else {
+                current.append(trimmed);
+            }
+        }
+        if (current.length() > 0) {
+            flushChunk(current, metadata, chunks, chunkIndex);
+        }
+    }
+
+    /**
+     * 落盘一个分片：写入尾部 overlap 到下一个分片的开头，保证上下文连续
+     */
+    private void flushChunk(StringBuilder content, Metadata metadata,
+                            List<TextSegment> chunks, int[] chunkIndex) {
+        String text = content.toString().trim();
+        if (text.isEmpty()) {
+            return;
+        }
+        chunks.add(createChunk(text, metadata, chunkIndex[0]++));
     }
 
     /**
@@ -267,25 +364,6 @@ public class KnowledgeIngestService {
         Metadata chunkMetadata = metadata.copy();
         chunkMetadata.put("index", index);
         return TextSegment.from(text.trim(), chunkMetadata);
-    }
-
-    /**
-     * 提取文本尾部作为重叠部分
-     *
-     * @param text 原始文本
-     * @return 尾部重叠文本
-     */
-    private String extractOverlap(String text) {
-        if (text.length() <= OVERLAP_SIZE) {
-            return text;
-        }
-        // 从最后一个换行处截断，避免截断到句子中间
-        int cutPoint = text.lastIndexOf('\n', text.length() - OVERLAP_SIZE);
-        if (cutPoint < 0 || text.length() - cutPoint > OVERLAP_SIZE * 2) {
-            // 找不到合适的换行符，直接从字符位置截断
-            return text.substring(text.length() - OVERLAP_SIZE);
-        }
-        return text.substring(cutPoint + 1);
     }
 
     /**

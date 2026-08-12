@@ -37,6 +37,7 @@ public class SpeechController {
     @SkipAuth
     public Result<String> asr(@RequestParam("audio") MultipartFile audio) {
         String text = speechAsrService.recognize(audio);
-        return Result.success(text);
+        // 识别文字放入 data，message 返回成功提示（避免误匹配 success(String message) 重载）
+        return Result.success("语音识别成功", text);
     }
 }
