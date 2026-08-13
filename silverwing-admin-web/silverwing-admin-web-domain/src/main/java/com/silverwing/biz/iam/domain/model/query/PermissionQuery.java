@@ -14,6 +14,6 @@ public class PermissionQuery extends PageRequest {
     /** 关键词（模糊匹配权限编码或权限名称） */
     private String keyword;
 
-    /** 状态（可选：1启用 / 0禁用） */
+    /** 状态（可选：0启用 / 1禁用） */
     private Integer status;
 }

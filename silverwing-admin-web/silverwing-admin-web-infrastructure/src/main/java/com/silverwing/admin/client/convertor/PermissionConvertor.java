@@ -44,7 +44,9 @@ public interface PermissionConvertor {
             entity.setSort(0);
         }
         if (cmd.getStatus() != null) {
-            if (cmd.getStatus() == 1) {
+            // 与 SysPermissionAggregate 语义对齐：status==0 启用(正常)，status==1 停用。
+            // 原实现把 ==1 当启用、==0 当停用，导致前端选"正常"反而落库为停用，此处修正。
+            if (cmd.getStatus() == 0) {
                 entity.enable();
             } else {
                 entity.disable();

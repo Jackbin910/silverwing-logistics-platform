@@ -33,7 +33,7 @@ public class SysPermissionPO extends BaseLogicEntity {
     /** 排序 */
     private Integer sort;
 
-    /** 状态: 0-禁用, 1-启用 */
+    /** 状态: 0-启用, 1-禁用 */
     private Integer status;
 
     /** 是否可见: 0-可见, 1-隐藏 */
