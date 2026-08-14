@@ -41,4 +41,7 @@ public class SysDictDataPO extends BaseEntity {
 
     /** 状态（0-正常 1-停用） */
     private String status;
+
+    /** 备注 */
+    private String remark;
 }
