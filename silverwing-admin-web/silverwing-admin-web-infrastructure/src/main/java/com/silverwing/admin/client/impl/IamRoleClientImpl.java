@@ -60,6 +60,10 @@ public class IamRoleClientImpl implements IamRoleClient {
             // 状态: 0-启用, 1-禁用，直接赋值，避免启用/禁用语义反转
             role.setStatus(command.getStatus());
         }
+        if (command.getRoleSort() != null) {
+            // 显示顺序：修改角色时需同步落库，原逻辑遗漏此字段导致顺序不保存
+            role.setRoleSort(command.getRoleSort());
+        }
         // 领域服务负责持久化
         roleDomainService.update(role);
         log.info("更新角色 id={}", id);
