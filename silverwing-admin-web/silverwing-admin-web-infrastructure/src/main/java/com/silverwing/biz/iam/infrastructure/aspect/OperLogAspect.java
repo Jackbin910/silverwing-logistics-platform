@@ -2,166 +2,53 @@ package com.silverwing.biz.iam.infrastructure.aspect;
 
 import cn.dev33.satoken.session.SaSession;
 import cn.dev33.satoken.stp.StpUtil;
-import cn.hutool.core.text.CharSequenceUtil;
-import com.silverwing.common.constant.SaSessionConstants;
-import cn.hutool.extra.servlet.JakartaServletUtil;
-import cn.hutool.extra.servlet.ServletUtil;
-import com.alibaba.fastjson2.JSON;
 import com.silverwing.biz.dept.infrastructure.dao.SysDeptDao;
 import com.silverwing.biz.dept.infrastructure.dao.po.SysDeptPO;
 import com.silverwing.biz.iam.infrastructure.dao.SysOperLogMapper;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysOperLogPO;
-import com.silverwing.biz.iam.infrastructure.dao.SysUserDao;
 import com.silverwing.biz.iam.infrastructure.dao.po.SysUserPO;
-import com.silverwing.common.annotation.Log;
-import com.silverwing.common.i18n.LocaleContextUtils;
-import jakarta.servlet.http.HttpServletRequest;
+import com.silverwing.biz.iam.infrastructure.dao.SysUserDao;
+import com.silverwing.common.aspect.AbstractOperLogAspect;
+import com.silverwing.common.constant.SaSessionConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.aspectj.lang.ProceedingJoinPoint;
-import org.aspectj.lang.annotation.Around;
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.reflect.MethodSignature;
-import org.dromara.dynamictp.core.DtpRegistry;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.List;
 
 /**
  * IAM 操作日志切面
  * <p>
- * 拦截被 {@link Log} 标记的方法，采集耗时、入参、返回与异常及请求上下文，
- * 直接组装为 {@link SysOperLogPO} 并通过 {@link SysOperLogMapper#insertBatch} 落库到本服务库。
- * 落库经 DynamicTP 线程池 {@code operLogExecutor} 异步执行，不阻塞请求线程；
- * 记录过程异常隔离，任何失败都不影响主业务流程。
- * </p>
- * <p>
- * 供 admin-web、auth 等依赖 biz-iam 的进程复用（共享 silverwing_logistics 库的 sys_oper_log 表）。
+ * 继承 {@link AbstractOperLogAspect} 复用拦截、采集、截断与异步落库能力，
+ * 仅补充 IAM 特有的「按登录用户反查部门名称」逻辑，使操作日志可按部门检索。
+ * 落库目标为 silverwing_logistics 库的 sys_oper_log 表。
  * </p>
  */
 @Slf4j
-@Aspect
 @Component
-@Order
 @RequiredArgsConstructor
-public class OperLogAspect {
-
-
-    /** DynamicTP 线程池名称，须与 application.yml 中 spring.dynamic.tp.executors[].threadPoolName 一致 */
-    private static final String DTP_EXECUTOR_NAME = "operLogExecutor";
+public class OperLogAspect extends AbstractOperLogAspect<SysOperLogPO> {
 
     private final SysOperLogMapper sysOperLogMapper;
     private final SysUserDao sysUserDao;
     private final SysDeptDao sysDeptDao;
 
-    /**
-     * 环绕 @Log 注解方法，采集并异步落库操作日志
-     *
-     * @param joinPoint 连接点
-     * @return 目标方法返回值
-     * @throws Throwable 透传目标方法异常
-     */
-    @Around("@annotation(com.silverwing.common.annotation.Log)")
-    public Object around(ProceedingJoinPoint joinPoint) throws Throwable {
-        long startTime = System.currentTimeMillis();
-        SysOperLogPO po = new SysOperLogPO();
-        po.setOperTime(LocalDateTime.now());
-        po.setStatus(0);
-
-        try {
-            MethodSignature signature = (MethodSignature) joinPoint.getSignature();
-            Log logAnno = signature.getMethod().getAnnotation(Log.class);
-            po.setTitle(logAnno.title());
-            po.setBusinessType(logAnno.businessType().getCode());
-            po.setOperatorType(logAnno.operatorType());
-            po.setMethod(signature.getDeclaringTypeName() + "." + signature.getName());
-
-            fillRequestInfo(po, joinPoint.getArgs(), logAnno.saveResult());
-
-            Object result = joinPoint.proceed();
-            if (logAnno.saveResult()) {
-                po.setJsonResult(CharSequenceUtil.sub(JSON.toJSONString(result),0, 2000));
-            }
-            return result;
-        } catch (Throwable throwable) {
-            po.setStatus(1);
-            po.setErrorMsg(CharSequenceUtil.sub(throwable.getMessage(), 0, 2000));
-            throw throwable;
-        } finally {
-            po.setCostTime(System.currentTimeMillis() - startTime);
-            record(po);
-        }
+    @Override
+    protected SysOperLogPO createPo() {
+        return new SysOperLogPO();
     }
 
-    /**
-     * 异步落库：提交一个任务到 DynamicTP 线程池，内部执行批量插入。
-     * 全程异常隔离，绝不阻塞请求线程。
-     *
-     * @param po 操作日志 PO
-     */
-    private void record(SysOperLogPO po) {
-        Executor executor = DtpRegistry.getExecutor(DTP_EXECUTOR_NAME);
-        // 包装任务以传播请求线程的 Locale，保证异步线程内的国际化取值正确
-        CompletableFuture.runAsync(LocaleContextUtils.wrap(() -> {
-            try {
-                sysOperLogMapper.insertBatch(Collections.singletonList(po));
-            } catch (Exception e) {
-                log.error("操作日志异步落库失败", e);
-            }
-        }), executor);
+    @Override
+    protected void doInsert(List<SysOperLogPO> list) {
+        sysOperLogMapper.insertBatch(list);
     }
 
-    /**
-     * 采集 HTTP 请求上下文（URL / IP / 请求方式 / 操作人员）与入参
-     *
-     * @param po         操作日志 PO
-     * @param args       方法入参
-     * @param saveResult 是否记录入参
-     */
-    private void fillRequestInfo(SysOperLogPO po, Object[] args, boolean saveResult) {
+    @Override
+    protected void fillOperator(SysOperLogPO po) {
         try {
-            ServletRequestAttributes attributes =
-                    (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-            HttpServletRequest request = attributes.getRequest();
-            po.setRequestMethod(request.getMethod());
-            po.setOperUrl(request.getRequestURI());
-            po.setOperIp(JakartaServletUtil.getClientIP(request));
-            if (saveResult) {
-                po.setOperParam(CharSequenceUtil.sub(JSON.toJSONString(args), 0, 2000));
-            }
-            fillOperator(po);
-        } catch (Exception e) {
-            log.error("采集操作日志请求上下文失败", e);
-        }
-    }
-
-    /**
-     * 从 Sa-Token 获取当前登录用户作为操作人员
-     *
-     * @param po 操作日志 PO
-     */
-    private void fillOperator(SysOperLogPO po) {
-        try {
-            // 优先取登录时写入会话的用户名作为操作人
-            SaSession session = StpUtil.getSession();
-            String username = session.getString(SaSessionConstants.USERNAME);
-            if (username != null && !username.isBlank()) {
-                po.setOperName(username);
-            } else {
-                // 兜底取 Sa-Token 登录标识（通常为 userId）
-                Object loginId = StpUtil.getLoginIdDefaultNull();
-                if (loginId != null) {
-                    po.setOperName(String.valueOf(loginId));
-                }
-            }
-            // 按登录用户id反查所属部门名称，便于操作日志按部门检索
+            // 先取会话中的用户名（与基类一致），再追加部门反查
+            super.fillOperator(po);
             Object loginId = StpUtil.getLoginIdDefaultNull();
             if (loginId != null) {
                 SysUserPO user = sysUserDao.selectById(Long.valueOf(String.valueOf(loginId)));
@@ -173,9 +60,78 @@ public class OperLogAspect {
                 }
             }
         } catch (Exception e) {
-            // 未登录或令牌不可用，操作人员/部门留空
-            log.warn("采集操作日志操作人员/部门失败", e);
+            // 未登录或令牌不可用，部门留空
+            log.warn("采集操作日志部门失败", e);
         }
     }
 
+    @Override
+    protected void setTitle(SysOperLogPO po, String title) {
+        po.setTitle(title);
+    }
+
+    @Override
+    protected void setBusinessType(SysOperLogPO po, Integer code) {
+        po.setBusinessType(code);
+    }
+
+    @Override
+    protected void setOperatorType(SysOperLogPO po, Integer operatorType) {
+        po.setOperatorType(operatorType);
+    }
+
+    @Override
+    protected void setMethod(SysOperLogPO po, String method) {
+        po.setMethod(method);
+    }
+
+    @Override
+    protected void setRequestMethod(SysOperLogPO po, String requestMethod) {
+        po.setRequestMethod(requestMethod);
+    }
+
+    @Override
+    protected void setOperUrl(SysOperLogPO po, String operUrl) {
+        po.setOperUrl(operUrl);
+    }
+
+    @Override
+    protected void setOperIp(SysOperLogPO po, String operIp) {
+        po.setOperIp(operIp);
+    }
+
+    @Override
+    protected void setOperParam(SysOperLogPO po, String operParam) {
+        po.setOperParam(operParam);
+    }
+
+    @Override
+    protected void setJsonResult(SysOperLogPO po, String jsonResult) {
+        po.setJsonResult(jsonResult);
+    }
+
+    @Override
+    protected void setStatus(SysOperLogPO po, Integer status) {
+        po.setStatus(status);
+    }
+
+    @Override
+    protected void setErrorMsg(SysOperLogPO po, String errorMsg) {
+        po.setErrorMsg(errorMsg);
+    }
+
+    @Override
+    protected void setOperName(SysOperLogPO po, String operName) {
+        po.setOperName(operName);
+    }
+
+    @Override
+    protected void setOperTime(SysOperLogPO po, LocalDateTime operTime) {
+        po.setOperTime(operTime);
+    }
+
+    @Override
+    protected void setCostTime(SysOperLogPO po, Long costTime) {
+        po.setCostTime(costTime);
+    }
 }

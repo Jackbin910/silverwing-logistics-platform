@@ -18,11 +18,16 @@ import com.silverwing.auth.iam.domain.model.aggregate.AuthUserAggregate;
 import com.silverwing.common.constant.SaSessionConstants;
 import com.silverwing.common.domain.ResultCode;
 import com.silverwing.common.exception.BusinessException;
+import com.silverwing.common.i18n.LocaleContextUtils;
+import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +41,9 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class AuthCommandService {
+
+    @Resource
+    private ThreadPoolExecutor operLogExecutor;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -153,6 +161,8 @@ public class AuthCommandService {
     /**
      * 记录登录日志到 {@code sys_logininfor} 表。
      * <p>无论登录成功或失败均写入一条记录，便于审计与安全分析；写入异常仅记录日志，不影响主流程。</p>
+     * <p>落库经 DynamicTP 线程池 {@code operLogExecutor} 异步执行，不阻塞登录主流程；
+     * 若线程池未在配置中心声明，则降级到默认线程池，保证不抛 NPE。</p>
      *
      * @param username 用户账号
      * @param ipaddr   登录IP
@@ -166,10 +176,18 @@ public class AuthCommandService {
             aggregate.setIpaddr(ipaddr);
             aggregate.setStatus(success ? 0 : 1);
             aggregate.setMsg(msg);
-            aggregate.setAccessTime(java.time.LocalDateTime.now());
-            logininforRepository.insert(aggregate);
+            aggregate.setAccessTime(LocalDateTime.now());
+
+            Runnable task = LocaleContextUtils.wrap(() -> {
+                try {
+                    logininforRepository.insert(aggregate);
+                } catch (Exception e) {
+                    log.warn("写入登录日志失败 username={}, ip={}, 原因={}", username, ipaddr, e.getMessage());
+                }
+            });
+            CompletableFuture.runAsync(task, operLogExecutor);
         } catch (Exception e) {
-            log.warn("写入登录日志失败 username={}, ip={}, 原因={}", username, ipaddr, e.getMessage());
+            log.warn("提交登录日志失败 username={}, ip={}, 原因={}", username, ipaddr, e.getMessage());
         }
     }
 
