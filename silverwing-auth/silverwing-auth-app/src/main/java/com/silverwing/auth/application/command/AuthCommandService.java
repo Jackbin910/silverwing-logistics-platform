@@ -97,7 +97,7 @@ public class AuthCommandService {
                 .collect(Collectors.toList());
         // 超级管理员直接授予全部权限通配符，与 RuoYi 方案一致（无需逐条绑定权限）
         boolean isAdmin = roleCodes.stream()
-                .anyMatch(code -> IamConstants.SUPER_ADMIN.equalsIgnoreCase(code));
+                .anyMatch(IamConstants.SUPER_ADMIN::equalsIgnoreCase);
         List<String> permissions = isAdmin
                 ? List.of(IamConstants.ALL_PERMISSION)
                 : permissionRepository.findPermissionCodesByUserId(user.getId());

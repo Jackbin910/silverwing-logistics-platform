@@ -176,6 +176,7 @@ public class IntentScopedAssistant {
 
         return assistant.chat(sessionId, augmentedMessage)
                 .doOnComplete(() -> log.info("意图限定 Agent 流式完成: intent={}", intent))
+                .doOnCancel(() -> log.info("意图限定 Agent 流式被客户端取消: intent={}", intent))
                 .doOnError(e -> log.error("意图限定 Agent 流式异常: intent={}", intent, e));
     }
 

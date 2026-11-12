@@ -1,22 +1,20 @@
 package com.silverwing.ai.domain.service.rag;
 
 import cn.hutool.core.util.StrUtil;
+import com.silverwing.ai.common.util.StreamingCancellation;
 import dev.langchain4j.data.embedding.Embedding;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.request.ChatRequest;
-import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.model.chat.response.*;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingMatch;
 import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -24,6 +22,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -88,7 +87,7 @@ public class KnowledgeQaService {
      * 向量检索（同步）完成后，通过回调逐 token 推送 LLM 生成的回答
      */
     public Flux<String> answerStream(String question) {
-        return Flux.defer(() -> {
+        return Flux.<String>defer(() -> {
             // 1. 检索相关知识片段（含 Query 改写多路召回）
             List<EmbeddingMatch<TextSegment>> relevantMatches = retrieve(question);
             if (relevantMatches.isEmpty()) {
@@ -103,12 +102,25 @@ public class KnowledgeQaService {
                     .messages(UserMessage.from(prompt))
                     .build();
 
-            // 5. 使用 StreamingChatResponseHandler 桥接为 Flux
-            return Flux.create(sink -> {
+            // 5. 桥接为 Flux，并把下游取消信号传递给底层模型，避免断开后继续生成
+            return Flux.<String>create(sink -> {
+                // 流式句柄仅在首个 token 到达后可用，用 AtomicReference 在回调与取消信号间传递
+                AtomicReference<StreamingHandle> handleRef = new AtomicReference<>();
+                sink.onCancel(() -> StreamingCancellation.cancel(handleRef, "知识库问答"));
+
                 streamingChatModel.chat(chatRequest, new StreamingChatResponseHandler() {
                     @Override
-                    public void onPartialResponse(String partialResponse) {
-                        sink.next(partialResponse);
+                    public void onPartialResponse(String token) {
+                        sink.next(token);
+                    }
+
+                    @Override
+                    public void onPartialResponse(PartialResponse partialResponse,
+                                                 PartialResponseContext context) {
+                        // 两个重载都覆盖：provider 走带 context 的路径时可拿到取消句柄，
+                        // 走旧 String 路径时也能输出 token；token 统一由 String 重载推送，避免重复
+                        handleRef.compareAndSet(null, context.streamingHandle());
+                        onPartialResponse(partialResponse.text());
                     }
 
                     @Override
@@ -124,8 +136,6 @@ public class KnowledgeQaService {
             });
         });
     }
-
-
 
     /**
      * 检索相关知识片段（含 Query 改写多路召回）

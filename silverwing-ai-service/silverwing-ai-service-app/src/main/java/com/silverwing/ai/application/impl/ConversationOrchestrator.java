@@ -2,6 +2,7 @@ package com.silverwing.ai.application.impl;
 
 import com.alibaba.fastjson2.JSON;
 import com.silverwing.ai.application.dto.*;
+import com.silverwing.ai.common.util.StreamingCancellation;
 import com.silverwing.biz.ai.domain.enums.IntentEnum;
 import com.silverwing.ai.domain.service.IntentRecognitionService;
 import com.silverwing.ai.domain.service.rag.DatabaseRagService;
@@ -13,15 +14,18 @@ import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.chat.response.PartialResponse;
+import dev.langchain4j.model.chat.response.PartialResponseContext;
 import dev.langchain4j.model.chat.response.StreamingChatResponseHandler;
+import dev.langchain4j.model.chat.response.StreamingHandle;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import com.silverwing.ai.domain.model.NlpParseResult;
 import com.silverwing.ai.domain.model.BizQueryResult;
 import com.silverwing.ai.domain.model.ConversationRecord;
@@ -213,110 +217,144 @@ public class ConversationOrchestrator {
      * @return Flux<String> 流式响应片段
      */
     public Flux<String> chatStream(String userMessage, String sessionId) {
-        Sinks.Many<String> sink = Sinks.many().unicast().onBackpressureBuffer();
         // 入口（请求线程）获取登录用户ID，向下透传，避免流式异步线程 Sa-Token 上下文不可用
         Long userId = getLoginUserId();
 
-        try {
-            // 1. 获取历史上下文
-            List<ChatMessage> history = conversationRepository.getHistory(sessionId);
-            log.debug("对话历史: sessionId={}, 轮数={}", sessionId, history.size() / 2);
+        return Flux.<String>defer(() -> {
+            try {
+                // 1. 获取历史上下文
+                List<ChatMessage> history = conversationRepository.getHistory(sessionId);
+                log.debug("对话历史: sessionId={}, 轮数={}", sessionId, history.size() / 2);
 
-            // 2. NLP 解析：意图 + 实体
-            NlpParseResult parseResult = intentService.parseWithEntities(userMessage);
-            log.info("NLP解析结果 - 意图: {}, 实体: {}", parseResult.getIntent(), parseResult.getEntities());
+                // 2. NLP 解析：意图 + 实体
+                NlpParseResult parseResult = intentService.parseWithEntities(userMessage);
+                log.info("NLP解析结果 - 意图: {}, 实体: {}",
+                        parseResult.getIntent(), parseResult.getEntities());
 
-            // 3. OTHER 意图：识别不出 -> 兜底进知识库查询（流式）
-            //    命中知识库则流式返回答案；未命中由 RAG 服务返回"抱歉"兜底文案
-            if (parseResult.getIntent() == IntentEnum.OTHER) {
-                // 流式输出，并在流结束时落记忆（主路径为流式）
-                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage, parseResult, userId);
-            }
-
-            // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
-            if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
-                // 流式输出RAG回答，并在流结束时落记忆
-                return withMemory(knowledgeQaService.answerStream(userMessage), sessionId, userMessage, parseResult, userId);
-            }
-
-            // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
-            if ((parseResult.getIntent() == IntentEnum.DATABASE_QUERY
-                    || parseResult.getIntent() == IntentEnum.DATA_STATISTICS)
-                    && databaseRagService != null) {
-                String nl2sqlAnswer = databaseRagService.query(userMessage);
-                log.info("NL2SQL回答: {}", nl2sqlAnswer);
-                saveMemory(sessionId, userMessage, nl2sqlAnswer, parseResult, userId);
-                emitFullResponse(sink, nl2sqlAnswer);
-                return sink.asFlux();
-            }
-
-            // 6. 其他意图：走标准业务处理器路由
-            BizQueryResult bizResult = intentRouter.route(
-                    parseResult.getIntent(),
-                    userMessage,
-                    parseResult.getEntities()
-            );
-            log.info("业务查询结果: {}", bizResult);
-
-            // 7. LLM 将结构化数据转化为自然语言流式回答，带上历史上下文
-            String contextHint = buildContextHint(history);
-            String queryResultJson = JSON.toJSONString(bizResult.getData());
-            String prompt = contextHint + userMessage + "\n\n查询结果数据：" + queryResultJson;
-
-            List<ChatMessage> messages = new ArrayList<>(history);
-            messages.add(UserMessage.from(prompt));
-
-            StringBuilder fullAnswer = new StringBuilder();
-
-            streamingChatModel.chat(messages, new StreamingChatResponseHandler() {
-                @Override
-                public void onPartialResponse(String partialResponse) {
-                    fullAnswer.append(partialResponse);
-                    sink.tryEmitNext(partialResponse);
+                // 3. OTHER 意图：识别不出 -> 兜底进知识库查询（流式）
+                //    命中知识库则流式返回答案；未命中由 RAG 服务返回"抱歉"兜底文案
+                if (parseResult.getIntent() == IntentEnum.OTHER) {
+                    // 流式输出，并在流结束或客户端取消时落记忆
+                    return withMemory(knowledgeQaService.answerStream(userMessage),
+                            sessionId, userMessage, parseResult, userId);
                 }
 
-                @Override
-                public void onCompleteResponse(ChatResponse completeResponse) {
-                    saveMemory(sessionId, userMessage, fullAnswer.toString(), parseResult, userId);
-                    sink.tryEmitComplete();
+                // 4. KNOWLEDGE_QA 走 RAG 知识库问答流程（不走业务处理器路由）
+                if (parseResult.getIntent() == IntentEnum.KNOWLEDGE_QA) {
+                    return withMemory(knowledgeQaService.answerStream(userMessage),
+                            sessionId, userMessage, parseResult, userId);
                 }
 
-                @Override
-                public void onError(Throwable error) {
-                    log.error("流式回答生成异常", error);
-                    sink.tryEmitError(error);
+                // 5. DATABASE_QUERY / DATA_STATISTICS 走 NL2SQL 流程（直接查询数据库）
+                if ((parseResult.getIntent() == IntentEnum.DATABASE_QUERY
+                        || parseResult.getIntent() == IntentEnum.DATA_STATISTICS)
+                        && databaseRagService != null) {
+                    String nl2sqlAnswer = databaseRagService.query(userMessage);
+                    log.info("NL2SQL回答: {}", nl2sqlAnswer);
+                    saveMemory(sessionId, userMessage, nl2sqlAnswer, parseResult, userId);
+                    return Flux.just(nl2sqlAnswer);
                 }
-            });
 
-        } catch (BusinessException e) {
-            log.warn("业务处理异常: {}", e.getMessage());
-            String answer = "抱歉，" + e.getMessage() + "。请提供更多信息。";
-            emitFullResponse(sink, answer);
-        } catch (Exception e) {
-            log.error("对话处理异常", e);
-            sink.tryEmitError(e);
-        }
+                // 6. 其他意图：走标准业务处理器路由
+                BizQueryResult bizResult = intentRouter.route(
+                        parseResult.getIntent(),
+                        userMessage,
+                        parseResult.getEntities()
+                );
+                log.info("业务查询结果: {}", bizResult);
 
-        return sink.asFlux();
+                // 7. LLM 将结构化数据转化为自然语言流式回答，带上历史上下文
+                String contextHint = buildContextHint(history);
+                String queryResultJson = JSON.toJSONString(bizResult.getData());
+                String prompt = contextHint + userMessage + "\n\n查询结果数据：" + queryResultJson;
+
+                List<ChatMessage> messages = new ArrayList<>(history);
+                messages.add(UserMessage.from(prompt));
+
+                return Flux.<String>create(sink -> {
+                    StringBuilder fullAnswer = new StringBuilder();
+                    // 流式句柄仅在首个 token 到达后可用，用 AtomicReference 在回调与取消信号间传递
+                    AtomicReference<StreamingHandle> handleRef = new AtomicReference<>();
+                    sink.onCancel(() -> {
+                        StreamingCancellation.cancel(handleRef, "对话");
+                        savePartialMemory(sessionId, userMessage, fullAnswer, parseResult, userId);
+                    });
+
+                    streamingChatModel.chat(messages, new StreamingChatResponseHandler() {
+                        @Override
+                        public void onPartialResponse(String token) {
+                            fullAnswer.append(token);
+                            sink.next(token);
+                        }
+
+                        @Override
+                        public void onPartialResponse(PartialResponse partialResponse,
+                                                     PartialResponseContext context) {
+                            // 两个重载都覆盖：provider 走带 context 的路径时可拿到取消句柄，
+                            // 走旧 String 路径时也能输出 token；token 统一由 String 重载推送，避免重复
+                            handleRef.compareAndSet(null, context.streamingHandle());
+                            onPartialResponse(partialResponse.text());
+                        }
+
+                        @Override
+                        public void onCompleteResponse(ChatResponse completeResponse) {
+                            saveMemory(sessionId, userMessage, fullAnswer.toString(),
+                                    parseResult, userId);
+                            sink.complete();
+                        }
+
+                        @Override
+                        public void onError(Throwable error) {
+                            log.error("流式回答生成异常", error);
+                            sink.error(error);
+                        }
+                    });
+                });
+
+            } catch (BusinessException e) {
+                log.warn("业务处理异常: {}", e.getMessage());
+                return Flux.just("抱歉，" + e.getMessage() + "。请提供更多信息。");
+            } catch (Exception e) {
+                log.error("对话处理异常", e);
+                return Flux.<String>error(e);
+            }
+        });
     }
 
     /**
-     * 非流式内容直接完整发送
+     * 保存被中断时已输出的部分回答
+     * <p>调用 cancel() 后框架不会再触发 onCompleteResponse，若不在此处补写，
+     * 用户已看到的那半段回答不会进入对话记忆，下一轮会出现上下文失忆。</p>
+     *
+     * @param sessionId    会话ID
+     * @param userMessage  用户消息
+     * @param fullAnswer   已输出的回答片段
+     * @param parseResult  NLP解析结果
+     * @param userId       登录用户ID
      */
-    private void emitFullResponse(Sinks.Many<String> sink, String content) {
-        sink.tryEmitNext(content);
-        sink.tryEmitComplete();
+    private void savePartialMemory(String sessionId, String userMessage,
+                                   StringBuilder fullAnswer, NlpParseResult parseResult,
+                                   Long userId) {
+        if (fullAnswer.length() == 0) {
+            return;
+        }
+        log.info("SSE 客户端断开，保存部分回答: sessionId={}, length={}",
+                sessionId, fullAnswer.length());
+        saveMemory(sessionId, userMessage, fullAnswer.toString(), parseResult, userId);
     }
 
     /**
      * 流式响应记忆包装器
      * <p>主路径为流式输出，需在 token 流结束后把完整答案落对话记忆，
      * 以支持多轮上下文。用户消息与完整回答一并保存。</p>
+     * <p>客户端断开时 doOnComplete 不会触发，改为保存已输出的部分回答，
+     * 避免下一轮对话出现上下文失忆。</p>
      *
      * @param source      原始流式 token 源
      * @param sessionId   会话ID，null 不保存
      * @param userMessage 用户消息
      * @param parseResult NLP解析结果
+     * @param userId      登录用户ID
      * @return 透传的流式 token 源（仅叠加记忆副作用）
      */
     private Flux<String> withMemory(Flux<String> source, String sessionId, String userMessage,
@@ -324,7 +362,10 @@ public class ConversationOrchestrator {
         StringBuilder fullAnswer = new StringBuilder();
         return source
                 .doOnNext(fullAnswer::append)
-                .doOnComplete(() -> saveMemory(sessionId, userMessage, fullAnswer.toString(), parseResult, userId))
+                .doOnComplete(() -> saveMemory(sessionId, userMessage,
+                        fullAnswer.toString(), parseResult, userId))
+                .doOnCancel(() -> savePartialMemory(sessionId, userMessage,
+                        fullAnswer, parseResult, userId))
                 .doOnError(e -> log.error("流式回答生成异常", e));
     }
 

@@ -58,6 +58,12 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j</artifactId>
         </dependency>
+        <!-- AI Service 接口返回 Flux<String> 所需适配器（ServiceLoader 注册 PublisherAdapter），
+             同时显式提供 reactor-core，避免仅靠 Redis/Lettuce 传递依赖 -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-reactor</artifactId>
+        </dependency>
         <!-- Apache Tika 文档解析（DocumentParser） -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
