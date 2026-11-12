@@ -12,6 +12,8 @@ import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.MemoryId;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.tool.ToolArgumentsErrorHandler;
+import dev.langchain4j.service.tool.ToolExecutionErrorHandler;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -123,6 +125,11 @@ public class IntentScopedAssistant {
                 .streamingChatModel(streamingChatModel)
                 .chatMemoryProvider(memoryProvider)
                 .tools(tools)
+                // 显式固化工具错误策略：避免框架未来改默认值时行为漂移；
+                // 业务工具内部已捕获异常并返回文本，此配置不影响现有成功链路
+                .toolArgumentsErrorHandler(ToolArgumentsErrorHandler.sendExceptionMessageToLlm())
+                .toolExecutionErrorHandler(
+                        ToolExecutionErrorHandler.failInvocationUnlessVisibleToLlm())
                 .build();
     }
 

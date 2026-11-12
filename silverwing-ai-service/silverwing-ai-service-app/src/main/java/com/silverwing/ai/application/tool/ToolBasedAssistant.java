@@ -7,6 +7,8 @@ import com.silverwing.ops.client.OpsWarehouseClient;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
+import dev.langchain4j.service.tool.ToolArgumentsErrorHandler;
+import dev.langchain4j.service.tool.ToolExecutionErrorHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -49,6 +51,10 @@ public class ToolBasedAssistant {
         this.assistant = AiServices.builder(LogisticsAssistant.class)
                 .chatModel(chatModel)
                 .tools(deviceTools, orderTools, workOrderTools, opsTools)
+                // 与 IntentScopedAssistant 保持一致，显式固化工具错误策略
+                .toolArgumentsErrorHandler(ToolArgumentsErrorHandler.sendExceptionMessageToLlm())
+                .toolExecutionErrorHandler(
+                        ToolExecutionErrorHandler.failInvocationUnlessVisibleToLlm())
                 .build();
     }
 
