@@ -26,6 +26,10 @@ public class IntentRecognitionService {
     private static final int MAX_ATTEMPTS = 2;
     private static final double DEFAULT_CONFIDENCE = 0.8D;
 
+    // 意图识别为分类任务，单独使用 0 温度，避免与答案生成共用的全局温度影响稳定性
+    private static final double INTENT_TEMPERATURE = 0.0D;
+
+    // 清单需与 IntentEnum / EntityTypeEnum 保持一致，新增枚举时同步补充
     private static final String SYSTEM_PROMPT = """
         你是物流智能平台的统一 NLP 解析引擎。
         请根据用户输入，同时完成意图识别和实体提取。
@@ -56,7 +60,32 @@ public class IntentRecognitionService {
         - TIME：时间信息（如 今天、昨天、最近一周、上午）
         - DEVICE_TYPE：设备类型（如 AGV、机器狗、配送机器人、气动物流）
         - PERSON：人员姓名
+        - LOCATION：位置（具体的物理位置描述，如 一楼东侧、A区门口）
         - BIN_LOCATION：库位编号（如 12-1-11、3-2-5），即仓储接驳库的库位编号
+
+        易混场景示例（注意区分相近意图）：
+        输入：AGV-002 现在在线吗？
+        输出：{"intent":"QUERY_DEVICE_STATUS","confidence":0.95,
+              "entities":[{"type":"DEVICE_ID","value":"AGV-002"}]}
+
+        输入：AGV-002 的温度是多少？
+        输出：{"intent":"QUERY_DEVICE_METRIC","confidence":0.95,
+              "entities":[{"type":"DEVICE_ID","value":"AGV-002"},{"type":"METRIC","value":"温度"}]}
+
+        输入：AGV-002 充不进电，帮我报修
+        输出：{"intent":"FAULT_REPORT","confidence":0.93,
+              "entities":[{"type":"FAULT_DESC","value":"充不进电"}]}
+
+        输入：设备保养规程是怎么规定的？
+        输出：{"intent":"KNOWLEDGE_QA","confidence":0.90,"entities":[]}
+
+        输入：统计上周各设备的运行时长
+        输出：{"intent":"DATA_STATISTICS","confidence":0.88,
+              "entities":[{"type":"TIME","value":"上周"}]}
+
+        输入：帮我打开 12-1-1 的库位门
+        输出：{"intent":"OPEN_WAREHOUSE","confidence":0.96,
+              "entities":[{"type":"BIN_LOCATION","value":"12-1-1"}]}
 
         返回要求：
         1. 只返回一个 JSON 对象，不要返回其他说明
@@ -79,16 +108,6 @@ public class IntentRecognitionService {
      */
     public IntentRecognitionService(LlmPort llmPort) {
         this.llmPort = llmPort;
-    }
-
-    /**
-     * 识别用户输入的意图。
-     *
-     * @param userMessage 用户自然语言输入
-     * @return 意图枚举
-     */
-    public IntentEnum recognize(String userMessage) {
-        return parseWithEntities(userMessage).getIntent();
     }
 
     /**
@@ -134,7 +153,8 @@ public class IntentRecognitionService {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             String rawResult = null;
             try {
-                rawResult = llmPort.complete(SYSTEM_PROMPT, userMessage);
+                // 分类任务固定 0 温度并要求 JSON 输出，避免结果漂移与解析失败重试
+                rawResult = llmPort.completeJson(SYSTEM_PROMPT, userMessage, INTENT_TEMPERATURE);
                 return parseUnifiedResult(rawResult);
             } catch (Exception e) {
                 log.warn("第{}次统一NLP解析失败，原始返回: {}", attempt, rawResult, e);
@@ -150,7 +170,7 @@ public class IntentRecognitionService {
      * @return 综合解析结果
      */
     private NlpParseResult parseUnifiedResult(String jsonStr) {
-        String jsonContent = extractJsonSegment(jsonStr, '{', '}');
+        String jsonContent = extractJsonSegment(jsonStr);
         JSONObject jsonObject = JSON.parseObject(jsonContent);
         if (jsonObject == null) {
             throw new IllegalArgumentException("统一NLP解析结果为空");
@@ -264,7 +284,9 @@ public class IntentRecognitionService {
      * @return 合法的置信度
      */
     private Double normalizeConfidence(Double confidence) {
-        if (confidence == null || confidence < 0.0D || confidence > 1.0D) {
+        // NaN / Infinity 与 0、1 的比较恒为 false，需显式拦截，否则非法置信度会透传给模型
+        if (confidence == null || confidence.isNaN() || confidence.isInfinite()
+                || confidence < 0.0D || confidence > 1.0D) {
             return DEFAULT_CONFIDENCE;
         }
         return confidence;
@@ -274,14 +296,12 @@ public class IntentRecognitionService {
      * 从模型输出中提取 JSON 片段。
      *
      * @param rawResult 模型原始返回
-     * @param startChar JSON 起始字符
-     * @param endChar JSON 结束字符
      * @return 提取后的 JSON 片段
      */
-    private String extractJsonSegment(String rawResult, char startChar, char endChar) {
+    private String extractJsonSegment(String rawResult) {
         String cleaned = sanitizeModelOutput(rawResult);
-        int startIndex = cleaned.indexOf(startChar);
-        int endIndex = cleaned.lastIndexOf(endChar);
+        int startIndex = cleaned.indexOf('{');
+        int endIndex = cleaned.lastIndexOf('}');
         if (startIndex < 0 || endIndex < startIndex) {
             throw new IllegalArgumentException("未找到有效JSON片段: " + rawResult);
         }

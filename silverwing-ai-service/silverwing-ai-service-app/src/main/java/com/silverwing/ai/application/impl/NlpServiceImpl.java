@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import com.silverwing.ai.domain.model.IntentResult;
+import com.silverwing.ai.domain.model.NlpParseResult;
 import com.silverwing.ai.domain.model.EntityResult;
 import com.silverwing.ai.domain.model.ClassifyResult;
 import com.silverwing.ai.domain.model.SentimentResult;
@@ -52,12 +53,7 @@ public class NlpServiceImpl implements NlpService {
     @Override
     public IntentResult recognizeIntent(String text) {
         try {
-            IntentEnum intent = intentService.recognize(text);
-            return IntentResult.builder()
-                    .intent(intent)
-                    .confidence(0.8)
-                    .description(intent.getDescription())
-                    .build();
+            return buildIntentResult(intentService.parseWithEntities(text));
         } catch (Exception e) {
             log.error("意图识别失败", e);
             return IntentResult.builder()
@@ -92,16 +88,30 @@ public class NlpServiceImpl implements NlpService {
     public NlpAnalyzeResult analyze(String text) {
         log.info("开始综合 NLP 分析, 文本长度: {}", text.length());
 
-        IntentResult intentResult = recognizeIntent(text);
-        List<EntityResult> entities = extractEntities(text);
-        ClassifyResult classifyResult = classifyText(text);
-        SentimentResult sentimentResult = analyzeSentiment(text);
+        // 意图与实体由同一次 LLM 调用产出，避免重复调用 parseWithEntities
+        NlpParseResult parseResult = intentService.parseWithEntities(text);
+        IntentResult intentResult = buildIntentResult(parseResult);
 
         return NlpAnalyzeResult.builder()
                 .intentResult(intentResult)
-                .entities(entities)
-                .classifyResult(classifyResult)
-                .sentimentResult(sentimentResult)
+                .entities(parseResult.getEntities())
+                .classifyResult(classifyText(text))
+                .sentimentResult(analyzeSentiment(text))
+                .build();
+    }
+
+    /**
+     * 将统一 NLP 解析结果转换为意图识别结果
+     *
+     * @param parseResult 统一解析结果（含意图、实体与置信度）
+     * @return 意图识别结果
+     */
+    private IntentResult buildIntentResult(NlpParseResult parseResult) {
+        IntentEnum intent = parseResult.getIntent();
+        return IntentResult.builder()
+                .intent(intent)
+                .confidence(parseResult.getConfidence())
+                .description(intent.getDescription())
                 .build();
     }
 }

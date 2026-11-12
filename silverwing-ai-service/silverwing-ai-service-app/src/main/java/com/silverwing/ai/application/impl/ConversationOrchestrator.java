@@ -470,23 +470,4 @@ public class ConversationOrchestrator {
         return sb.toString();
     }
 
-    /**
-     * OTHER 意图的兜底回答
-     * 有历史上下文时给出更简洁的提示，首次对话给出完整帮助
-     *
-     * @param history 历史消息列表
-     * @return 兜底回答
-     */
-    private String buildFallbackAnswer(List<ChatMessage> history) {
-        if (history.isEmpty()) {
-            return "抱歉，我暂时无法理解您的问题。您可以试试：\n" +
-                    "- 查询设备位置：如\"AGV-002在哪\"\n" +
-                    "- 查询设备状态：如\"AGV-002状态如何\"\n" +
-                    "- 查询设备指标：如\"AGV-002的温度是多少\"\n" +
-                    "- 报告故障：如\"AGV-002充不进电\"\n" +
-                    "- 查询订单：如\"ORD-001到哪了\"";
-        }
-        return "抱歉，我没有完全理解您的意思。您可以试试更具体的描述，" +
-                "比如设备编码、订单号等，我可以帮您查询相关信息。";
-    }
 }
