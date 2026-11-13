@@ -53,6 +53,17 @@ public class ConversationOrchestrator {
         5. 如果有数值数据，带上合适的单位
         """;
 
+    /** 普通对话提示词：OTHER 意图不走知识库与业务查询，由模型直接自由回答。 */
+    private static final String GENERAL_CHAT_SYSTEM_PROMPT = """
+        你是物流智能平台的智能助手。请直接、友好地用中文回答用户的问题。
+
+        要求：
+        1. 直接回答问题，不要重复用户的问题
+        2. 仅基于通用常识回答，不确定的业务数据不要编造，如实说明
+        3. 回答简洁清晰，必要时分点说明
+        4. 结合对话历史理解上下文，保持多轮对话连贯
+        """;
+
     private final IntentRecognitionService intentService;
     private final IntentRouter intentRouter;
     private final LlmPort llmPort;
@@ -140,17 +151,17 @@ public class ConversationOrchestrator {
                         .build();
             }
 
-            // 3. OTHER 意图：识别不出 -> 兜底进知识库查询
-            //    命中知识库则返回相关知识答案；未命中由 RAG 服务返回"抱歉"兜底文案
+            // 3. OTHER 意图：识别不出 -> 直接普通对话回答（不检索知识库、不查业务数据）
             if (parseResult.getIntent() == IntentEnum.OTHER) {
-                String ragAnswer = knowledgeQaService.answer(userMessage);
-                log.info("未知意图兜底知识库回答: {}", ragAnswer);
-                saveMemory(sessionId, userMessage, ragAnswer, parseResult, userId);
+                String plainAnswer = llmPort.complete(GENERAL_CHAT_SYSTEM_PROMPT,
+                        buildContextHint(history) + userMessage);
+                log.info("未知意图普通对话回答: {}", plainAnswer);
+                saveMemory(sessionId, userMessage, plainAnswer, parseResult, userId);
                 return ConversationResponse.builder()
                         .sessionId(sessionId)
                         .intent(IntentEnum.OTHER.name())
                         .entities(parseResult.getEntities())
-                        .answer(ragAnswer)
+                        .answer(plainAnswer)
                         .build();
             }
 
@@ -231,11 +242,9 @@ public class ConversationOrchestrator {
                 log.info("NLP解析结果 - 意图: {}, 实体: {}",
                         parseResult.getIntent(), parseResult.getEntities());
 
-                // 3. OTHER 意图：识别不出 -> 兜底进知识库查询（流式）
-                //    命中知识库则流式返回答案；未命中由 RAG 服务返回"抱歉"兜底文案
+                // 3. OTHER 意图：识别不出 -> 直接普通对话流式回答（不检索知识库、不查业务数据）
                 if (parseResult.getIntent() == IntentEnum.OTHER) {
-                    // 流式输出，并在流结束或客户端取消时落记忆
-                    return withMemory(knowledgeQaService.answerStream(userMessage),
+                    return withMemory(plainChatStream(userMessage, history),
                             sessionId, userMessage, parseResult, userId);
                 }
 
@@ -367,6 +376,55 @@ public class ConversationOrchestrator {
                 .doOnCancel(() -> savePartialMemory(sessionId, userMessage,
                         fullAnswer, parseResult, userId))
                 .doOnError(e -> log.error("流式回答生成异常", e));
+    }
+
+    /**
+     * 普通对话流式回答。
+     * <p>OTHER 意图专用：不检索知识库、不查业务数据，仅把历史上下文与用户消息交给模型自由回答。
+     * 客户端断开时通过底层流式句柄取消生成，避免断开后模型继续占用算力；
+     * 完整/部分回答的记忆落库由外层 withMemory 统一处理。</p>
+     *
+     * @param userMessage 用户消息
+     * @param history     多轮对话历史
+     * @return 流式 token 源
+     */
+    private Flux<String> plainChatStream(String userMessage, List<ChatMessage> history) {
+        List<ChatMessage> messages = new ArrayList<>(history);
+        messages.add(UserMessage.from(GENERAL_CHAT_SYSTEM_PROMPT + "\n\n"
+                + buildContextHint(history) + userMessage));
+
+        return Flux.<String>create(sink -> {
+            // 流式句柄仅在首个 token 到达后可用，用 AtomicReference 在回调与取消信号间传递
+            AtomicReference<StreamingHandle> handleRef = new AtomicReference<>();
+            sink.onCancel(() -> StreamingCancellation.cancel(handleRef, "普通对话"));
+
+            streamingChatModel.chat(messages, new StreamingChatResponseHandler() {
+                @Override
+                public void onPartialResponse(String token) {
+                    sink.next(token);
+                }
+
+                @Override
+                public void onPartialResponse(PartialResponse partialResponse,
+                                             PartialResponseContext context) {
+                    // 两个重载都覆盖：provider 走带 context 的路径时可拿到取消句柄，
+                    // 走旧 String 路径时也能输出 token；token 统一由 String 重载推送，避免重复
+                    handleRef.compareAndSet(null, context.streamingHandle());
+                    onPartialResponse(partialResponse.text());
+                }
+
+                @Override
+                public void onCompleteResponse(ChatResponse completeResponse) {
+                    sink.complete();
+                }
+
+                @Override
+                public void onError(Throwable error) {
+                    log.error("普通对话流式回答异常", error);
+                    sink.error(error);
+                }
+            });
+        });
     }
 
     /**

@@ -3,8 +3,8 @@ package com.silverwing.ai.config;
 import dev.langchain4j.community.store.memory.chat.redis.RedisChatMemoryStore;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.StreamingChatModel;
+import dev.langchain4j.model.chat.router.ChatModelRouter;
 import dev.langchain4j.model.chat.router.DecisionModelChatModelRouter;
-import dev.langchain4j.model.chat.router.RoutingStreamingChatModel;
 import dev.langchain4j.model.decision.DecisionModel;
 import dev.langchain4j.model.ollama.OllamaDecisionModel;
 import dev.langchain4j.model.ollama.OllamaStreamingChatModel;
@@ -22,18 +22,11 @@ import java.time.Duration;
  * LangChain4j 配置类
  * ChatModel 和 EmbeddingModel 均由 langchain4j-ollama-spring-boot-starter 自动配置
  * EmbeddingModel 通过 Nacos 属性 langchain4j.ollama.embedding-model.* 配置
- * 此处配置 PGVector 向量存储与 Ollama 流式对话模型；
- * 流式模型可选启用决策模型路由，由小决策模型判定难度、大小模型负责生成回答。
+ * 此处配置 PGVector 向量存储与 Ollama 流式对话模型
  */
 @Slf4j
 @Configuration
 public class LangChain4jConfig {
-
-    /** 决策模型常驻显存，避免每次请求重新加载（负值表示不自动卸载）。 */
-    private static final int DECISION_KEEP_ALIVE = -1;
-
-    /** 决策模型位于同步热路径，只重试一次，避免拖慢主链路。 */
-    private static final int DECISION_MAX_RETRIES = 1;
 
     @Value("${langchain4j.vector-store.pgvector.host:localhost}")
     private String pgHost;
@@ -65,30 +58,11 @@ public class LangChain4jConfig {
     @Value("${spring.data.redis.port:6379}")
     private String redisPort;
 
-    // ===== 小决策模型路由（默认关闭）=====
-    // 开启后由 Ollama 决策模型判定请求难度，选择快速小模型或主模型生成回答；
-    // 决策模型只输出分类与概率、不生成文本，低置信度或调用失败统一兜底到主模型。
+    @Value("${ai.intent-recognition.model-name:nimble:9b}")
+    private String intentModelName;
 
-    @Value("${ai.decision-routing.enabled:false}")
-    private Boolean decisionRoutingEnabled;
-
-    @Value("${ai.decision-routing.decision-model-name:nimble}")
-    private String decisionModelName;
-
-    @Value("${ai.decision-routing.fast-model-name:qwen2.5:1.5b-instruct}")
-    private String fastModelName;
-
-    @Value("${ai.decision-routing.decision-timeout-seconds:5}")
-    private Integer decisionTimeoutSeconds;
-
-    @Value("${ai.decision-routing.min-probability:0.7}")
-    private Double minProbability;
-
-    @Value("${ai.decision-routing.fast-route-description:寒暄、简短事实查询、简单状态确认}")
-    private String fastRouteDescription;
-
-    @Value("${ai.decision-routing.strong-route-description:业务查询、数据分析、多步推理、工具调用、长文生成}")
-    private String strongRouteDescription;
+    @Value("${ai.intent-recognition.min-probability:0.7}")
+    private Double intentMinProbability;
 
     /**
      * PGVector 向量存储
@@ -118,12 +92,9 @@ public class LangChain4jConfig {
      * 流式对话模型
      * 复用与 ChatModel 相同的 Ollama 地址与模型名，用于知识库问答等场景的逐 token 流式输出
      * 仅当 Nacos 未配置 langchain4j.ollama.streaming-chat-model 时由本方法提供，避免重复 Bean
-     * 开启决策路由后由小决策模型判定难度、大小模型负责生成回答，业务侧注入类型不变。
-     * 注意：handler 形式的 chat() 会在调用线程同步完成路由判定，若 chat/stream 运行在
-     * Reactor 事件循环线程上，开启后需评估阻塞影响。
      *
      * @param baseUrl     Ollama 服务地址
-     * @param modelName   主模型名称
+     * @param modelName   模型名称
      * @param temperature 生成温度
      * @return StreamingChatModel 实例
      */
@@ -132,28 +103,7 @@ public class LangChain4jConfig {
             @Value("${langchain4j.ollama.chat-model.base-url}") String baseUrl,
             @Value("${langchain4j.ollama.chat-model.model-name}") String modelName,
             @Value("${langchain4j.ollama.chat-model.temperature}") Double temperature) {
-        OllamaStreamingChatModel strongModel =
-                buildOllamaStreamingModel(baseUrl, modelName, temperature);
-        if (!Boolean.TRUE.equals(decisionRoutingEnabled)) {
-            return strongModel;
-        }
-
-        // 决策模型只输出分类与概率，低置信度或调用失败时由 router 兜底到主模型
-        OllamaStreamingChatModel fastModel =
-                buildOllamaStreamingModel(baseUrl, fastModelName, temperature);
-        DecisionModelChatModelRouter router = DecisionModelChatModelRouter.builder()
-                .decisionModel(buildDecisionModel(baseUrl))
-                .minProbability(minProbability)
-                .build();
-        log.info("决策模型路由已启用: decisionModel={}, fastModel={}, strongModel={}",
-                decisionModelName, fastModelName, modelName);
-
-        return RoutingStreamingChatModel.builder()
-                .route("fast", fastRouteDescription, fastModel)
-                .route("strong", strongRouteDescription, strongModel)
-                .router(router)
-                .defaultRoute("strong")
-                .build();
+        return buildOllamaStreamingModel(baseUrl, modelName, temperature);
     }
 
     /**
@@ -176,22 +126,39 @@ public class LangChain4jConfig {
     }
 
     /**
-     * 构建 Ollama 小决策模型。
-     * 决策模型位于同步热路径，需收敛超时与重试次数，避免拖慢整条 SSE 对话链路。
+     * 意图识别专用决策模型
+     * 使用轻量分类模型（如 nimble:9b）做意图分类，常驻显存避免每次请求重新加载
      *
      * @param baseUrl Ollama 服务地址
-     * @return 决策模型实例
+     * @return 决策模型
      */
-    private DecisionModel buildDecisionModel(String baseUrl) {
+    @Bean
+    public DecisionModel intentDecisionModel(
+            @Value("${langchain4j.ollama.chat-model.base-url}") String baseUrl) {
         return OllamaDecisionModel.builder()
                 .baseUrl(baseUrl)
-                .modelName(decisionModelName)
-                .timeout(Duration.ofSeconds(decisionTimeoutSeconds))
-                .keepAlive(DECISION_KEEP_ALIVE)
-                .maxRetries(DECISION_MAX_RETRIES)
+                .modelName(intentModelName)
+                .timeout(Duration.ofSeconds(10))
+                .keepAlive(-1)
+                .maxRetries(1)
                 .build();
     }
 
+    /**
+     * 意图分类器
+     * 基于决策模型将用户输入分到各意图候选，低置信度时返回默认路由（OTHER）
+     *
+     * @param intentDecisionModel 意图识别决策模型
+     * @return 意图分类器
+     */
+    @Bean
+    public ChatModelRouter intentClassifier(DecisionModel intentDecisionModel) {
+        return DecisionModelChatModelRouter.builder()
+                .decisionModel(intentDecisionModel)
+                .question("用户这句话属于以下哪个意图？")
+                .minProbability(intentMinProbability)
+                .build();
+    }
 
     /**
      * Redis 聊天记忆存储

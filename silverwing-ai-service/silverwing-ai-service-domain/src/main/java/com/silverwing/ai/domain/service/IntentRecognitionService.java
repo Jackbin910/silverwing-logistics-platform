@@ -1,113 +1,67 @@
 package com.silverwing.ai.domain.service;
 
-import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONArray;
-import com.alibaba.fastjson2.JSONObject;
 import com.silverwing.ai.domain.model.EntityResult;
 import com.silverwing.ai.domain.model.NlpParseResult;
-import com.silverwing.ai.domain.port.LlmPort;
 import com.silverwing.biz.ai.domain.enums.EntityTypeEnum;
 import com.silverwing.biz.ai.domain.enums.IntentEnum;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.request.ChatRequest;
+import dev.langchain4j.model.chat.router.ChatModelRoute;
+import dev.langchain4j.model.chat.router.ChatModelRouter;
+import dev.langchain4j.model.chat.router.ChatModelRoutingRequest;
+import dev.langchain4j.model.chat.router.ChatModelRoutingResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * 意图识别服务实现
- * 通过 LangChain4j AiServices 调用 LLM 进行意图识别和实体提取
+ * 使用 LangChain4j 决策模型（nimble）做意图分类（低置信度兜底 OTHER），
+ * 实体通过正则从用户输入中提取，避免重型大模型生成 JSON。
  */
 @Slf4j
 @Service
 public class IntentRecognitionService {
 
-    private static final int MAX_ATTEMPTS = 2;
     private static final double DEFAULT_CONFIDENCE = 0.8D;
 
-    // 意图识别为分类任务，单独使用 0 温度，避免与答案生成共用的全局温度影响稳定性
-    private static final double INTENT_TEMPERATURE = 0.0D;
+    /** 意图分类命中时赋予的置信度（决策模型不暴露具体概率，命中即视为高置信）。 */
+    private static final double CLASSIFY_HIT_CONFIDENCE = 0.85D;
 
-    // 清单需与 IntentEnum / EntityTypeEnum 保持一致，新增枚举时同步补充
-    private static final String SYSTEM_PROMPT = """
-        你是物流智能平台的统一 NLP 解析引擎。
-        请根据用户输入，同时完成意图识别和实体提取。
+    /** 设备编码，如 AGV-002、ROBOT-001、DOG-003。 */
+    private static final Pattern DEVICE_ID_PATTERN =
+            Pattern.compile("(?i)\\b[A-Z]{2,}-\\d{2,}\\b");
 
-        可选意图：
-        - QUERY_DEVICE_STATUS：查询设备状态
-        - QUERY_DEVICE_LOCATION：查询设备位置
-        - QUERY_ORDER_STATUS：查询订单状态
-        - QUERY_DEVICE_METRIC：查询设备指标
-        - CREATE_WORK_ORDER：创建工单
-        - MAINTENANCE_ASSIST：维修辅助
-        - FAULT_REPORT：故障报告
-        - KNOWLEDGE_QA：智能问答
-        - DATA_STATISTICS：数据统计
-        - DATABASE_QUERY：数据库查询
-        - OPEN_WAREHOUSE：开门（打开 H800 仓储接驳库位的仓门，如"开 h800 12-1-1 的库位门""帮我开门放料"）
-        - OTHER：无法识别
+    /** 订单号，如 ORD-20260330-001。 */
+    private static final Pattern ORDER_NO_PATTERN =
+            Pattern.compile("(?i)\\bORD-[0-9-]+\\b");
 
-        可提取的实体类型：
-        - DEVICE_ID：设备编码（如 AGV-002、ROBOT-001、DOG-003）
-        - WAREHOUSE：仓库名称（如 3号仓、中心仓库、药房仓库）
-        - AREA：区域（如 A区、B区、一楼、二楼）
-        - ORDER_NO：订单号（如 ORD-20260330-001）
-        - METRIC：指标名（如 温度、电量、速度、振动值、运行时长）
-        - VALUE：指标值（如 85%、42°C、1200小时、50m/min）
-        - FAULT_DESC：故障描述（如 充不进电、履带卡住、传感器失灵）
-        - WORK_ORDER_TYPE：工单类型（如 维修、巡检、保养）
-        - TIME：时间信息（如 今天、昨天、最近一周、上午）
-        - DEVICE_TYPE：设备类型（如 AGV、机器狗、配送机器人、气动物流）
-        - PERSON：人员姓名
-        - LOCATION：位置（具体的物理位置描述，如 一楼东侧、A区门口）
-        - BIN_LOCATION：库位编号（如 12-1-11、3-2-5），即仓储接驳库的库位编号
+    /** 库位编号，如 12-1-1、3-2-5；前后排除数字，避免误匹配日期。 */
+    private static final Pattern BIN_LOCATION_PATTERN =
+            Pattern.compile("(?<!\\d)\\d{1,3}-\\d{1,3}-\\d{1,3}(?!\\d)");
 
-        易混场景示例（注意区分相近意图）：
-        输入：AGV-002 现在在线吗？
-        输出：{"intent":"QUERY_DEVICE_STATUS","confidence":0.95,
-              "entities":[{"type":"DEVICE_ID","value":"AGV-002"}]}
+    /** 常见设备指标关键词。 */
+    private static final List<String> METRICS = List.of(
+            "运行时长", "温度", "电量", "速度", "振动", "里程", "电压", "电流", "在线", "状态");
 
-        输入：AGV-002 的温度是多少？
-        输出：{"intent":"QUERY_DEVICE_METRIC","confidence":0.95,
-              "entities":[{"type":"DEVICE_ID","value":"AGV-002"},{"type":"METRIC","value":"温度"}]}
+    /** 意图分类候选：除 OTHER 外的全部意图，route 名即意图编码。 */
+    private static final List<ChatModelRoute> INTENT_ROUTES = buildIntentRoutes();
 
-        输入：AGV-002 充不进电，帮我报修
-        输出：{"intent":"FAULT_REPORT","confidence":0.93,
-              "entities":[{"type":"FAULT_DESC","value":"充不进电"}]}
-
-        输入：设备保养规程是怎么规定的？
-        输出：{"intent":"KNOWLEDGE_QA","confidence":0.90,"entities":[]}
-
-        输入：统计上周各设备的运行时长
-        输出：{"intent":"DATA_STATISTICS","confidence":0.88,
-              "entities":[{"type":"TIME","value":"上周"}]}
-
-        输入：帮我打开 12-1-1 的库位门
-        输出：{"intent":"OPEN_WAREHOUSE","confidence":0.96,
-              "entities":[{"type":"BIN_LOCATION","value":"12-1-1"}]}
-
-        返回要求：
-        1. 只返回一个 JSON 对象，不要返回其他说明
-        2. JSON 必须严格使用以下结构：
-           {"intent":"QUERY_DEVICE_METRIC","confidence":0.92,
-           "entities":[{"type":"DEVICE_ID","value":"AGV-002"},
-           {"type":"METRIC","value":"电量"}]}
-        3. confidence 取值范围为 0 到 1
-        4. 如果没有识别到实体，entities 返回 []
-        5. 如果无法识别意图，intent 返回 OTHER
-        6. 不要输出 markdown 代码块，不要输出额外解释
-        """;
-
-    private final LlmPort llmPort;
+    private final ChatModelRouter intentClassifier;
 
     /**
-     * 构造函数，注入 LLM 端口。
+     * 构造函数，注入意图分类器。
      *
-     * @param llmPort LLM 调用端口
+     * @param intentClassifier 基于决策模型的意图分类器
      */
-    public IntentRecognitionService(LlmPort llmPort) {
-        this.llmPort = llmPort;
+    public IntentRecognitionService(
+            @Qualifier("intentClassifier") ChatModelRouter intentClassifier) {
+        this.intentClassifier = intentClassifier;
     }
 
     /**
@@ -128,15 +82,13 @@ public class IntentRecognitionService {
      */
     public NlpParseResult parseWithEntities(String userMessage) {
         try {
-            NlpParseResult unifiedResult = parseUnifiedWithRetry(userMessage);
-            if (unifiedResult != null) {
-                log.info("统一NLP解析结果: {} <- \"{}\"",
-                        JSON.toJSONString(unifiedResult), userMessage);
-                return unifiedResult;
-            }
-
-            log.error("统一NLP解析失败，返回兜底结果: {}", userMessage);
-            return buildParseResult(IntentEnum.OTHER, new ArrayList<>(), 0.0D);
+            IntentEnum intent = classifyIntent(userMessage);
+            List<EntityResult> entities = extractEntitiesByRule(userMessage);
+            double confidence = intent == IntentEnum.OTHER ? 0.0D : CLASSIFY_HIT_CONFIDENCE;
+            NlpParseResult result = buildParseResult(intent, entities, confidence);
+            log.info("统一NLP解析结果: intent={}, entities={} <- \"{}\"",
+                    intent.getCode(), entities, userMessage);
+            return result;
         } catch (Exception e) {
             log.error("NLP综合解析失败: {}", userMessage, e);
             return buildParseResult(IntentEnum.OTHER, new ArrayList<>(), 0.0D);
@@ -144,87 +96,103 @@ public class IntentRecognitionService {
     }
 
     /**
-     * 重试执行统一 NLP 解析。
+     * 使用决策模型对用户消息做意图分类。
      *
      * @param userMessage 用户自然语言输入
-     * @return 统一解析结果，失败时返回 null
+     * @return 识别出的意图，低置信度或无法识别时返回 OTHER
      */
-    private NlpParseResult parseUnifiedWithRetry(String userMessage) {
-        for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            String rawResult = null;
-            try {
-                // 分类任务固定 0 温度并要求 JSON 输出，避免结果漂移与解析失败重试
-                rawResult = llmPort.completeJson(SYSTEM_PROMPT, userMessage, INTENT_TEMPERATURE);
-                return parseUnifiedResult(rawResult);
-            } catch (Exception e) {
-                log.warn("第{}次统一NLP解析失败，原始返回: {}", attempt, rawResult, e);
-            }
+    private IntentEnum classifyIntent(String userMessage) {
+        ChatModelRoutingRequest request = ChatModelRoutingRequest.builder()
+                .chatRequest(ChatRequest.builder()
+                        .messages(UserMessage.from(userMessage))
+                        .build())
+                .routes(INTENT_ROUTES)
+                .build();
+        ChatModelRoutingResult result = intentClassifier.route(request);
+
+        // 低置信度或分类失败时决策模型返回默认路由，映射为 OTHER
+        if (result.isDefaultRoute()) {
+            return IntentEnum.OTHER;
         }
-        return null;
+        IntentEnum intent = IntentEnum.getByCode(result.routeName());
+        return intent == null ? IntentEnum.OTHER : intent;
     }
 
     /**
-     * 解析统一 NLP JSON 结果。
+     * 通过正则规则从用户输入中提取实体。
      *
-     * @param jsonStr LLM 返回的 JSON 字符串
-     * @return 综合解析结果
-     */
-    private NlpParseResult parseUnifiedResult(String jsonStr) {
-        String jsonContent = extractJsonSegment(jsonStr);
-        JSONObject jsonObject = JSON.parseObject(jsonContent);
-        if (jsonObject == null) {
-            throw new IllegalArgumentException("统一NLP解析结果为空");
-        }
-
-        String intentCode = normalizeIntentCode(jsonObject.getString("intent"));
-        if (!isValidIntentCode(intentCode)) {
-            throw new IllegalArgumentException("统一NLP解析意图非法: " + jsonStr);
-        }
-
-        List<EntityResult> entities = parseEntityArray(jsonObject.getJSONArray("entities"));
-        Double confidence = normalizeConfidence(jsonObject.getDouble("confidence"));
-        return buildParseResult(IntentEnum.getByCode(intentCode), entities, confidence);
-    }
-
-    /**
-     * 解析实体数组。
-     *
-     * @param array 实体 JSON 数组
+     * @param userMessage 用户自然语言输入
      * @return 实体列表
      */
-    private List<EntityResult> parseEntityArray(JSONArray array) {
-        List<EntityResult> results = new ArrayList<>();
-        if (array == null) {
-            return results;
-        }
+    private List<EntityResult> extractEntitiesByRule(String userMessage) {
+        List<EntityResult> entities = new ArrayList<>();
+        extractByPattern(entities, EntityTypeEnum.DEVICE_ID, DEVICE_ID_PATTERN, userMessage);
+        extractByPattern(entities, EntityTypeEnum.ORDER_NO, ORDER_NO_PATTERN, userMessage);
+        extractByPattern(entities, EntityTypeEnum.BIN_LOCATION, BIN_LOCATION_PATTERN, userMessage);
 
-        for (int i = 0; i < array.size(); i++) {
-            JSONObject obj = array.getJSONObject(i);
-            if (obj == null) {
-                log.warn("跳过无效实体项: {}", array.get(i));
+        // 指标名按关键词匹配
+        for (String metric : METRICS) {
+            if (userMessage.contains(metric)) {
+                addEntity(entities, EntityTypeEnum.METRIC, metric);
+            }
+        }
+        return entities;
+    }
+
+    /**
+     * 按正则提取实体并去重追加。
+     *
+     * @param entities 实体列表
+     * @param type     实体类型
+     * @param pattern  匹配模式
+     * @param text     待匹配文本
+     */
+    private void extractByPattern(List<EntityResult> entities, EntityTypeEnum type,
+                                  Pattern pattern, String text) {
+        Matcher matcher = pattern.matcher(text);
+        while (matcher.find()) {
+            addEntity(entities, type, matcher.group());
+        }
+    }
+
+    /**
+     * 追加实体，避免重复值。
+     *
+     * @param entities 实体列表
+     * @param type     实体类型
+     * @param value    实体值
+     */
+    private void addEntity(List<EntityResult> entities, EntityTypeEnum type, String value) {
+        boolean exists = entities.stream()
+                .anyMatch(e -> e.getType() == type && value.equals(e.getValue()));
+        if (!exists) {
+            entities.add(EntityResult.builder().type(type).value(value).build());
+        }
+    }
+
+    /**
+     * 构建意图分类候选路由。
+     *
+     * @return 除 OTHER 外的意图路由列表
+     */
+    private static List<ChatModelRoute> buildIntentRoutes() {
+        List<ChatModelRoute> routes = new ArrayList<>();
+        for (IntentEnum intent : IntentEnum.values()) {
+            if (intent == IntentEnum.OTHER) {
                 continue;
             }
-
-            EntityTypeEnum type = EntityTypeEnum.getByCode(obj.getString("type"));
-            String value = obj.getString("value");
-            if (type == null || value == null || value.trim().isEmpty()) {
-                log.warn("跳过非法实体项: {}", obj);
-                continue;
-            }
-
-            results.add(EntityResult.builder()
-                    .type(type)
-                    .value(value.trim())
-                    .build());
+            // 名称 + 详细描述，帮助决策模型区分相近意图
+            routes.add(new ChatModelRoute(intent.getCode(),
+                    intent.getName() + "：" + intent.getDescription()));
         }
-        return results;
+        return routes;
     }
 
     /**
      * 构建统一解析结果。
      *
-     * @param intent 意图
-     * @param entities 实体列表
+     * @param intent     意图
+     * @param entities   实体列表
      * @param confidence 置信度
      * @return 统一解析结果
      */
@@ -236,45 +204,6 @@ public class IntentRecognitionService {
                 .entities(entities == null ? new ArrayList<>() : entities)
                 .confidence(normalizeConfidence(confidence))
                 .build();
-    }
-
-    /**
-     * 规范化意图编码。
-     *
-     * @param rawResult 模型原始返回
-     * @return 规范化后的意图编码
-     */
-    private String normalizeIntentCode(String rawResult) {
-        if (rawResult == null || rawResult.trim().isEmpty()) {
-            return null;
-        }
-
-        String cleaned = sanitizeModelOutput(rawResult).toUpperCase(Locale.ROOT);
-        for (IntentEnum intent : IntentEnum.values()) {
-            if (cleaned.contains(intent.getCode())) {
-                return intent.getCode();
-            }
-        }
-        return null;
-    }
-
-    /**
-     * 校验意图编码是否合法。
-     *
-     * @param intentCode 意图编码
-     * @return 是否合法
-     */
-    private boolean isValidIntentCode(String intentCode) {
-        if (intentCode == null || intentCode.trim().isEmpty()) {
-            return false;
-        }
-
-        for (IntentEnum intent : IntentEnum.values()) {
-            if (intent.getCode().equals(intentCode)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /**
@@ -290,40 +219,5 @@ public class IntentRecognitionService {
             return DEFAULT_CONFIDENCE;
         }
         return confidence;
-    }
-
-    /**
-     * 从模型输出中提取 JSON 片段。
-     *
-     * @param rawResult 模型原始返回
-     * @return 提取后的 JSON 片段
-     */
-    private String extractJsonSegment(String rawResult) {
-        String cleaned = sanitizeModelOutput(rawResult);
-        int startIndex = cleaned.indexOf('{');
-        int endIndex = cleaned.lastIndexOf('}');
-        if (startIndex < 0 || endIndex < startIndex) {
-            throw new IllegalArgumentException("未找到有效JSON片段: " + rawResult);
-        }
-        return cleaned.substring(startIndex, endIndex + 1);
-    }
-
-    /**
-     * 清洗模型原始输出。
-     *
-     * @param rawResult 模型原始返回
-     * @return 清洗后的结果
-     */
-    private String sanitizeModelOutput(String rawResult) {
-        if (rawResult == null) {
-            return "";
-        }
-
-        String cleaned = rawResult.trim();
-        if (cleaned.startsWith("```")) {
-            cleaned = cleaned.replaceAll("^```(?:json)?\\s*", "");
-            cleaned = cleaned.replaceAll("\\s*```$", "");
-        }
-        return cleaned.trim();
     }
 }

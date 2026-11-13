@@ -60,7 +60,7 @@ public class KnowledgeQaService {
      */
     public String answer(String question) {
         try {
-            // 1. 检索相关知识片段（含 Query 改写多路召回）
+            // 1. 检索相关知识片段（原问题单路召回）
             List<EmbeddingMatch<TextSegment>> relevantMatches = retrieve(question);
             if (relevantMatches.isEmpty()) {
                 log.info("未检索到与问题相关的知识内容: {}", question);
@@ -88,7 +88,7 @@ public class KnowledgeQaService {
      */
     public Flux<String> answerStream(String question) {
         return Flux.<String>defer(() -> {
-            // 1. 检索相关知识片段（含 Query 改写多路召回）
+            // 1. 检索相关知识片段（原问题单路召回）
             List<EmbeddingMatch<TextSegment>> relevantMatches = retrieve(question);
             if (relevantMatches.isEmpty()) {
                 // 2. 无匹配时直接返回兜底文本
@@ -138,16 +138,16 @@ public class KnowledgeQaService {
     }
 
     /**
-     * 检索相关知识片段（含 Query 改写多路召回）
-     * <p>参考 WeKnora 的检索增强思想：先用 LLM 将用户口语化问题改写为若干标准检索问句，
-     * 对原问题与改写问句分别向量检索，合并去重后返回 topN 候选片段，缓解口语/书面语语义鸿沟。</p>
+     * 检索相关知识片段
+     * <p>直接使用用户原问题做单路向量检索，不再调用 LLM 改写问句，
+     * 避免首 token 前多一次主模型调用与多路检索开销。</p>
      *
      * @param question 用户原始问题
-     * @return 去重合并后的相关知识片段（按相关性排序，最多 DEFAULT_MAX_RESULTS 条）
+     * @return 相关知识片段（最多 DEFAULT_MAX_RESULTS 条）
      */
     private List<EmbeddingMatch<TextSegment>> retrieve(String question) {
-        List<String> queries = rewriteQuery(question);
-        log.info("Query 改写完成，检索问句数={}：{}", queries.size(), queries);
+        List<String> queries = List.of(question);
+        log.info("RAG 检索问句: {}", question);
 
         Set<String> seen = new LinkedHashSet<>();
         List<EmbeddingMatch<TextSegment>> merged = new ArrayList<>();
@@ -172,9 +172,11 @@ public class KnowledgeQaService {
     }
 
     /**
-     * 将用户问题改写为若干标准检索问句
+     * 将用户问题改写为若干标准检索问句（当前未启用，保留备用）
      * <p>物流场景口语与文档书面语差异大（如「货到了吗」vs「入库完成状态」），
      * 通过 LLM 生成 1~3 个规范化检索问句提升召回率。改写失败则回退到原问题。</p>
+     * <p>单路召回已满足当前知识库检索，retrieve() 不再调用本方法；
+     * 若后续出现口语化提问漏召回，可在此恢复按需改写。</p>
      *
      * @param question 用户原始问题
      * @return 检索问句列表（至少包含原问题）

@@ -110,7 +110,9 @@ public class MybatisPlusAutoConfiguration {
                     }
                     return null;
                 } catch (Exception e) {
-                    log.error("获取当前登录用户失败，可能未登录或上下文不可用：{}", e.getMessage());
+                    // 未登录或异步线程无 Sa-Token 上下文（ThreadLocal 不跨线程）属预期降级：
+                    // 创建人/更新人留空即可，主流程不受影响，不能按故障级别刷 ERROR 日志
+                    log.debug("当前上下文无登录用户，跳过创建人/更新人自动填充：{}", e.getMessage());
                     return null;
                 }
             }
