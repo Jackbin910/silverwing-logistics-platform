@@ -128,7 +128,13 @@ public class AuthCommandService {
      * 用户登出
      */
     public void logout() {
-        StpUtil.logout();
+        // 登出需幂等：登录态已失效（如 token 过期、重复登出）时也要正常返回成功，
+        // 让前端能统一清理本地状态并跳转登录页
+        try {
+            StpUtil.logout();
+        } catch (Exception e) {
+            log.warn("登出时清理会话异常，按已登出处理: {}", e.getMessage());
+        }
     }
 
     /**

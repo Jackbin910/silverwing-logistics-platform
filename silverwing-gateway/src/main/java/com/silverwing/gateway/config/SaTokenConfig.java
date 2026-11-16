@@ -37,7 +37,8 @@ public class SaTokenConfig {
                 // 异常处理：Sa-Token 异常统一返回 401 JSON
                 .setError(e -> {
                     log.warn("Gateway 认证拦截：{}", e.getMessage());
-                    return SaResult.error("登录已过期，请重新登录");
+                    // SaResult.error 默认 code=500，前端按 401 识别登录过期并跳转登录页，这里必须显式置为 401
+                    return SaResult.error("登录已过期，请重新登录").setCode(401);
                 });
     }
 

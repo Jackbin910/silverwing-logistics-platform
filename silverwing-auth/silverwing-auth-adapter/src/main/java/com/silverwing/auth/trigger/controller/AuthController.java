@@ -98,6 +98,7 @@ public class AuthController {
         }
     }
 
+    @SkipAuth
     @Operation(summary = "用户登出")
     @PostMapping("/logout")
     public Result<Void> logout() {

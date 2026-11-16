@@ -226,9 +226,33 @@ public class KnowledgeQaService {
                         label.append(" / ").append(headingPath);
                     }
                     label.append("】");
-                    return label + "\n" + segment.text();
+                    // 文档导入时可能丢失换行，先补回结构换行，避免模型照抄粘连的长段落
+                    return label + "\n" + normalizeSegmentText(segment.text());
                 })
                 .collect(Collectors.joining("\n\n---\n\n"));
+    }
+
+    /**
+     * 规范化知识片段排版。
+     * <p>部分文档导入时丢失换行，标题、编号步骤会连成一段，这里只补回结构换行，不改动原文内容。</p>
+     *
+     * @param text 原始片段文本
+     * @return 补回换行后的文本
+     */
+    private String normalizeSegmentText(String text) {
+        if (text == null || text.isEmpty()) {
+            return "";
+        }
+        String normalized = text;
+        // Markdown 标题前空一行，使每个主题独立成段
+        normalized = normalized.replaceAll("(?<!\\n)#{2,6}", "\n\n$0");
+        // "异常1：" 这类中文编号前换行
+        normalized = normalized.replaceAll("(?<!\\n)(异常\\d+[：:])", "\n$1");
+        // "1.自动调度" 这类数字步骤前换行（序号后紧跟中文时）
+        normalized = normalized.replaceAll("(?<!\\n)([1-9]\\.[^\\d])(?=[\\u4e00-\\u9fa5])", "\n$1");
+        // "|15|" 这类表格数据行前换行，避免表格挤成一整段
+        normalized = normalized.replaceAll("(?<!\\n)(\\|\\d)", "\n$1");
+        return normalized.trim();
     }
 
     /**
@@ -247,7 +271,11 @@ public class KnowledgeQaService {
                 2. 如果参考资料不足以完全回答问题，请如实说明并提供已有的相关信息
                 3. 回答要简洁专业，使用合适的物流/设备术语
                 4. 如果参考资料中有具体数据（温度、容量、速度等），请准确引用
-                5. 使用分点或分行让回答更清晰易读
+                5. 输出格式（必须遵守）：参考资料可能因导入丢失换行而连成一整段，
+                   你必须重新排版后输出，禁止把多个主题挤在同一行
+                   - 每个主题用 Markdown 标题（### ）开头，标题独占一行，标题前空一行
+                   - 每个步骤、要点、表格行各占一行，段落之间空一行
+                   - 不要输出没有换行的长段落
 
                 【参考资料】
                 %s
