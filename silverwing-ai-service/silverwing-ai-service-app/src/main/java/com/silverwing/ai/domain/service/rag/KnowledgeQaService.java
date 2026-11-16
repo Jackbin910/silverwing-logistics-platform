@@ -15,6 +15,7 @@ import dev.langchain4j.store.embedding.EmbeddingSearchRequest;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -44,13 +45,18 @@ public class KnowledgeQaService {
 
 
     /**
-     * 默认检索最大结果数
+     * 无匹配时的兜底提示（两处复用）
      */
-    private static final int DEFAULT_MAX_RESULTS = 8;
-    /**
-     * 默认最低相似度分数
-     */
-    private static final double DEFAULT_MIN_SCORE = 0.5;
+    private static final String NO_RESULT_TIP = "抱歉，知识库中暂未找到与您问题相关的内容。\n\n"
+            + "您可以尝试：\n- 换一种方式描述您的问题\n- 确认知识库中是否已导入相关文档";
+
+    /** 检索最大结果数，可在 Nacos 调优 */
+    @Value("${ai.rag.max-results:8}")
+    private int maxResults;
+
+    /** 最低相似度分数，可在 Nacos 调优 */
+    @Value("${ai.rag.min-score:0.5}")
+    private double minScore;
 
     /**
      * 基于知识库回答用户问题
@@ -64,9 +70,7 @@ public class KnowledgeQaService {
             List<EmbeddingMatch<TextSegment>> relevantMatches = retrieve(question);
             if (relevantMatches.isEmpty()) {
                 log.info("未检索到与问题相关的知识内容: {}", question);
-                return "抱歉，知识库中暂未找到与您问题相关的内容。\n\n您可以尝试：\n"
-                        + "- 换一种方式描述您的问题\n"
-                        + "- 确认知识库中是否已导入相关文档";
+                return NO_RESULT_TIP;
             }
 
             log.info("检索到 {} 条相关知识片段，开始生成回答", relevantMatches.size());
@@ -92,7 +96,7 @@ public class KnowledgeQaService {
             List<EmbeddingMatch<TextSegment>> relevantMatches = retrieve(question);
             if (relevantMatches.isEmpty()) {
                 // 2. 无匹配时直接返回兜底文本
-                return Flux.just("抱歉，知识库中暂未找到与您问题相关的内容。\n\n您可以尝试：\n- 换一种方式描述您的问题\n- 确认知识库中是否已导入相关文档");
+                return Flux.just(NO_RESULT_TIP);
             }
 
             // 3. 构建上下文与 ChatRequest
@@ -143,7 +147,7 @@ public class KnowledgeQaService {
      * 避免首 token 前多一次主模型调用与多路检索开销。</p>
      *
      * @param question 用户原始问题
-     * @return 相关知识片段（最多 DEFAULT_MAX_RESULTS 条）
+     * @return 相关知识片段（最多 maxResults 条，可在 Nacos 配置）
      */
     private List<EmbeddingMatch<TextSegment>> retrieve(String question) {
         List<String> queries = List.of(question);
@@ -155,8 +159,8 @@ public class KnowledgeQaService {
             Embedding qEmbedding = embeddingModel.embed(q).content();
             EmbeddingSearchRequest request = EmbeddingSearchRequest.builder()
                     .queryEmbedding(qEmbedding)
-                    .maxResults(DEFAULT_MAX_RESULTS)
-                    .minScore(DEFAULT_MIN_SCORE)
+                    .maxResults(maxResults)
+                    .minScore(minScore)
                     .build();
             for (EmbeddingMatch<TextSegment> match : embeddingStore.search(request).matches()) {
                 // 以分片文本为去重键，避免多路召回重复片段
@@ -166,9 +170,7 @@ public class KnowledgeQaService {
             }
         }
         // 超出上限时截断（保留先召回的高相关片段）
-        return merged.size() > DEFAULT_MAX_RESULTS
-                ? merged.subList(0, DEFAULT_MAX_RESULTS)
-                : merged;
+        return merged.size() > maxResults ? merged.subList(0, maxResults) : merged;
     }
 
     /**
@@ -271,11 +273,11 @@ public class KnowledgeQaService {
                 2. 如果参考资料不足以完全回答问题，请如实说明并提供已有的相关信息
                 3. 回答要简洁专业，使用合适的物流/设备术语
                 4. 如果参考资料中有具体数据（温度、容量、速度等），请准确引用
-                5. 输出格式（必须遵守）：参考资料可能因导入丢失换行而连成一整段，
-                   你必须重新排版后输出，禁止把多个主题挤在同一行
-                   - 每个主题用 Markdown 标题（### ）开头，标题独占一行，标题前空一行
-                   - 每个步骤、要点、表格行各占一行，段落之间空一行
-                   - 不要输出没有换行的长段落
+                5. 输出格式：参考资料已按章节整理好，请沿用其结构与标题层级输出，
+                   不要自行重新排版或大段改写（逐条照搬结构最稳妥）
+                   - 每个主题/章节用 Markdown 标题（### ）开头，标题独占一行
+                   - 步骤、要点、表格行各占一行，段落之间空一行
+                   - 直接引用资料中的原文表述与数据，不要压缩成没有换行的长段落
 
                 【参考资料】
                 %s

@@ -64,6 +64,14 @@ public class LangChain4jConfig {
     @Value("${ai.intent-recognition.min-probability:0.7}")
     private Double intentMinProbability;
 
+    /** 意图识别位于 SSE 首 token 前的同步热路径，超时不宜过长。 */
+    @Value("${ai.intent-recognition.timeout-seconds:30}")
+    private Integer intentTimeoutSeconds;
+
+    /** 意图识别不重试：模型慢时重试只会让用户多等一倍时间，直接兜底 OTHER 更快。 */
+    @Value("${ai.intent-recognition.max-retries:0}")
+    private Integer intentMaxRetries;
+
     /**
      * PGVector 向量存储
      * 用于存储和检索知识库的文本向量
@@ -138,9 +146,9 @@ public class LangChain4jConfig {
         return OllamaDecisionModel.builder()
                 .baseUrl(baseUrl)
                 .modelName(intentModelName)
-                .timeout(Duration.ofSeconds(10))
+                .timeout(Duration.ofSeconds(intentTimeoutSeconds))
                 .keepAlive(-1)
-                .maxRetries(1)
+                .maxRetries(intentMaxRetries)
                 .build();
     }
 

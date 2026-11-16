@@ -3,6 +3,7 @@ package com.silverwing.gateway.config;
 import org.springframework.util.AntPathMatcher;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * 网关公开路径（白名单）统一定义。
@@ -57,7 +58,25 @@ public final class GatewayPublicPaths {
             "/public/**"
     );
 
+    /** 前端统一入口前缀，网关过滤器可能看到带或不带该前缀的路径。 */
+    private static final String API_PREFIX = "/api";
+
+    /** SaRouter 使用的白名单模式：同时覆盖带 /api 前缀与不带前缀的写法。 */
+    private static final String[] ALL_PUBLIC_PATTERNS = Stream.concat(
+            PUBLIC_PATHS.stream(),
+            PUBLIC_PATHS.stream().map(pattern -> API_PREFIX + pattern)
+    ).distinct().toArray(String[]::new);
+
     private GatewayPublicPaths() {
+    }
+
+    /**
+     * 获取供 SaRouter 使用的完整白名单模式（含 /api 前缀版本）。
+     *
+     * @return 白名单模式数组
+     */
+    public static String[] allPublicPatterns() {
+        return ALL_PUBLIC_PATTERNS.clone();
     }
 
     /**
@@ -67,6 +86,21 @@ public final class GatewayPublicPaths {
      * @return true 表示公开路径
      */
     public static boolean matches(String path) {
-        return PUBLIC_PATHS.stream().anyMatch(pattern -> PATH_MATCHER.match(pattern, path));
+        String normalized = normalize(path);
+        return PUBLIC_PATHS.stream()
+                .anyMatch(pattern -> PATH_MATCHER.match(pattern, normalized));
+    }
+
+    /**
+     * 去掉前端统一入口的 /api 前缀，便于与网关内部路径白名单匹配。
+     *
+     * @param path 原始请求路径
+     * @return 归一化后的路径
+     */
+    private static String normalize(String path) {
+        if (path != null && path.startsWith(API_PREFIX + "/")) {
+            return path.substring(API_PREFIX.length());
+        }
+        return path;
     }
 }

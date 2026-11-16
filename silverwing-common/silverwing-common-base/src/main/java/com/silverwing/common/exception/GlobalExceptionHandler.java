@@ -21,6 +21,7 @@ import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.io.IOException;
 import java.util.stream.Collectors;
@@ -167,11 +168,25 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 404 未找到
+     * 404 未找到（Spring 未匹配到 Handler 时抛出）
      */
     @ExceptionHandler(NoHandlerFoundException.class)
     public Result<?> handleNoHandlerFoundException(NoHandlerFoundException e) {
         log.warn("接口不存在：{}", e.getRequestURL());
+        return Result.fail(ResultCode.NOT_FOUND);
+    }
+
+    /**
+     * 404 静态资源/路径未找到
+     * <p>Spring Boot 3.2+ 在开启 spring.mvc.throw-exception-if-no-handler-found 或直接访问
+     * 不存在的路径时抛此异常，而非老的 NoHandlerFoundException。
+     * 单独处理避免落入兜底 Exception 被打成「系统异常」ERROR 日志、污染错误监控。</p>
+     */
+    @ExceptionHandler(NoResourceFoundException.class)
+    public Result<?> handleNoResourceFoundException(NoResourceFoundException e,
+                                                     HttpServletRequest request) {
+        String uri = request != null ? request.getRequestURI() : e.getResourcePath();
+        log.warn("资源不存在：{}", uri);
         return Result.fail(ResultCode.NOT_FOUND);
     }
 

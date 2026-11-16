@@ -27,6 +27,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static dev.langchain4j.store.embedding.filter.MetadataFilterBuilder.metadataKey;
@@ -49,6 +51,18 @@ public class KnowledgeIngestService {
      * 默认分片重叠字符数（保证上下文连续性）
      */
     private static final int OVERLAP_SIZE = 50;
+
+    /**
+     * 标题层级上限（对应 # ~ ###### 六级）
+     */
+    private static final int MAX_HEADING_LEVEL = 6;
+
+    /**
+     * 数字多级编号标题：捕获编号部分（如「2.2.1」「IV」），后跟空白与标题文本。
+     * 参考 WeKnora NumberedSectionPattern。
+     */
+    private static final Pattern NUMBERED_HEADING_PATTERN = Pattern.compile(
+            "^\\s*((?:\\d+(?:\\.\\d+){0,3}\\.?|[IVX]{1,5}\\.))\\s+\\S.{0,200}$");
 
     private final EmbeddingModel embeddingModel;
 
@@ -197,35 +211,140 @@ public class KnowledgeIngestService {
         List<TextSegment> chunks = new ArrayList<>();
         int[] chunkIndex = {0};
 
-        // 先按一级/二级标题切分为章节，逐章节递归处理
-        String[] sections = text.split("(?m)^#{1,3}\\s+");
-        for (String section : sections) {
-            String trimmed = section.trim();
-            if (trimmed.isEmpty()) {
+        // 按行扫描，识别 Markdown 标题（### 标题 / ###标题）与中文编号标题（一、/ 1.）作为章节边界，
+        // 并维护标题层级栈生成面包屑，让每个分片都带上所属章节上下文
+        String[] lines = text.split("\\R", -1);
+        StringBuilder body = new StringBuilder();
+        // 各层级标题：下标即层级，值是当前标题文本
+        String[] headingStack = new String[MAX_HEADING_LEVEL + 1];
+        boolean hasHeading = false;
+
+        for (String rawLine : lines) {
+            String line = rawLine.trim();
+            int level = headingLevel(line);
+            if (level > 0) {
+                // 遇到新标题：先冲刷上一个章节的正文
+                flushBody(body, metadata, headingStack, chunks, chunkIndex);
+                String title = stripHeadingMark(line);
+                headingStack[level - 1] = title;
+                // 清空更深层级的旧标题，避免面包屑残留过期章节
+                for (int i = level; i <= MAX_HEADING_LEVEL; i++) {
+                    headingStack[i] = null;
+                }
+                hasHeading = true;
+                // 标题本身也作为一条短分片，便于精确命中章节名查询
+                Metadata headingMeta = metadata.copy();
+                headingMeta.put("headingPath", buildHeadingPath(headingStack));
+                chunks.add(createChunk(line, headingMeta, chunkIndex[0]++));
                 continue;
             }
-            // 取章节首行作为标题面包屑（如「仓储管理」），去除标题后的正文继续递归
-            String[] firstLineSplit = trimmed.split("\\n", 2);
-            String heading = firstLineSplit[0].trim();
-            String body = firstLineSplit.length > 1 ? firstLineSplit[1].trim() : "";
-            String headingPath = heading.isEmpty() ? "正文" : heading;
-
-            Metadata sectionMeta = metadata.copy();
-            sectionMeta.put("headingPath", headingPath);
-
-            if (body.isEmpty()) {
-                // 整段就是标题，直接作为最小分片
-                chunks.add(createChunk(heading, sectionMeta, chunkIndex[0]++));
-                continue;
+            if (body.length() > 0) {
+                body.append('\n');
             }
-            recursiveSplit(body, sectionMeta, chunks, chunkIndex);
+            body.append(line);
         }
+        // 冲刷最后一个章节
+        flushBody(body, metadata, headingStack, chunks, chunkIndex);
 
         // 处理完全没有标题的纯文本文档
-        if (chunks.isEmpty()) {
+        if (!hasHeading) {
+            chunks.clear();
             recursiveSplit(text, metadata, chunks, chunkIndex);
         }
         return chunks;
+    }
+
+    /**
+     * 识别标题行并返回层级（1-based），非标题返回 0。
+     * 兼容 Markdown 的 # 标题（# 后可无空格）以及中文编号 / 数字编号标题。
+     *
+     * @param line 单行文本（已 trim）
+     * @return 标题层级，0 表示非标题
+     */
+    private int headingLevel(String line) {
+        if (line.isEmpty()) {
+            return 0;
+        }
+        // Markdown 标题：统计行首连续 # 的数量（最多 6 级），且 # 后必须有空白，
+        // 排除「C#」「#######」这类正文（对齐 WeKnora MarkdownHeadingPattern 的严谨写法）
+        int hashes = 0;
+        while (hashes < line.length() && line.charAt(hashes) == '#') {
+            hashes++;
+        }
+        if (hashes > 0 && hashes <= 6 && hashes < line.length()
+                && Character.isWhitespace(line.charAt(hashes))) {
+            return hashes;
+        }
+        // 中文编号标题：一、/（一）/ 第一章 / 第 1 章
+        if (line.matches("^[一二三四五六七八九十百]+[、.．]\\s*\\S.*")
+                || line.matches("^[（(][一二三四五六七八九十\\d]+[)）]\\s*\\S.*")
+                || line.matches("^第\\s*[一二三四五六七八九十百千零〇\\d]+\\s*[章节篇部部分]\\s*\\S.*")) {
+            return 1;
+        }
+        // 数字多级编号标题：1. Intro / 2.3 Methods / 2.2.1 用户与权限 / IV. Results
+        // 按编号层级映射为标题层级，使面包屑能反映 1 → 1.2 → 1.2.3 的嵌套
+        Matcher numberMatcher = NUMBERED_HEADING_PATTERN.matcher(line);
+        if (numberMatcher.matches()) {
+            String numbering = numberMatcher.group(1);
+            if (numbering != null && numbering.contains(".")) {
+                return Math.min(numbering.split("\\.").length, MAX_HEADING_LEVEL);
+            }
+            return 1;
+        }
+        return 0;
+    }
+
+    /**
+     * 去掉标题行的 Markdown 标记或编号前缀，得到纯标题文本。
+     *
+     * @param line 标题行
+     * @return 纯标题文本
+     */
+    private String stripHeadingMark(String line) {
+        String title = line.replaceFirst("^#{1,6}\\s+", "")
+                .replaceFirst("^第\\s*[一二三四五六七八九十百千零〇\\d]+\\s*[章节篇部部分]\\s*", "")
+                .replaceFirst("^[一二三四五六七八九十百]+\\s*[、.．]\\s*", "")
+                .replaceFirst("^[（(][一二三四五六七八九十\\d]+[)）]\\s*", "");
+        Matcher matcher = NUMBERED_HEADING_PATTERN.matcher(title);
+        if (matcher.matches()) {
+            title = title.substring(matcher.end(1)).trim();
+        }
+        return title.trim();
+    }
+
+    /**
+     * 拼接标题面包屑（各级标题用 / 连接）。
+     *
+     * @param headingStack 标题层级栈
+     * @return 面包屑字符串
+     */
+    private String buildHeadingPath(String[] headingStack) {
+        StringBuilder path = new StringBuilder();
+        for (String heading : headingStack) {
+            if (heading == null || heading.isEmpty()) {
+                continue;
+            }
+            if (path.length() > 0) {
+                path.append(" / ");
+            }
+            path.append(heading);
+        }
+        return path.length() == 0 ? "正文" : path.toString();
+    }
+
+    /**
+     * 冲刷一个章节的正文，按递归策略切分并写入其标题面包屑。
+     */
+    private void flushBody(StringBuilder body, Metadata metadata, String[] headingStack,
+                           List<TextSegment> chunks, int[] chunkIndex) {
+        String text = body.toString().trim();
+        if (text.isEmpty()) {
+            return;
+        }
+        Metadata sectionMeta = metadata.copy();
+        sectionMeta.put("headingPath", buildHeadingPath(headingStack));
+        recursiveSplit(text, sectionMeta, chunks, chunkIndex);
+        body.setLength(0);
     }
 
     /**
